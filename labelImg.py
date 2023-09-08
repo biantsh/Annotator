@@ -252,6 +252,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 return '&YOLO', 'format_yolo'
             elif format == LabelFileFormat.CREATE_ML:
                 return '&CreateML', 'format_createml'
+            elif format == LabelFileFormat.COCO:
+                return '&COCO', 'format_coco'
 
         save_format = action(get_format_meta(self.label_file_format)[0],
                              self.change_format, 'Ctrl+Y',
@@ -568,12 +570,20 @@ class MainWindow(QMainWindow, WindowMixin):
             self.label_file_format = LabelFileFormat.CREATE_ML
             LabelFile.suffix = JSON_EXT
 
+        elif save_format == FORMAT_COCO:
+            self.actions.save_format.setText(FORMAT_COCO)
+            self.actions.save_format.setIcon(new_icon("format_coco"))
+            self.label_file_format = LabelFileFormat.COCO
+            LabelFile.suffix = XML_EXT
+
     def change_format(self):
         if self.label_file_format == LabelFileFormat.PASCAL_VOC:
             self.set_format(FORMAT_YOLO)
         elif self.label_file_format == LabelFileFormat.YOLO:
             self.set_format(FORMAT_CREATEML)
         elif self.label_file_format == LabelFileFormat.CREATE_ML:
+            self.set_format(FORMAT_COCO)
+        elif self.label_file_format == LabelFileFormat.COCO:
             self.set_format(FORMAT_PASCALVOC)
         else:
             raise ValueError('Unknown label file format.')
@@ -908,6 +918,11 @@ class MainWindow(QMainWindow, WindowMixin):
                     annotation_file_path += JSON_EXT
                 self.label_file.save_create_ml_format(annotation_file_path, shapes, self.file_path, self.image_data,
                                                       self.label_hist, self.line_color.getRgb(), self.fill_color.getRgb())
+            elif self.label_file_format == LabelFileFormat.COCO:
+                if annotation_file_path[-4:].lower() != ".xml":
+                    annotation_file_path += XML_EXT
+                self.label_file.save_pascal_voc_format(annotation_file_path, shapes, self.file_path, self.image_data,
+                                                       self.line_color.getRgb(), self.fill_color.getRgb())
             else:
                 self.label_file.save(annotation_file_path, shapes, self.file_path, self.image_data,
                                      self.line_color.getRgb(), self.fill_color.getRgb())

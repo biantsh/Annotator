@@ -19,6 +19,7 @@ class LabelFileFormat(Enum):
     PASCAL_VOC = 1
     YOLO = 2
     CREATE_ML = 3
+    COCO = 4
 
 
 class LabelFileError(Exception):
