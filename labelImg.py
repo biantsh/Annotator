@@ -921,10 +921,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.label_file.save_create_ml_format(annotation_file_path, shapes, self.file_path, self.image_data,
                                                       self.label_hist, self.line_color.getRgb(), self.fill_color.getRgb())
             elif self.label_file_format == LabelFileFormat.COCO:
-                if annotation_file_path[-4:].lower() != ".xml":
-                    annotation_file_path += XML_EXT
-                self.label_file.save_pascal_voc_format(annotation_file_path, shapes, self.file_path, self.image_data,
-                                                       self.line_color.getRgb(), self.fill_color.getRgb())
+                if annotation_file_path[-5:].lower() != ".json":
+                    annotation_file_path += JSON_EXT
+                self.label_file.save_coco_format(annotation_file_path, shapes, self.file_path)
             else:
                 self.label_file.save(annotation_file_path, shapes, self.file_path, self.image_data,
                                      self.line_color.getRgb(), self.fill_color.getRgb())
@@ -1209,6 +1208,7 @@ class MainWindow(QMainWindow, WindowMixin):
             elif os.path.isfile(txt_path):
                 self.load_yolo_txt_by_filename(txt_path)
             elif os.path.isfile(json_path):
+                print(self.default_save_dir)
                 self.load_create_ml_json_by_filename(json_path, file_path)
             elif os.path.isfile(coco_path):
                 self.load_coco_json_by_filename(coco_path, file_path)
@@ -1492,6 +1492,10 @@ class MainWindow(QMainWindow, WindowMixin):
                 image_file_name = os.path.basename(self.file_path)
                 saved_file_name = os.path.splitext(image_file_name)[0]
                 saved_path = os.path.join(ustr(self.default_save_dir), saved_file_name)
+
+                if self.label_file_format == LabelFileFormat.COCO:
+                    saved_path = os.path.join(os.path.dirname(self.default_save_dir), 'annotations.json')
+
                 self._save_file(saved_path)
         else:
             image_file_dir = os.path.dirname(self.file_path)
