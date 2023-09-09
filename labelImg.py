@@ -45,6 +45,8 @@ from libs.yolo_io import YoloReader
 from libs.yolo_io import TXT_EXT
 from libs.create_ml_io import CreateMLReader
 from libs.create_ml_io import JSON_EXT
+from libs.coco_io import COCOReader
+from libs.coco_io import COCO_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
 
@@ -1198,7 +1200,7 @@ class MainWindow(QMainWindow, WindowMixin):
             xml_path = os.path.join(self.default_save_dir, basename + XML_EXT)
             txt_path = os.path.join(self.default_save_dir, basename + TXT_EXT)
             json_path = os.path.join(self.default_save_dir, basename + JSON_EXT)
-
+            coco_path = os.path.join(os.path.dirname(self.default_save_dir), 'annotations' + COCO_EXT)
             """Annotation file priority:
             PascalXML > YOLO
             """
@@ -1208,11 +1210,14 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.load_yolo_txt_by_filename(txt_path)
             elif os.path.isfile(json_path):
                 self.load_create_ml_json_by_filename(json_path, file_path)
+            elif os.path.isfile(coco_path):
+                self.load_coco_json_by_filename(coco_path, file_path)
 
         else:
             xml_path = os.path.splitext(file_path)[0] + XML_EXT
             txt_path = os.path.splitext(file_path)[0] + TXT_EXT
             json_path = os.path.splitext(file_path)[0] + JSON_EXT
+            coco_path = os.path.join(os.path.dirname(file_path), 'annotations' + COCO_EXT)
 
             if os.path.isfile(xml_path):
                 self.load_pascal_xml_by_filename(xml_path)
@@ -1220,7 +1225,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.load_yolo_txt_by_filename(txt_path)
             elif os.path.isfile(json_path):
                 self.load_create_ml_json_by_filename(json_path, file_path)
-            
+            elif os.path.isfile(coco_path):
+                self.load_coco_json_by_filename(coco_path, file_path)
+
 
     def resizeEvent(self, event):
         if self.canvas and not self.image.isNull()\
@@ -1669,6 +1676,19 @@ class MainWindow(QMainWindow, WindowMixin):
         shapes = create_ml_parse_reader.get_shapes()
         self.load_labels(shapes)
         self.canvas.verified = create_ml_parse_reader.verified
+
+    def load_coco_json_by_filename(self, json_path, file_path):
+        if self.file_path is None:
+            return
+        if os.path.isfile(json_path) is False:
+            return
+
+        self.set_format(FORMAT_COCO)
+
+        coco_parse_reader = COCOReader(json_path, file_path)
+        shapes = coco_parse_reader.get_shapes()
+        self.load_labels(shapes)
+        self.canvas.verified = coco_parse_reader.verified
 
     def copy_previous_bounding_boxes(self):
         current_index = self.m_img_list.index(self.file_path)
