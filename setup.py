@@ -22,6 +22,10 @@ with open("README.rst", "rb") as readme_file:
 with open("HISTORY.rst", "rb") as history_file:
     history = history_file.read().decode("UTF-8")
 
+pypi_desc = "A fork of the popular image annotation tool labelImg, aimed at " \
+            "adding more features such as keypoint annotation and support for " \
+            "the COCO format.\n\nGitHub: https://github.com/biantsh/labelImgPlus"
+
 # OS specific settings
 SET_REQUIRES = []
 if _platform == "linux" or _platform == "linux2":
@@ -86,8 +90,8 @@ setup(
     name=NAME,
     version=about['__version__'],
     description="LabelImg is a graphical image annotation tool and label object bounding boxes in images",
-    long_description=readme + '\n\n' + history,
-    long_description_content_type='text/markdown',
+    long_description=pypi_desc,
+    long_description_content_type='text/x-rst',
     author="TzuTa Lin",
     author_email='tzu.ta.lin@gmail.com',
     url='https://github.com/tzutalin/labelImg',
