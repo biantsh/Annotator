@@ -2,74 +2,151 @@
 # -*- coding: utf8 -*-
 import json
 import os
+from collections import defaultdict
 from libs.constants import DEFAULT_ENCODING
 
 COCO_EXT = '.json'
 ENCODE_METHOD = DEFAULT_ENCODING
 LABEL_MAP = [
-    'die',
-    'person'
+    'person',
+    'die'
 ]
 
 
-class COCOWriter:
+class COCOIOHandler:
 
-    def __init__(self, filename, img_size, shapes, output_file):
-        self.filename = filename
-        self.img_size = img_size
-        self.shapes = shapes
-        self.output_file = output_file
+    def __init__(self, json_path, image_dir):
+        self.json_path = json_path
+        self.image_dir = image_dir
 
-        self.box_list = []
+        self.shapes = []
         self.verified = False
 
-    def write(self):
-        if os.path.isfile(self.output_file):
-            with open(self.output_file, "r") as json_file:
-                output_data = json.load(json_file)
+        self.coco_dataset = None
+        self.images = None
+        self.annotations = None
+        self.categories = None
+
+        self.image_ids = set()
+        self.anno_ids = set()
+
+        if json_path is not None:
+            try:
+                self.parse_json()
+            except ValueError as e:
+                print("JSON decoding failed:", e)
+            except FileNotFoundError:
+                self.create_empty_json()
+
         else:
-            output_data = {
-                "images": [],
-                "annotations": [],
-                "categories": []
-            }
+            self.create_empty_json()
 
-            for category_id, label_name in enumerate(LABEL_MAP, start=1):
-                output_data["categories"].append({
-                    "id": category_id,
-                    "name": label_name
-                })
+    def parse_json(self):
+        with open(self.json_path, "r") as json_file:
+            self.coco_dataset = json.load(json_file)
 
-        image_ids = set()
-        image_names = set()
+        self.images = {image["file_name"]: image for image in self.coco_dataset["images"]}
 
-        for image in output_data["images"]:
-            image_ids.add(image["id"])
-            image_names.add(image["file_name"])
+        self.categories = {cat["id"]: cat["name"] for cat in self.coco_dataset["categories"]}
 
-        if self.filename in image_names:
-            for image in output_data["images"]:
-                if image["file_name"] == self.filename:
-                    image_id = image["id"]
-                    break
-        else:
-            image_id = self._get_new_id(image_ids)
-            image_height, image_width, _ = self.img_size
+        self.annotations = defaultdict(lambda: [])
+        for anno in self.coco_dataset["annotations"]:
+            self.annotations[anno["image_id"]].append(anno)
+            self.anno_ids.add(anno["id"])
 
-            output_data["images"].append({
-                "id": image_id,
-                "width": image_width,
-                "height": image_height,
-                "file_name": self.filename
+    def create_empty_json(self):
+        self.coco_dataset = {
+            "images": [],
+            "annotations": [],
+            "categories": []
+        }
+
+        for category_id, label_name in enumerate(LABEL_MAP, start=1):
+            self.coco_dataset["categories"].append({
+                "id": category_id,
+                "name": label_name
             })
 
-        annotations = [anno for anno in output_data["annotations"]
-                       if anno["image_id"] != image_id]
-        output_data["annotations"] = annotations.copy()
+        self.images = {}
+        self.annotations = defaultdict(lambda: [])
+        self.categories = {cat["id"]: cat["name"] for cat in self.coco_dataset["categories"]}
 
-        anno_ids = {anno["id"] for anno in output_data["annotations"]}
+    def load_shapes(self, file_path):
+        file_name = os.path.basename(file_path)
 
-        for shape in self.shapes:
+        # print(f"{len(self.annotations[self.images[file_name]['id']])} annotations for this image ({file_name}): {self.annotations[self.images[file_name]['id']]}")
+
+        if file_name in self.images:
+            coco_image = self.images[file_name]
+        else:
+            self.shapes = []
+            return
+
+        image_id = coco_image["id"]
+        annotations = self.annotations[image_id]
+
+        if len(self.shapes) > 0:
+            self.shapes = []
+
+        for anno in annotations:
+            print("NEW ANNO")
+            if anno["category_id"] not in self.categories:
+                continue
+
+            anno_name = self.categories[anno["category_id"]]
+            anno_bbox = anno["bbox"]
+
+            if anno_bbox != [0, 0, 0, 0]:
+                self.add_shape(anno_name, anno_bbox)
+
+    def add_image(self, image_name, image_size):
+        image_width, image_height = image_size
+
+        if image_name in self.images:
+            return
+
+        image_id = self._get_new_id(self.image_ids)
+        self.image_ids.add(image_id)
+
+        image = {
+            "id": image_id,
+            "width": image_width,
+            "height": image_height,
+            "file_name": image_name
+        }
+
+        self.coco_dataset["images"].append(image)
+        self.images[image_name] = image
+
+    def add_shape(self, label, bnd_box):
+        x_min, y_min, width, height = bnd_box
+        x_max, y_max = x_min + width, y_min + height
+
+        points = [(x_min, y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max)]
+        self.shapes.append((label, points, None, None, True))
+
+    def write(self, annotation_file_path, shapes, image_path, image_data):
+        image_name = os.path.basename(image_path)
+        self.shapes = shapes
+
+        if image_name not in self.images:
+            self.add_image(image_name, (image_data.width(), image_data.height()))
+
+        image = self.images[image_name]
+        image_id = image["id"]
+
+        # Remove existing annotations for image
+        remaining_annos = []
+        for anno in self.coco_dataset["annotations"]:
+            if anno["image_id"] == image_id:
+                self.anno_ids.remove(anno["id"])
+                self.annotations[anno["image_id"]] = []
+            else:
+                remaining_annos.append(anno)
+
+        self.coco_dataset["annotations"] = remaining_annos.copy()
+
+        for shape in shapes:
             points = shape["points"]
 
             x1 = points[0][0]
@@ -80,8 +157,8 @@ class COCOWriter:
             x_min, y_min, width, height = self._calculate_coordinates(x1, x2, y1, y2)
             x_max, y_max = x_min + width, y_min + height
 
-            anno_id = self._get_new_id(anno_ids)
-            anno_ids.add(anno_id)
+            anno_id = self._get_new_id(self.anno_ids)
+            self.anno_ids.add(anno_id)
 
             label = shape["label"]
             category_id = LABEL_MAP.index(label) + 1
@@ -90,17 +167,23 @@ class COCOWriter:
                 "id": anno_id,
                 "image_id": image_id,
                 "category_id": category_id,
-                "area": width * height,
+                "area": int(width * height),
                 "bbox": [int(x_min), int(y_min), int(width), int(height)],
                 "iscrowd": 0,
                 "segmentation": [
-                    [x_max, y_min, x_max, y_max, x_min, y_max, x_min, y_min]
+                    [int(x_max), int(y_min), int(x_max), int(y_max),
+                     int(x_min), int(y_max), int(x_min), int(y_min)]
                 ]
             }
-            output_data["annotations"].append(annotation)
 
-        with open(self.output_file, "w") as json_file:
-            json.dump(output_data, json_file, indent=2)
+            self.coco_dataset["annotations"].append(annotation)
+            self.annotations[image_id].append(annotation)
+
+        with open(annotation_file_path, "w") as json_file:
+            json.dump(self.coco_dataset, json_file, indent=2)
+
+    def get_shapes(self):
+        return self.shapes
 
     @staticmethod
     def _get_new_id(current_ids):
@@ -131,51 +214,3 @@ class COCOWriter:
         height = y_max - y_min
 
         return x_min, y_min, width, height
-
-
-
-class COCOReader:
-
-    def __init__(self, json_path, file_path):
-        self.json_path = json_path
-        self.shapes = []
-        self.verified = False
-        self.filename = os.path.basename(file_path)
-        try:
-            self.parse_json()
-        except ValueError as e:
-            print("JSON decoding failed", e)
-
-    def parse_json(self):
-        with open(self.json_path, "r") as json_file:
-            input_data = json.load(json_file)
-
-        category_map = {cat["id"]: cat["name"] for cat in input_data['categories']}
-
-        if len(self.shapes) > 0:
-            self.shapes = []
-
-        for image in input_data["images"]:
-            if image["file_name"] == self.filename:
-                image_id = image["id"]
-                break
-        else:
-            return
-
-        for anno in input_data["annotations"]:
-            if anno["image_id"] == image_id:
-                anno_name = category_map[anno["category_id"]]
-                anno_bbox = anno["bbox"]
-
-                if anno_bbox != [0, 0, 0, 0]:
-                    self.add_shape(anno_name, anno_bbox)
-
-    def add_shape(self, label, bnd_box):
-        x_min, y_min, width, height = bnd_box
-        x_max, y_max = x_min + width, y_min + height
-
-        points = [(x_min, y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max)]
-        self.shapes.append((label, points, None, None, True))
-
-    def get_shapes(self):
-        return self.shapes

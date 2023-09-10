@@ -45,7 +45,7 @@ from libs.yolo_io import YoloReader
 from libs.yolo_io import TXT_EXT
 from libs.create_ml_io import CreateMLReader
 from libs.create_ml_io import JSON_EXT
-from libs.coco_io import COCOReader
+from libs.coco_io import COCOIOHandler
 from libs.coco_io import COCO_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
@@ -213,6 +213,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.dock_features = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
         self.dock.setFeatures(self.dock.features() ^ self.dock_features)
+
+        # Only used when annotation format is set to COCO
+        self.coco_io_handler = None
+        self.coco_path = None
 
         # Actions
         action = partial(new_action, self)
@@ -923,7 +927,11 @@ class MainWindow(QMainWindow, WindowMixin):
             elif self.label_file_format == LabelFileFormat.COCO:
                 if annotation_file_path[-5:].lower() != ".json":
                     annotation_file_path += JSON_EXT
-                self.label_file.save_coco_format(annotation_file_path, shapes, self.file_path)
+
+                if self.coco_io_handler is None:
+                    self.coco_io_handler = COCOIOHandler(self.coco_path, self.dir_name)
+
+                self.coco_io_handler.write(annotation_file_path, shapes, self.file_path, self.image_data)
             else:
                 self.label_file.save(annotation_file_path, shapes, self.file_path, self.image_data,
                                      self.line_color.getRgb(), self.fill_color.getRgb())
@@ -1175,6 +1183,12 @@ class MainWindow(QMainWindow, WindowMixin):
             self.toggle_actions(True)
             self.show_bounding_box_from_annotation_file(self.file_path)
 
+            if self.label_file_format == LabelFileFormat.COCO and self.coco_io_handler is not None:
+                image_name = os.path.basename(unicode_file_path)
+                image_size = (self.image.width(), self.image.height())
+
+                self.coco_io_handler.add_image(image_name, image_size)
+
             counter = self.counter_str()
             self.setWindowTitle(__appname__ + ' ' + file_path + ' ' + counter)
 
@@ -1200,6 +1214,7 @@ class MainWindow(QMainWindow, WindowMixin):
             txt_path = os.path.join(self.default_save_dir, basename + TXT_EXT)
             json_path = os.path.join(self.default_save_dir, basename + JSON_EXT)
             coco_path = os.path.join(os.path.dirname(self.default_save_dir), 'annotations' + COCO_EXT)
+            self.coco_path = coco_path  # To be used for creating COCOIOHandler instance when saving annotations
             """Annotation file priority:
             PascalXML > YOLO
             """
@@ -1212,6 +1227,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.load_create_ml_json_by_filename(json_path, file_path)
             elif os.path.isfile(coco_path):
                 self.load_coco_json_by_filename(coco_path, file_path)
+            elif self.label_file_format == LabelFileFormat.COCO and self.coco_io_handler is None:
+                self.coco_io_handler = COCOIOHandler(None, self.dir_name)
 
         else:
             xml_path = os.path.splitext(file_path)[0] + XML_EXT
@@ -1227,7 +1244,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.load_create_ml_json_by_filename(json_path, file_path)
             elif os.path.isfile(coco_path):
                 self.load_coco_json_by_filename(coco_path, file_path)
-
+            elif self.label_file_format == LabelFileFormat.COCO and self.coco_io_handler is None:
+                self.coco_io_handler = COCOIOHandler(None, self.dir_name)
 
     def resizeEvent(self, event):
         if self.canvas and not self.image.isNull()\
@@ -1689,10 +1707,14 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.set_format(FORMAT_COCO)
 
-        coco_parse_reader = COCOReader(json_path, file_path)
-        shapes = coco_parse_reader.get_shapes()
+        if self.coco_io_handler is None:
+            self.coco_io_handler = COCOIOHandler(json_path, self.dir_name)
+
+        self.coco_io_handler.load_shapes(file_path)
+        shapes = self.coco_io_handler.get_shapes()
+
         self.load_labels(shapes)
-        self.canvas.verified = coco_parse_reader.verified
+        self.canvas.verified = self.coco_io_handler.verified
 
     def copy_previous_bounding_boxes(self):
         current_index = self.m_img_list.index(self.file_path)
