@@ -1,13 +1,4 @@
-.. image:: /readme/images/labelimg.png
-        :target: https://github.com/heartexlabs/label-studio
-
-Label Studio is a modern, multi-modal data annotation tool
-=======
-
-LabelImg, the popular image annotation tool created by Tzutalin with the help of dozens contributors, is no longer actively being developed and has become part of the Label Studio community. Check out `Label Studio <https://github.com/heartexlabs/label-studio>`__, the most flexible open source data labeling tool for images, text, hypertext, audio, video and time-series data. `Install <https://labelstud.io/guide/install.html>`__ Label Studio and join the `slack community <https://label-studio.slack.com/>`__ to get started.
-
-.. image:: /readme/images/label-studio-1-6-player-screenshot.png
-        :target: https://github.com/heartexlabs/label-studio
+A fork of the popular image annotation tool **labelImg**, aimed at adding more features such as keypoint annotation and support for the COCO format.
 
 About LabelImg
 ========
