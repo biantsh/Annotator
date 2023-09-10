@@ -8,7 +8,7 @@ import sys
 import os
 
 here = os.path.abspath(os.path.dirname(__file__))
-NAME = 'labelImg'
+NAME = 'labelImgPlus'
 REQUIRES_PYTHON = '>=3.0.0'
 REQUIRED_DEP = ['pyqt5', 'lxml']
 about = {}
@@ -87,6 +87,7 @@ setup(
     version=about['__version__'],
     description="LabelImg is a graphical image annotation tool and label object bounding boxes in images",
     long_description=readme + '\n\n' + history,
+    long_description_content_type='text/markdown',
     author="TzuTa Lin",
     author_email='tzu.ta.lin@gmail.com',
     url='https://github.com/tzutalin/labelImg',
