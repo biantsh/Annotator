@@ -216,7 +216,6 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Only used when annotation format is set to COCO
         self.coco_io_handler = None
-        self.coco_path = None
 
         # Actions
         action = partial(new_action, self)
@@ -929,9 +928,9 @@ class MainWindow(QMainWindow, WindowMixin):
                     annotation_file_path += JSON_EXT
 
                 if self.coco_io_handler is None:
-                    self.coco_io_handler = COCOIOHandler(self.coco_path, self.dir_name)
+                    self.coco_io_handler = COCOIOHandler(annotation_file_path, self.dir_name)
 
-                self.coco_io_handler.write(annotation_file_path, shapes, self.file_path, self.image_data)
+                self.coco_io_handler.update_annotations(shapes, self.file_path, self.image_data)
             else:
                 self.label_file.save(annotation_file_path, shapes, self.file_path, self.image_data,
                                      self.line_color.getRgb(), self.fill_color.getRgb())
@@ -1214,7 +1213,6 @@ class MainWindow(QMainWindow, WindowMixin):
             txt_path = os.path.join(self.default_save_dir, basename + TXT_EXT)
             json_path = os.path.join(self.default_save_dir, basename + JSON_EXT)
             coco_path = os.path.join(os.path.dirname(self.default_save_dir), 'annotations' + COCO_EXT)
-            self.coco_path = coco_path  # To be used for creating COCOIOHandler instance when saving annotations
             """Annotation file priority:
             PascalXML > YOLO
             """
@@ -1223,12 +1221,11 @@ class MainWindow(QMainWindow, WindowMixin):
             elif os.path.isfile(txt_path):
                 self.load_yolo_txt_by_filename(txt_path)
             elif os.path.isfile(json_path):
-                print(self.default_save_dir)
                 self.load_create_ml_json_by_filename(json_path, file_path)
             elif os.path.isfile(coco_path):
                 self.load_coco_json_by_filename(coco_path, file_path)
             elif self.label_file_format == LabelFileFormat.COCO and self.coco_io_handler is None:
-                self.coco_io_handler = COCOIOHandler(None, self.dir_name)
+                self.coco_io_handler = COCOIOHandler(coco_path, self.dir_name)
 
         else:
             xml_path = os.path.splitext(file_path)[0] + XML_EXT
@@ -1245,7 +1242,7 @@ class MainWindow(QMainWindow, WindowMixin):
             elif os.path.isfile(coco_path):
                 self.load_coco_json_by_filename(coco_path, file_path)
             elif self.label_file_format == LabelFileFormat.COCO and self.coco_io_handler is None:
-                self.coco_io_handler = COCOIOHandler(None, self.dir_name)
+                self.coco_io_handler = COCOIOHandler(coco_path, self.dir_name)
 
     def resizeEvent(self, event):
         if self.canvas and not self.image.isNull()\
@@ -1314,6 +1311,10 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_PAINT_LABEL] = self.display_label_option.isChecked()
         settings[SETTING_DRAW_SQUARE] = self.draw_squares_option.isChecked()
         settings[SETTING_LABEL_FILE_FORMAT] = self.label_file_format
+
+        if settings[SETTING_AUTO_SAVE] and self.label_file_format == LabelFileFormat.COCO:
+            self.coco_io_handler.write()
+
         settings.save()
 
     def load_recent(self, filename):

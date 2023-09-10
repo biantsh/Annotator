@@ -74,8 +74,6 @@ class COCOIOHandler:
     def load_shapes(self, file_path):
         file_name = os.path.basename(file_path)
 
-        # print(f"{len(self.annotations[self.images[file_name]['id']])} annotations for this image ({file_name}): {self.annotations[self.images[file_name]['id']]}")
-
         if file_name in self.images:
             coco_image = self.images[file_name]
         else:
@@ -89,7 +87,6 @@ class COCOIOHandler:
             self.shapes = []
 
         for anno in annotations:
-            print("NEW ANNO")
             if anno["category_id"] not in self.categories:
                 continue
 
@@ -125,7 +122,7 @@ class COCOIOHandler:
         points = [(x_min, y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max)]
         self.shapes.append((label, points, None, None, True))
 
-    def write(self, annotation_file_path, shapes, image_path, image_data):
+    def update_annotations(self, shapes, image_path, image_data):
         image_name = os.path.basename(image_path)
         self.shapes = shapes
 
@@ -179,7 +176,10 @@ class COCOIOHandler:
             self.coco_dataset["annotations"].append(annotation)
             self.annotations[image_id].append(annotation)
 
-        with open(annotation_file_path, "w") as json_file:
+        self.write()
+
+    def write(self):
+        with open(self.json_path, "w") as json_file:
             json.dump(self.coco_dataset, json_file, indent=2)
 
     def get_shapes(self):
