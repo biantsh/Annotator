@@ -1312,7 +1312,9 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_DRAW_SQUARE] = self.draw_squares_option.isChecked()
         settings[SETTING_LABEL_FILE_FORMAT] = self.label_file_format
 
-        if settings[SETTING_AUTO_SAVE] and self.label_file_format == LabelFileFormat.COCO:
+        if settings[SETTING_AUTO_SAVE] \
+                and self.label_file_format == LabelFileFormat.COCO \
+                and self.coco_io_handler is not None:
             self.coco_io_handler.write()
 
         settings.save()

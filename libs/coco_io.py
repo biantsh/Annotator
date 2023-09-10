@@ -2,6 +2,8 @@
 # -*- coding: utf8 -*-
 import json
 import os
+import tempfile
+import threading
 from collections import defaultdict
 from libs.constants import DEFAULT_ENCODING
 
@@ -29,6 +31,8 @@ class COCOIOHandler:
 
         self.image_ids = set()
         self.anno_ids = set()
+
+        self.writer = ThreadedCocoWriter(json_path)
 
         if json_path is not None:
             try:
@@ -179,8 +183,7 @@ class COCOIOHandler:
         self.write()
 
     def write(self):
-        with open(self.json_path, "w") as json_file:
-            json.dump(self.coco_dataset, json_file, indent=2)
+        self.writer.write(self.coco_dataset)
 
     def get_shapes(self):
         return self.shapes
@@ -214,3 +217,34 @@ class COCOIOHandler:
         height = y_max - y_min
 
         return x_min, y_min, width, height
+
+
+class ThreadedCocoWriter:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+        self.is_writing = False
+        self.current_thread = None
+
+    def _write(self, json_data):
+        self.is_writing = True
+
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
+                temp_filename = temp_file.name
+                json.dump(json_data, temp_file, indent=2)
+                temp_file.flush()
+
+            os.replace(temp_filename, self.file_path)
+
+        except Exception as e:
+            print(f"Error while writing COCO annotation file: {e}")
+        finally:
+            self.is_writing = False
+
+    def write(self, json_data):
+        if self.is_writing:
+            self.current_thread.join()  # Cancel current write before starting the new one
+
+        self.current_thread = threading.Thread(target=self._write, args=(json_data,))
+        self.current_thread.start()
