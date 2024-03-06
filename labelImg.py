@@ -75,7 +75,7 @@ class WindowMixin(object):
 class MainWindow(QMainWindow, WindowMixin):
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = list(range(3))
 
-    def __init__(self, default_filename=None, default_prefdef_class_file=None, default_save_dir=None):
+    def __init__(self, default_filename=None, default_prefdef_class_file=None, default_save_dir=None, label_map_path=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
 
@@ -216,13 +216,18 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Only used when annotation format is set to COCO
         self.coco_io_handler = None
+        if label_map_path is None:
+            self.label_map = []
+        else:
+            with open(label_map_path, 'r') as text_file:
+                self.label_map = text_file.read().strip().split('\n')
 
         # Actions
         action = partial(new_action, self)
         quit = action(get_str('quit'), self.close,
                       'Ctrl+Q', 'quit', get_str('quitApp'))
 
-        open = action(get_str('openFile'), self.open_file,
+        open_ = action(get_str('openFile'), self.open_file,
                       'Ctrl+O', 'open', get_str('openFileDetail'))
 
         open_dir = action(get_str('openDir'), self.open_dir_dialog,
@@ -387,7 +392,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.draw_squares_option.triggered.connect(self.toggle_draw_square)
 
         # Store actions for further handling.
-        self.actions = Struct(save=save, save_format=save_format, saveAs=save_as, open=open, close=close, resetAll=reset_all, deleteImg=delete_image,
+        self.actions = Struct(save=save, save_format=save_format, saveAs=save_as, open=open_, close=close, resetAll=reset_all, deleteImg=delete_image,
                               lineColor=color1, create=create, delete=delete, edit=edit, copy=copy,
                               createMode=create_mode, editMode=edit_mode, advancedMode=advanced_mode,
                               shapeLineColor=shape_line_color, shapeFillColor=shape_fill_color,
@@ -397,7 +402,7 @@ class MainWindow(QMainWindow, WindowMixin):
                               lightBrighten=light_brighten, lightDarken=light_darken, lightOrg=light_org,
                               lightActions=light_actions,
                               fileMenuActions=(
-                                  open, open_dir, save, save_as, close, reset_all, quit),
+                                  open_, open_dir, save, save_as, close, reset_all, quit),
                               beginner=(), advanced=(),
                               editMenu=(edit, copy, delete,
                                         None, color1, self.draw_squares_option),
@@ -434,7 +439,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.display_label_option.triggered.connect(self.toggle_paint_labels_option)
 
         add_actions(self.menus.file,
-                    (open, open_dir, change_save_dir, open_annotation, copy_prev_bounding, self.menus.recentFiles, save, save_format, save_as, close, reset_all, delete_image, quit))
+                    (open_, open_dir, change_save_dir, open_annotation, copy_prev_bounding, self.menus.recentFiles, save, save_format, save_as, close, reset_all, delete_image, quit))
         add_actions(self.menus.help, (help_default, show_info, show_shortcut))
         add_actions(self.menus.view, (
             self.auto_saving,
@@ -456,12 +461,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            open, open_dir, change_save_dir, open_next_image, open_prev_image, verify, save, save_format, None, create, copy, delete, None,
+            open_, open_dir, change_save_dir, open_next_image, open_prev_image, verify, save, save_format, None, create, copy, delete, None,
             zoom_in, zoom, zoom_out, fit_window, fit_width, None,
             light_brighten, light, light_darken, light_org)
 
         self.actions.advanced = (
-            open, open_dir, change_save_dir, open_next_image, open_prev_image, save, save_format, None,
+            open_, open_dir, change_save_dir, open_next_image, open_prev_image, save, save_format, None,
             create_mode, edit_mode, None,
             hide_all, show_all)
 
@@ -924,13 +929,16 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.label_file.save_create_ml_format(annotation_file_path, shapes, self.file_path, self.image_data,
                                                       self.label_hist, self.line_color.getRgb(), self.fill_color.getRgb())
             elif self.label_file_format == LabelFileFormat.COCO:
+                while not self.label_map:
+                    self.open_label_map_dialog()
+
                 if annotation_file_path[-5:].lower() != ".json":
                     annotation_file_path += JSON_EXT
 
                 if self.coco_io_handler is None:
                     self.coco_io_handler = COCOIOHandler(annotation_file_path, self.dir_name)
 
-                self.coco_io_handler.update_annotations(shapes, self.file_path, self.image_data)
+                self.coco_io_handler.update_annotations(shapes, self.file_path, self.image_data, self.label_map)
             else:
                 self.label_file.save(annotation_file_path, shapes, self.file_path, self.image_data,
                                      self.line_color.getRgb(), self.fill_color.getRgb())
@@ -1349,7 +1357,8 @@ class MainWindow(QMainWindow, WindowMixin):
         if dir_path is not None and len(dir_path) > 1:
             self.default_save_dir = dir_path
 
-        self.show_bounding_box_from_annotation_file(self.file_path)
+        if self.file_path and os.path.exists(self.file_path):
+            self.show_bounding_box_from_annotation_file(self.file_path)
 
         self.statusBar().showMessage('%s . Annotation will be saved to %s' %
                                      ('Change saved folder', self.default_save_dir))
@@ -1403,6 +1412,22 @@ class MainWindow(QMainWindow, WindowMixin):
         self.default_save_dir = target_dir_path
         if self.file_path:
             self.show_bounding_box_from_annotation_file(file_path=self.file_path)
+
+    def open_label_map_dialog(self, _value=False):
+        path = os.path.dirname(ustr(self.file_path)) \
+            if self.file_path else '.'
+
+        filters = "Open label map file (%s)" % ' '.join(['*.txt'])
+
+        filename = ustr(QFileDialog.getOpenFileName(self,
+                                                    '%s - Choose a text file' % __appname__,
+                                                    path, filters))[0]
+
+        try:
+            with open(filename, 'r') as text_file:
+                self.label_map = text_file.read().strip().split('\n')
+        except FileNotFoundError:
+            pass
 
     def import_dir_images(self, dir_path):
         if not self.may_continue() or not dir_path:
@@ -1763,16 +1788,19 @@ def get_main_app(argv=None):
                            default=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
                            nargs="?")
     argparser.add_argument("save_dir", nargs="?")
+    argparser.add_argument("-l", "--label_map_path", default=None)
     args = argparser.parse_args(argv[1:])
 
     args.image_dir = args.image_dir and os.path.normpath(args.image_dir)
     args.class_file = args.class_file and os.path.normpath(args.class_file)
     args.save_dir = args.save_dir and os.path.normpath(args.save_dir)
+    args.label_map_path = args.label_map_path and os.path.normpath(args.label_map_path)
 
     # Usage : labelImg.py image classFile saveDir
     win = MainWindow(args.image_dir,
                      args.class_file,
-                     args.save_dir)
+                     args.save_dir,
+                     args.label_map_path)
     win.show()
     return app, win
 

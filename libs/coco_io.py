@@ -9,11 +9,6 @@ from libs.constants import DEFAULT_ENCODING
 
 COCO_EXT = '.json'
 ENCODE_METHOD = DEFAULT_ENCODING
-LABEL_MAP = [
-    'person',
-    'die'
-]
-
 
 class COCOIOHandler:
 
@@ -27,7 +22,7 @@ class COCOIOHandler:
         self.coco_dataset = None
         self.images = None
         self.annotations = None
-        self.categories = None
+        self.categories = {}
 
         self.image_ids = set()
         self.anno_ids = set()
@@ -65,15 +60,8 @@ class COCOIOHandler:
             "categories": []
         }
 
-        for category_id, label_name in enumerate(LABEL_MAP, start=1):
-            self.coco_dataset["categories"].append({
-                "id": category_id,
-                "name": label_name
-            })
-
         self.images = {}
         self.annotations = defaultdict(lambda: [])
-        self.categories = {cat["id"]: cat["name"] for cat in self.coco_dataset["categories"]}
 
     def load_shapes(self, file_path):
         file_name = os.path.basename(file_path)
@@ -126,7 +114,7 @@ class COCOIOHandler:
         points = [(x_min, y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max)]
         self.shapes.append((label, points, None, None, True))
 
-    def update_annotations(self, shapes, image_path, image_data):
+    def update_annotations(self, shapes, image_path, image_data, label_map):
         image_name = os.path.basename(image_path)
         self.shapes = shapes
 
@@ -162,7 +150,11 @@ class COCOIOHandler:
             self.anno_ids.add(anno_id)
 
             label = shape["label"]
-            category_id = LABEL_MAP.index(label) + 1
+            try:
+                category_id = label_map.index(label) + 1
+            except ValueError:
+                print('Warning: Tried to save annotation that is not present in label map.')
+                continue
 
             annotation = {
                 "id": anno_id,
@@ -179,6 +171,14 @@ class COCOIOHandler:
 
             self.coco_dataset["annotations"].append(annotation)
             self.annotations[image_id].append(annotation)
+
+        self.coco_dataset["categories"] = []
+        for cat_id, name in enumerate(label_map, start=1):
+            self.coco_dataset["categories"].append({
+                'id': cat_id,
+                'name': name
+            })
+            self.categories[cat_id] = name
 
         self.write()
 
