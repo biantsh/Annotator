@@ -1,4 +1,36 @@
+LabelImgPlus
+========
+
 A fork of the popular image annotation tool **labelImg**, aimed at adding more features such as keypoint annotation and support for the COCO format.
+
+Setup
+-----
+
+On an environment with a valid Python 3.9 installation, download the repository and run:
+
+.. code:: shell
+
+    cd labelImgPlus
+    pip install .
+
+Usage
+-----
+
+To launch the application, run:
+
+.. code:: shell
+
+    labelImg --label_map_path path/to/label/map.txt
+    # Or
+    labelImg -l path/to/label/map.txt
+
+*Note: You may choose to omit the label map at this stage, but a dialog will be opened where you have to provide it before saving any new annotations.*
+
+On the left-hand toolbar, select the COCO format:
+
+.. image:: readme/images/coco-format.png
+
+The annotations will be stored in a file named ``annotations.json`` outside the image directory. 
 
 About LabelImg
 ========
