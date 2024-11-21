@@ -35,7 +35,7 @@ class Actions:
         action.setShortcut(shortcut)
         action.setEnabled(enabled)
 
-        action.setIcon(QIcon(f':/{icon}'))
+        action.setIcon(QIcon(f'icon:{icon}'))
         action.triggered.connect(partial(binding, parent))
 
         return action

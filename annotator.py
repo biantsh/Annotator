@@ -1,13 +1,16 @@
+from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
-import app.build.resources
 from app.actions import Actions
 from app.canvas import Canvas
 from app.image_manager import ImageManager
 from app.toolbar import ToolBar
 
-__appname__ = 'labelImgPlus'
+QtCore.QDir.addSearchPath('icon', 'resources/icons/')
+
+__appname__ = 'Annotator'
 __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
 
 
@@ -55,6 +58,7 @@ if __name__ == '__main__':
     app = QApplication([])
     app.setStyle('fusion')
     app.setApplicationName(__appname__)
+    app.setWindowIcon(QIcon('icon:annotator.png'))
 
     window = MainWindow()
     window.showMaximized()
