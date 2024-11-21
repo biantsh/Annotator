@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
 
     def open_dir(self, dir_path: str) -> None:
         self.image_manager.load_images(dir_path)
+        self.canvas.reset()
 
         app_title = __appname__
         nav_enabled = False

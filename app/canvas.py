@@ -41,6 +41,9 @@ class Canvas(QWidget):
 
         return int(offset_x), int(offset_y)
 
+    def reset(self) -> None:
+        self.pixmap = QPixmap()
+
     def load_image(self, image_path: str) -> None:
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
