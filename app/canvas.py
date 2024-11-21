@@ -47,7 +47,7 @@ class Canvas(QWidget):
         painter.setRenderHint(QPainter.HighQualityAntialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
 
-        painter.scale(*[self._get_max_scale()] * 2)
         painter.translate(QPoint(*self._get_center_offset()))
+        painter.scale(*[self._get_max_scale()] * 2)
 
         painter.drawPixmap(0, 0, self.pixmap)

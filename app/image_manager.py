@@ -13,6 +13,7 @@ class ImageManager:
 
     def load_images(self, dir_path):
         image_paths = []
+        self.index = 0
 
         for extension in QImageReader.supportedImageFormats():
             extension = extension.data().decode()
