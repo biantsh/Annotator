@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import (
     QMainWindow
 )
 
-import app.resources
+import app.build.resources
 from app.actions import Actions
+from app.canvas import Canvas
 from app.image_manager import ImageManager
 from app.toolbar import ToolBar
 
@@ -16,11 +17,13 @@ __appname__ = 'labelImgPlus'
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.image_manager = ImageManager()
 
         self.actions = Actions(self).actions
         self.addToolBar(Qt.LeftToolBarArea, ToolBar(self.actions))
 
-        self.image_manager = ImageManager()
+        self.canvas = Canvas(self)
+        self.setCentralWidget(self.canvas)
 
     def open_dir(self, dir_path):
         self.image_manager.load_images(dir_path)
@@ -29,6 +32,8 @@ class MainWindow(QMainWindow):
         nav_enabled = False
 
         if self.image_manager.num_images > 0:
+            self.canvas.load_image(self.image_manager.get_image())
+
             app_title = self.image_manager.get_image_status()
             nav_enabled = True
 
@@ -38,11 +43,15 @@ class MainWindow(QMainWindow):
 
     def next_image(self):
         self.image_manager.next_image()
+
         self.setWindowTitle(self.image_manager.get_image_status())
+        self.canvas.load_image(self.image_manager.get_image())
 
     def prev_image(self):
         self.image_manager.prev_image()
+
         self.setWindowTitle(self.image_manager.get_image_status())
+        self.canvas.load_image(self.image_manager.get_image())
 
 
 if __name__ == '__main__':
