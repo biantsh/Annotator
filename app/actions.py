@@ -1,5 +1,6 @@
 from functools import partial
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
 
 
@@ -11,14 +12,14 @@ def next_image(parent):
     print('Next image!')
 
 
-def previous_image(parent):
+def prev_image(parent):
     print('Previous image!')
 
 
 actions = (
-    ('open_dir', 'Ctrl+O', open_dir, 'Open Directory'),
-    ('next_image', 'Ctrl+D', next_image, 'Next Image'),
-    ('previous_image', 'Ctrl+A', previous_image, 'Previous Image')
+    ('open_dir', 'Ctrl+O', open_dir, 'Open', 'open.png'),
+    ('next_image', 'D', next_image, 'Next', 'next.png'),
+    ('prev_image', 'A', prev_image, 'Previous', 'prev.png')
 )
 
 
@@ -27,11 +28,12 @@ class Actions:
         self.actions = [self._create_action(parent, *args) for args in actions]
 
     @staticmethod
-    def _create_action(parent, name, shortcut, binding, text):
+    def _create_action(parent, name, shortcut, binding, text, icon):
         action = QAction(text, parent)
         action.setShortcut(shortcut)
         action.setObjectName(name)
 
+        action.setIcon(QIcon(f':/{icon}'))
         action.triggered.connect(partial(binding, parent))
 
         return action

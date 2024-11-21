@@ -1,3 +1,4 @@
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QToolBar, QToolButton
 
 
@@ -5,7 +6,7 @@ class ToolBar(QToolBar):
     toolbar_actions = {
         'open_dir',
         'next_image',
-        'previous_image'
+        'prev_image'
     }
 
     def __init__(self, actions):
@@ -17,9 +18,11 @@ class ToolBar(QToolBar):
 
             button = ToolButton()
             button.setDefaultAction(action)
+            button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
             self.addWidget(button)
 
 
 class ToolButton(QToolButton):
-    pass
+    def minimumSizeHint(self):
+        return QSize(70, 60)

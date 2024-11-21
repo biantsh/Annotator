@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QMainWindow
 )
 
+import app.resources
 from app.actions import Actions
 from app.toolbar import ToolBar
 

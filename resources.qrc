@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file alias="open.png">resources/icons/open.png</file>
+    <file alias="next.png">resources/icons/next.png</file>
+    <file alias="prev.png">resources/icons/prev.png</file>
+</qresource>
+</RCC>
