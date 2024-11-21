@@ -21,7 +21,7 @@ def prev_image(parent: 'MainWindow') -> None:
     parent.prev_image()
 
 
-actions = (
+__actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
     ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False)
@@ -31,7 +31,7 @@ actions = (
 class Actions:
     def __init__(self, parent: 'MainWindow') -> None:
         self.actions = {action_name: self._create_action(parent, *args)
-                        for action_name, *args in actions}
+                        for action_name, *args in __actions__}
 
     @staticmethod
     def _create_action(parent: 'MainWindow',
