@@ -3,18 +3,17 @@ from PyQt5.QtWidgets import QToolBar, QToolButton
 
 
 class ToolBar(QToolBar):
-    toolbar_actions = {
+    toolbar_actions = (
         'open_dir',
         'next_image',
         'prev_image'
-    }
+    )
 
     def __init__(self, actions):
         super().__init__()
 
-        for action in actions:
-            if action.objectName() not in self.toolbar_actions:
-                continue
+        for action_name in self.toolbar_actions:
+            action = actions[action_name]
 
             button = ToolButton()
             button.setDefaultAction(action)

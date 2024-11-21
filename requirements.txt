@@ -1,2 +1,3 @@
+natsort>=8.1.0
 pyqt5>=5.15
 pyqtdarktheme>=2.0

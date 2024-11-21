@@ -1,37 +1,39 @@
 from functools import partial
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QFileDialog
 
 
 def open_dir(parent):
-    print('Opening dir!')
+    if dir_path := QFileDialog.getExistingDirectory(parent):
+        parent.open_dir(dir_path)
 
 
 def next_image(parent):
-    print('Next image!')
+    parent.next_image()
 
 
 def prev_image(parent):
-    print('Previous image!')
+    parent.prev_image()
 
 
 actions = (
-    ('open_dir', 'Ctrl+O', open_dir, 'Open', 'open.png'),
-    ('next_image', 'D', next_image, 'Next', 'next.png'),
-    ('prev_image', 'A', prev_image, 'Previous', 'prev.png')
+    ('open_dir', 'Ctrl+O', open_dir, 'Open', 'open.png', True),
+    ('next_image', 'D', next_image, 'Next', 'next.png', False),
+    ('prev_image', 'A', prev_image, 'Previous', 'prev.png', False)
 )
 
 
 class Actions:
     def __init__(self, parent):
-        self.actions = [self._create_action(parent, *args) for args in actions]
+        self.actions = {action_name: self._create_action(parent, *args)
+                        for action_name, *args in actions}
 
     @staticmethod
-    def _create_action(parent, name, shortcut, binding, text, icon):
+    def _create_action(parent, shortcut, binding, text, icon, enabled):
         action = QAction(text, parent)
         action.setShortcut(shortcut)
-        action.setObjectName(name)
+        action.setEnabled(enabled)
 
         action.setIcon(QIcon(f':/{icon}'))
         action.triggered.connect(partial(binding, parent))

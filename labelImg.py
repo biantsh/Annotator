@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
 
 import app.resources
 from app.actions import Actions
+from app.image_manager import ImageManager
 from app.toolbar import ToolBar
 
 __appname__ = 'labelImgPlus'
@@ -15,10 +16,33 @@ __appname__ = 'labelImgPlus'
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        actions = Actions(self)
 
-        toolbar = ToolBar(actions.actions)
-        self.addToolBar(Qt.LeftToolBarArea, toolbar)
+        self.actions = Actions(self).actions
+        self.addToolBar(Qt.LeftToolBarArea, ToolBar(self.actions))
+
+        self.image_manager = ImageManager()
+
+    def open_dir(self, dir_path):
+        self.image_manager.load_images(dir_path)
+
+        app_title = __appname__
+        nav_enabled = False
+
+        if self.image_manager.num_images > 0:
+            app_title = self.image_manager.get_image_status()
+            nav_enabled = True
+
+        self.setWindowTitle(app_title)
+        self.actions['next_image'].setEnabled(nav_enabled)
+        self.actions['prev_image'].setEnabled(nav_enabled)
+
+    def next_image(self):
+        self.image_manager.next_image()
+        self.setWindowTitle(self.image_manager.get_image_status())
+
+    def prev_image(self):
+        self.image_manager.prev_image()
+        self.setWindowTitle(self.image_manager.get_image_status())
 
 
 if __name__ == '__main__':
@@ -27,6 +51,6 @@ if __name__ == '__main__':
     qdarktheme.setup_theme()
 
     window = MainWindow()
-    window.show()
+    window.showMaximized()
 
     app.exec_()
