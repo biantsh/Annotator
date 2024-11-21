@@ -1,5 +1,7 @@
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QToolBar, QToolButton
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtWidgets import QToolBar, QToolButton
+
+__tool_button_style__ = Qt.ToolButtonStyle.ToolButtonTextUnderIcon
 
 
 class ToolBar(QToolBar):
@@ -17,7 +19,7 @@ class ToolBar(QToolBar):
 
             button = ToolButton()
             button.setDefaultAction(action)
-            button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            button.setToolButtonStyle(__tool_button_style__)
 
             self.addWidget(button)
 

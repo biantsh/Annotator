@@ -1,7 +1,7 @@
 from functools import partial
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog
+from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtWidgets import QFileDialog
 
 
 def open_dir(parent):

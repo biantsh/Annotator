@@ -2,7 +2,7 @@ import glob
 import os
 
 from natsort import os_sorted
-from PyQt5.QtGui import QImageReader
+from PyQt6.QtGui import QImageReader
 
 
 class ImageManager:

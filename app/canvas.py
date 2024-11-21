@@ -1,6 +1,9 @@
-from PyQt5.QtCore import QPoint
-from PyQt5.QtGui import QImageReader, QPainter, QPixmap
-from PyQt5.QtWidgets import QWidget
+from PyQt6.QtCore import QPoint
+from PyQt6.QtGui import QImageReader, QPainter, QPixmap
+from PyQt6.QtWidgets import QWidget
+
+__antialiasing__ = QPainter.RenderHint.Antialiasing
+__pixmap_transform__ = QPainter.RenderHint.SmoothPixmapTransform
 
 
 class Canvas(QWidget):
@@ -43,9 +46,7 @@ class Canvas(QWidget):
         painter = QPainter()
         painter.begin(self)
 
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setRenderHint(QPainter.HighQualityAntialiasing)
-        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setRenderHints(__antialiasing__ | __pixmap_transform__)
 
         painter.translate(QPoint(*self._get_center_offset()))
         painter.scale(*[self._get_max_scale()] * 2)

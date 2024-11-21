@@ -1,9 +1,5 @@
-import qdarktheme
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow
-)
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QMainWindow
 
 import app.build.resources
 from app.actions import Actions
@@ -12,6 +8,7 @@ from app.image_manager import ImageManager
 from app.toolbar import ToolBar
 
 __appname__ = 'labelImgPlus'
+__toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
 
 
 class MainWindow(QMainWindow):
@@ -20,7 +17,7 @@ class MainWindow(QMainWindow):
         self.image_manager = ImageManager()
 
         self.actions = Actions(self).actions
-        self.addToolBar(Qt.LeftToolBarArea, ToolBar(self.actions))
+        self.addToolBar(__toolbar_area__, ToolBar(self.actions))
 
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
@@ -56,10 +53,10 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication([])
+    app.setStyle('fusion')
     app.setApplicationName(__appname__)
-    qdarktheme.setup_theme()
 
     window = MainWindow()
     window.showMaximized()
 
-    app.exec_()
+    app.exec()
