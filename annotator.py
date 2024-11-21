@@ -15,7 +15,7 @@ __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.resize(800, 500)
 
@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
 
-    def open_dir(self, dir_path):
+    def open_dir(self, dir_path: str) -> None:
         self.image_manager.load_images(dir_path)
 
         app_title = __appname__
@@ -43,13 +43,13 @@ class MainWindow(QMainWindow):
         self.actions['next_image'].setEnabled(nav_enabled)
         self.actions['prev_image'].setEnabled(nav_enabled)
 
-    def next_image(self):
+    def next_image(self) -> None:
         self.image_manager.next_image()
 
         self.setWindowTitle(self.image_manager.get_image_status())
         self.canvas.load_image(self.image_manager.get_image())
 
-    def prev_image(self):
+    def prev_image(self) -> None:
         self.image_manager.prev_image()
 
         self.setWindowTitle(self.image_manager.get_image_status())

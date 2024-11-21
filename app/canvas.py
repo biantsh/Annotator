@@ -1,17 +1,22 @@
+from typing import TYPE_CHECKING
+
 from PyQt6.QtCore import QPoint
-from PyQt6.QtGui import QImageReader, QPainter, QPixmap
+from PyQt6.QtGui import QImageReader, QPixmap, QPainter, QPaintEvent
 from PyQt6.QtWidgets import QWidget
+
+if TYPE_CHECKING:
+    from annotator import MainWindow
 
 __antialiasing__ = QPainter.RenderHint.Antialiasing
 __pixmap_transform__ = QPainter.RenderHint.SmoothPixmapTransform
 
 
 class Canvas(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent)
         self.pixmap = QPixmap()
 
-    def _get_max_scale(self):
+    def _get_max_scale(self) -> float:
         if self.pixmap.isNull():
             return 1.0
 
@@ -26,7 +31,7 @@ class Canvas(QWidget):
 
         return canvas.height() / image.height()
 
-    def _get_center_offset(self):
+    def _get_center_offset(self) -> tuple[int, int]:
         canvas = super().size()
         image = self.pixmap
 
@@ -36,13 +41,14 @@ class Canvas(QWidget):
 
         return int(offset_x), int(offset_y)
 
-    def load_image(self, image_path):
+    def load_image(self, image_path: str) -> None:
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
 
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Override, called when canvas is updated."""
         painter = QPainter()
         painter.begin(self)
 

@@ -1,4 +1,5 @@
 from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QToolBar, QToolButton
 
 __tool_button_style__ = Qt.ToolButtonStyle.ToolButtonTextUnderIcon
@@ -11,7 +12,7 @@ class ToolBar(QToolBar):
         'prev_image'
     )
 
-    def __init__(self, actions):
+    def __init__(self, actions: dict[str, QAction]) -> None:
         super().__init__()
 
         for action_name in self.toolbar_actions:
@@ -25,5 +26,5 @@ class ToolBar(QToolBar):
 
 
 class ToolButton(QToolButton):
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         return QSize(70, 60)
