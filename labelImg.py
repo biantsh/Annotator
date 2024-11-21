@@ -1,3 +1,4 @@
+import qdarktheme
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QApplication,
@@ -23,6 +24,7 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication([])
     app.setApplicationName(__appname__)
+    qdarktheme.setup_theme()
 
     window = MainWindow()
     window.show()
