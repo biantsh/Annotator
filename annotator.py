@@ -17,6 +17,8 @@ __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.resize(800, 500)
+
         self.image_manager = ImageManager()
 
         self.actions = Actions(self).actions
