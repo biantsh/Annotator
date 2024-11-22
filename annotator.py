@@ -1,3 +1,4 @@
+import qdarktheme
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
@@ -62,6 +63,8 @@ if __name__ == '__main__':
     app.setStyle('fusion')
     app.setApplicationName(__appname__)
     app.setWindowIcon(QIcon('icon:annotator.png'))
+
+    qdarktheme.setup_theme()
 
     window = MainWindow()
     window.showMaximized()

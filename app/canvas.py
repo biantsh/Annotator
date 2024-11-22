@@ -43,6 +43,7 @@ class Canvas(QWidget):
 
     def reset(self) -> None:
         self.pixmap = QPixmap()
+        self.update()
 
     def load_image(self, image_path: str) -> None:
         image = QImageReader(image_path).read()
