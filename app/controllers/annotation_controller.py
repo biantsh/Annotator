@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from natsort import os_sorted
 
-from app.objects import Bbox
+from app.objects import Bbox, Annotation
 
 
 class AnnotationController:
@@ -12,7 +12,10 @@ class AnnotationController:
         self.images = {}
         self.bboxes = defaultdict(lambda: [])
 
-    def save_annotations(self, output_path: str) -> None:
+    def get_annotations(self, image_name: str) -> list[Annotation]:
+        return [Annotation.from_bbox(bbox) for bbox in self.bboxes[image_name]]
+
+    def save_annotations(self, image_name: str, output_path: str) -> None:
         """Save annotations for a single image"""
 
     def import_annotations(self, annotations_path: str) -> None:

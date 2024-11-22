@@ -34,6 +34,17 @@ class MainWindow(QMainWindow):
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
 
+    def _on_image_change(self) -> None:
+        """Called when navigating to a new image."""
+        self.setWindowTitle(self.image_controller.get_image_status())
+
+        image_path = self.image_controller.get_image_path()
+        image_name = self.image_controller.get_image_name()
+        annotations = self.annotation_controller.get_annotations(image_name)
+
+        self.canvas.load_image(image_path)
+        self.canvas.load_annotations(annotations)
+
     def open_dir(self, dir_path: str) -> None:
         self.image_controller.load_images(dir_path)
         self.canvas.reset()
@@ -42,7 +53,7 @@ class MainWindow(QMainWindow):
 
         if self.image_controller.num_images > 0:
             app_title = self.image_controller.get_image_status()
-            self.canvas.load_image(self.image_controller.get_image())
+            self.canvas.load_image(self.image_controller.get_image_path())
 
         self.setWindowTitle(app_title)
         self.button_controller.set_enabled_buttons()
@@ -55,18 +66,15 @@ class MainWindow(QMainWindow):
 
     def next_image(self) -> None:
         self.image_controller.next_image()
-
-        self.setWindowTitle(self.image_controller.get_image_status())
-        self.canvas.load_image(self.image_controller.get_image())
+        self._on_image_change()
 
     def prev_image(self) -> None:
         self.image_controller.prev_image()
-
-        self.setWindowTitle(self.image_controller.get_image_status())
-        self.canvas.load_image(self.image_controller.get_image())
+        self._on_image_change()
 
     def import_annotations(self, annotations_path: str) -> None:
         self.annotation_controller.import_annotations(annotations_path)
+        self._on_image_change()
 
     def export_annotations(self, output_path: str) -> None:
         self.annotation_controller.export_annotations(output_path)

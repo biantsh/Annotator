@@ -11,6 +11,15 @@ class Bbox:
         return cls((x_min, y_min, x_max, y_max), category_id)
 
     @property
+    def points(self) -> tuple[tuple[int, int], ...]:
+        return (
+            (self.left, self.top),
+            (self.right, self.top),
+            (self.right, self.bottom),
+            (self.left, self.bottom)
+        )
+
+    @property
     def left(self) -> int:
         return self.position[0]
 
@@ -59,3 +68,19 @@ class Bbox:
                  self.left, self.bottom, self.left, self.top]
             ]
         }
+
+
+class Annotation(Bbox):
+    def __init__(self, position: tuple[int, ...], category_id: int) -> None:
+        super().__init__(position, category_id)
+        self.hovered = False
+
+    @classmethod
+    def from_bbox(cls, bbox: Bbox) -> 'Annotation':
+        return cls(bbox.position, bbox.category_id)
+
+    def contains_point(self, point: tuple[int, int]) -> bool:
+        x_pos, y_pos = point
+
+        return (self.left <= x_pos <= self.right and
+                self.top <= y_pos <= self.bottom)

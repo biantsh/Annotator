@@ -22,12 +22,14 @@ class ImageController:
         self.image_paths = os_sorted(image_paths)
         self.num_images = len(self.image_paths)
 
-    def get_image(self) -> str:
+    def get_image_path(self) -> str:
         return self.image_paths[self.index]
 
+    def get_image_name(self) -> str:
+        return os.path.basename(self.get_image_path())
+
     def get_image_status(self) -> str:
-        image_name = os.path.basename(self.get_image())
-        return f'{image_name} [{self.index + 1}/{self.num_images}]'
+        return f'{self.get_image_name()} [{self.index + 1}/{self.num_images}]'
 
     def next_image(self) -> None:
         self.index = (self.index + 1) % self.num_images
