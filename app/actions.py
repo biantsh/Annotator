@@ -31,11 +31,36 @@ def prev_image(parent: 'MainWindow') -> None:
     parent.prev_image()
 
 
+def generate(parent: 'MainWindow') -> None:
+    print('Generating detections...')
+
+
+def import_annos(parent: 'MainWindow') -> None:
+    print('Importing annotations...')
+
+
+def export_annos(parent: 'MainWindow') -> None:
+    print('Exporting annotations...')
+
+
+def create_bbox(parent: 'MainWindow') -> None:
+    print('Creating bbox...')
+
+
+def create_keypoints(parent: 'MainWindow') -> None:
+    print('Creating keypoints...')
+
+
 __actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
     ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False),
-    ('open_labels', open_labels, 'Ctrl+P', 'Label Map', 'label_map.png', True)
+    ('open_labels', open_labels, 'Ctrl+P', 'Labels', 'label_map.png', True),
+    ('generate', generate, 'Ctrl+G', 'Generate', 'generate.png', True),
+    ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', True),
+    ('export', export_annos, 'Ctrl+Enter', 'Export', 'export.png', True),
+    ('bbox', create_bbox, 'W', 'Bbox', 'bbox.png', True),
+    ('keypoints', create_keypoints, 'E', 'Keypoints', 'keypoints.png', True)
 )
 
 
