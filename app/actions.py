@@ -36,11 +36,19 @@ def generate(parent: 'MainWindow') -> None:
 
 
 def import_annos(parent: 'MainWindow') -> None:
-    print('Importing annotations...')
+    title = 'Select Annotations File'
+    ext = 'JSON Files (*.json)'
+
+    if file_path := QFileDialog.getOpenFileName(parent, title, '', ext)[0]:
+        parent.import_annotations(file_path)
 
 
 def export_annos(parent: 'MainWindow') -> None:
-    print('Exporting annotations...')
+    title = 'Select Output File'
+    ext = 'JSON Files (*.json)'
+
+    if file_path := QFileDialog.getSaveFileName(parent, title, '', ext)[0]:
+        parent.export_annotations(file_path)
 
 
 def create_bbox(parent: 'MainWindow') -> None:
@@ -56,11 +64,11 @@ __actions__ = (
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
     ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False),
     ('open_labels', open_labels, 'Ctrl+P', 'Labels', 'label_map.png', True),
-    ('generate', generate, 'Ctrl+G', 'Generate', 'generate.png', True),
-    ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', True),
-    ('export', export_annos, 'Ctrl+Enter', 'Export', 'export.png', True),
-    ('bbox', create_bbox, 'W', 'Bbox', 'bbox.png', True),
-    ('keypoints', create_keypoints, 'E', 'Keypoints', 'keypoints.png', True)
+    ('generate', generate, 'Ctrl+G', 'Generate', 'generate.png', False),
+    ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
+    ('export', export_annos, 'Ctrl+Enter', 'Export', 'export.png', False),
+    ('bbox', create_bbox, 'W', 'Bbox', 'bbox.png', False),
+    ('keypoints', create_keypoints, 'E', 'Keypoints', 'keypoints.png', False)
 )
 
 

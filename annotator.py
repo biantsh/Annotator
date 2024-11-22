@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 
 from app.actions import Actions
 from app.canvas import Canvas
+from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.toolbar import ToolBar
@@ -23,6 +24,7 @@ class MainWindow(QMainWindow):
 
         self.image_controller = ImageController()
         self.label_map_controller = LabelMapController()
+        self.button_controller = ButtonController(self)
 
         self.actions = Actions(self).actions
         self.addToolBar(__toolbar_area__, ToolBar(self.actions))
@@ -35,20 +37,17 @@ class MainWindow(QMainWindow):
         self.canvas.reset()
 
         app_title = __appname__
-        nav_enabled = False
 
         if self.image_controller.num_images > 0:
+            app_title = self.image_controller.get_image_status()
             self.canvas.load_image(self.image_controller.get_image())
 
-            app_title = self.image_controller.get_image_status()
-            nav_enabled = True
-
         self.setWindowTitle(app_title)
-        self.actions['next_image'].setEnabled(nav_enabled)
-        self.actions['prev_image'].setEnabled(nav_enabled)
+        self.button_controller.set_enabled_buttons()
 
     def open_label_map(self, label_map_path: str) -> None:
         self.label_map_controller.load_labels(label_map_path)
+        self.button_controller.set_enabled_buttons()
 
     def next_image(self) -> None:
         self.image_controller.next_image()
@@ -61,6 +60,12 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(self.image_controller.get_image_status())
         self.canvas.load_image(self.image_controller.get_image())
+
+    def import_annotations(self, annotations_path: str) -> None:
+        print('Importing:', annotations_path)  # TODO: create annotation controller
+
+    def export_annotations(self, output_path: str) -> None:
+        print('Exporting:', output_path)  # TODO: create annotation controller
 
 
 if __name__ == '__main__':
