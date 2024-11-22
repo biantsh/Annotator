@@ -9,8 +9,18 @@ if TYPE_CHECKING:
 
 
 def open_dir(parent: 'MainWindow') -> None:
-    if dir_path := QFileDialog.getExistingDirectory(parent):
+    title = 'Select Image Directory'
+
+    if dir_path := QFileDialog.getExistingDirectory(parent, title):
         parent.open_dir(dir_path)
+
+
+def open_labels(parent: 'MainWindow') -> None:
+    title = 'Select Label Map'
+    ext = 'Text Files (*.txt)'
+
+    if file_path := QFileDialog.getOpenFileName(parent, title, '', ext)[0]:
+        parent.open_label_map(file_path)
 
 
 def next_image(parent: 'MainWindow') -> None:
@@ -24,7 +34,8 @@ def prev_image(parent: 'MainWindow') -> None:
 __actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
-    ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False)
+    ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False),
+    ('open_labels', open_labels, 'Ctrl+P', 'Label Map', 'label_map.png', True)
 )
 
 

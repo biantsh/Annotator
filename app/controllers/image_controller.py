@@ -5,7 +5,7 @@ from natsort import os_sorted
 from PyQt6.QtGui import QImageReader
 
 
-class ImageManager:
+class ImageController:
     def __init__(self) -> None:
         self.image_paths = []
         self.num_images = 0

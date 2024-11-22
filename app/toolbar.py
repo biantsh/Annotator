@@ -8,6 +8,7 @@ __tool_button_style__ = Qt.ToolButtonStyle.ToolButtonTextUnderIcon
 class ToolBar(QToolBar):
     toolbar_actions = (
         'open_dir',
+        'open_labels',
         'next_image',
         'prev_image'
     )
