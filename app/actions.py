@@ -66,7 +66,7 @@ __actions__ = (
     ('open_labels', open_labels, 'Ctrl+P', 'Labels', 'label_map.png', True),
     ('generate', generate_annos, 'Ctrl+G', 'Generate', 'generate.png', False),
     ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
-    ('export', export_annos, 'Ctrl+Enter', 'Export', 'export.png', False),
+    ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Bbox', 'bbox.png', False),
     ('keypoints', create_keypoints, 'E', 'Keypoints', 'keypoints.png', False)
 )
