@@ -58,6 +58,7 @@ class Canvas(QWidget):
 
     def reset(self) -> None:
         self.pixmap = QPixmap()
+        self.annotations = []
         self.update()
 
     def load_image(self, image_path: str) -> None:
@@ -127,7 +128,7 @@ class CanvasDrawer:
         painter.drawPath(line_path)
 
         if annotation.hovered:
-            painter.fillPath(line_path, QColor(*color, 155))
+            painter.fillPath(line_path, QColor(*color, 100))
 
     @staticmethod
     def integer_to_color(integer: int) -> tuple[int, int, int]:

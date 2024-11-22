@@ -49,13 +49,10 @@ class MainWindow(QMainWindow):
         self.image_controller.load_images(dir_path)
         self.canvas.reset()
 
-        app_title = __appname__
-
+        self.setWindowTitle(__appname__)
         if self.image_controller.num_images > 0:
-            app_title = self.image_controller.get_image_status()
-            self.canvas.load_image(self.image_controller.get_image_path())
+            self._on_image_change()
 
-        self.setWindowTitle(app_title)
         self.button_controller.set_enabled_buttons()
 
     def open_label_map(self, label_map_path: str) -> None:
