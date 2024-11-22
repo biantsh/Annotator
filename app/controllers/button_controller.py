@@ -30,6 +30,6 @@ class ButtonController:
             for action_name in self.requires_images:
                 self.parent.actions[action_name].setEnabled(True)
 
-            if self.parent.label_map_controller.label_map:
+            if self.parent.label_map_controller.labels:
                 for action_name in self.requires_label_map:
                     self.parent.actions[action_name].setEnabled(True)

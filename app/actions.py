@@ -31,7 +31,7 @@ def prev_image(parent: 'MainWindow') -> None:
     parent.prev_image()
 
 
-def generate(parent: 'MainWindow') -> None:
+def generate_annos(parent: 'MainWindow') -> None:
     print('Generating detections...')
 
 
@@ -64,7 +64,7 @@ __actions__ = (
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
     ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False),
     ('open_labels', open_labels, 'Ctrl+P', 'Labels', 'label_map.png', True),
-    ('generate', generate, 'Ctrl+G', 'Generate', 'generate.png', False),
+    ('generate', generate_annos, 'Ctrl+G', 'Generate', 'generate.png', False),
     ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
     ('export', export_annos, 'Ctrl+Enter', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Bbox', 'bbox.png', False),

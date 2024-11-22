@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 
 from app.actions import Actions
 from app.canvas import Canvas
+from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
 
         self.image_controller = ImageController()
         self.label_map_controller = LabelMapController()
+        self.annotation_controller = AnnotationController()
         self.button_controller = ButtonController(self)
 
         self.actions = Actions(self).actions
@@ -47,6 +49,8 @@ class MainWindow(QMainWindow):
 
     def open_label_map(self, label_map_path: str) -> None:
         self.label_map_controller.load_labels(label_map_path)
+        self.annotation_controller.labels = self.label_map_controller.labels
+
         self.button_controller.set_enabled_buttons()
 
     def next_image(self) -> None:
@@ -62,10 +66,10 @@ class MainWindow(QMainWindow):
         self.canvas.load_image(self.image_controller.get_image())
 
     def import_annotations(self, annotations_path: str) -> None:
-        print('Importing:', annotations_path)  # TODO: create annotation controller
+        self.annotation_controller.import_annotations(annotations_path)
 
     def export_annotations(self, output_path: str) -> None:
-        print('Exporting:', output_path)  # TODO: create annotation controller
+        self.annotation_controller.export_annotations(output_path)
 
 
 if __name__ == '__main__':
