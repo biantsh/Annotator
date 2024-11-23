@@ -79,6 +79,13 @@ class Annotation(Bbox):
     def from_bbox(cls, bbox: Bbox) -> 'Annotation':
         return cls(bbox.position, bbox.category_id)
 
+    def shift_position(self, delta_x: float, delta_y: float) -> None:
+        x_min, y_min, x_max, y_max = self.position
+        self.position = (x_min + delta_x,
+                         y_min + delta_y,
+                         x_max + delta_x,
+                         y_max + delta_y)
+
     def contains_point(self, point: tuple[int, int]) -> bool:
         x_pos, y_pos = point
 

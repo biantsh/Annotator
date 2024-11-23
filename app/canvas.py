@@ -1,7 +1,7 @@
 import hashlib
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QPoint
+from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import (
     QImageReader,
     QPixmap,
@@ -29,6 +29,7 @@ class Canvas(QWidget):
         self.pixmap = QPixmap()
         self.annotations = []
 
+        self.canvas_drawer = CanvasDrawer()
         self.setMouseTracking(True)
 
     def _get_center_offset(self) -> tuple[int, int]:
@@ -77,16 +78,14 @@ class Canvas(QWidget):
         mouse_position = ((event.pos().x() - offset_x) / scale,
                           (event.pos().y() - offset_y) / scale)
 
-        highlighted = False
+        hovered_anno = self.canvas_drawer.set_hovered_anno(
+            self.annotations, mouse_position)
 
-        for annotation in self.annotations[::-1]:  # Prioritize newer annos
-            if annotation.contains_point(mouse_position) and not highlighted:
-                highlighted = True
-                annotation.hovered = True
-            else:
-                annotation.hovered = False
+        if Qt.MouseButton.LeftButton & event.buttons() and hovered_anno:
+            self.canvas_drawer.move_anno(hovered_anno, mouse_position)
 
         self.update()
+        self.canvas_drawer.mouse_position = mouse_position
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter()
@@ -104,6 +103,37 @@ class Canvas(QWidget):
 
 
 class CanvasDrawer:
+    def __init__(self) -> None:
+        self.mouse_position = None
+
+    def move_anno(self,
+                  annotation: Annotation,
+                  mouse_position: tuple[int, int]
+                  ) -> None:
+        if self.mouse_position is None:
+            return
+
+        old_x, old_y = self.mouse_position
+        new_x, new_y = mouse_position
+
+        delta_x, delta_y = new_x - old_x, new_y - old_y
+        annotation.shift_position(delta_x, delta_y)
+
+    @staticmethod
+    def set_hovered_anno(annotations: list[Annotation],
+                         mouse_position: tuple[int, int]
+                         ) -> Annotation | None:
+        hovered = None
+
+        for annotation in annotations[::-1]:  # Prioritize newer annos
+            if annotation.contains_point(mouse_position) and hovered is None:
+                hovered = annotation
+                annotation.hovered = True
+            else:
+                annotation.hovered = False
+
+        return hovered
+
     @staticmethod
     def draw_annotation(canvas: Canvas,
                         painter: QPainter,
