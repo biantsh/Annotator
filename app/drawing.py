@@ -38,6 +38,17 @@ class Drawer:
         if hover_type & HoverType.BOTTOM or hover_type == HoverType.FULL:
             y_max += delta_y
 
+        # Flip the top/bottom and left/right hover types
+        if y_min > y_max:
+            annotation.hovered += HoverType.TOP \
+                if hover_type & HoverType.TOP else -HoverType.TOP
+        if x_min > x_max:
+            annotation.hovered += HoverType.LEFT \
+                if hover_type & HoverType.LEFT else -HoverType.LEFT
+
+        y_min, y_max = sorted([y_min, y_max])
+        x_min, x_max = sorted([x_min, x_max])
+
         annotation.position = x_min, y_min, x_max, y_max
 
     @staticmethod
