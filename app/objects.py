@@ -1,3 +1,6 @@
+from app.enums.annotation import HoverType
+
+
 class Bbox:
     def __init__(self, position: tuple[int, ...], category_id: int) -> None:
         self.position = position
@@ -73,21 +76,32 @@ class Bbox:
 class Annotation(Bbox):
     def __init__(self, position: tuple[int, ...], category_id: int) -> None:
         super().__init__(position, category_id)
-        self.hovered = False
+        self.hovered = HoverType.NONE
 
     @classmethod
     def from_bbox(cls, bbox: Bbox) -> 'Annotation':
         return cls(bbox.position, bbox.category_id)
 
-    def shift_position(self, delta_x: float, delta_y: float) -> None:
-        x_min, y_min, x_max, y_max = self.position
-        self.position = (x_min + delta_x,
-                         y_min + delta_y,
-                         x_max + delta_x,
-                         y_max + delta_y)
+    def get_hovered(self,
+                    mouse_position: tuple[int, int],
+                    edge_width: int
+                    ) -> HoverType:
+        x_pos, y_pos = mouse_position
 
-    def contains_point(self, point: tuple[int, int]) -> bool:
-        x_pos, y_pos = point
+        if not (self.left <= x_pos <= self.right and
+                self.top <= y_pos <= self.bottom):
+            return HoverType.NONE
 
-        return (self.left <= x_pos <= self.right and
-                self.top <= y_pos <= self.bottom)
+        # Check if hovering near an edge
+        top = self.top <= y_pos <= self.top + edge_width
+        left = self.left <= x_pos <= self.left + edge_width
+        right = self.right - edge_width <= x_pos <= self.right
+        bottom = self.bottom - edge_width <= y_pos <= self.bottom
+
+        hover_type = HoverType.NONE
+        hover_type |= top and HoverType.TOP
+        hover_type |= left and HoverType.LEFT
+        hover_type |= right and HoverType.RIGHT
+        hover_type |= bottom and HoverType.BOTTOM
+
+        return hover_type or HoverType.FULL

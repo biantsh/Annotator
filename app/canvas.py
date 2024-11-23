@@ -1,4 +1,3 @@
-import hashlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QPoint
@@ -6,14 +5,12 @@ from PyQt6.QtGui import (
     QImageReader,
     QPixmap,
     QPainter,
-    QPainterPath,
-    QPen,
-    QColor,
     QMouseEvent,
     QPaintEvent
 )
 from PyQt6.QtWidgets import QWidget
 
+from app.drawing import Drawer
 from app.objects import Annotation
 
 if TYPE_CHECKING:
@@ -28,8 +25,9 @@ class Canvas(QWidget):
         super().__init__(parent)
         self.pixmap = QPixmap()
         self.annotations = []
+        self.hovered_anno = None
 
-        self.canvas_drawer = CanvasDrawer()
+        self.drawer = Drawer()
         self.setMouseTracking(True)
 
     def _get_center_offset(self) -> tuple[int, int]:
@@ -78,14 +76,16 @@ class Canvas(QWidget):
         mouse_position = ((event.pos().x() - offset_x) / scale,
                           (event.pos().y() - offset_y) / scale)
 
-        hovered_anno = self.canvas_drawer.set_hovered_anno(
-            self.annotations, mouse_position)
+        if Qt.MouseButton.LeftButton & event.buttons():
+            if self.hovered_anno:
+                self.drawer.move_annotation(self.hovered_anno, mouse_position)
 
-        if Qt.MouseButton.LeftButton & event.buttons() and hovered_anno:
-            self.canvas_drawer.move_anno(hovered_anno, mouse_position)
+        else:
+            self.hovered_anno = self.drawer.set_hovered_annotation(
+                self, self.annotations, mouse_position)
 
         self.update()
-        self.canvas_drawer.mouse_position = mouse_position
+        self.drawer.mouse_position = mouse_position
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter()
@@ -99,74 +99,4 @@ class Canvas(QWidget):
         painter.drawPixmap(0, 0, self.pixmap)
 
         for annotation in self.annotations:
-            CanvasDrawer.draw_annotation(self, painter, annotation)
-
-
-class CanvasDrawer:
-    def __init__(self) -> None:
-        self.mouse_position = None
-
-    def move_anno(self,
-                  annotation: Annotation,
-                  mouse_position: tuple[int, int]
-                  ) -> None:
-        if self.mouse_position is None:
-            return
-
-        old_x, old_y = self.mouse_position
-        new_x, new_y = mouse_position
-
-        delta_x, delta_y = new_x - old_x, new_y - old_y
-        annotation.shift_position(delta_x, delta_y)
-
-    @staticmethod
-    def set_hovered_anno(annotations: list[Annotation],
-                         mouse_position: tuple[int, int]
-                         ) -> Annotation | None:
-        hovered = None
-
-        for annotation in annotations[::-1]:  # Prioritize newer annos
-            if annotation.contains_point(mouse_position) and hovered is None:
-                hovered = annotation
-                annotation.hovered = True
-            else:
-                annotation.hovered = False
-
-        return hovered
-
-    @staticmethod
-    def draw_annotation(canvas: Canvas,
-                        painter: QPainter,
-                        annotation: Annotation
-                        ) -> None:
-        color = CanvasDrawer.integer_to_color(annotation.category_id)
-        pen = QPen(QColor(*color, 155))
-
-        line_width = round(2 / canvas.get_max_scale())
-        line_width = max(line_width, 1)
-
-        pen.setWidth(line_width)
-        painter.setPen(pen)
-
-        line_path = QPainterPath()
-        line_path.moveTo(*annotation.points[0])
-
-        for point in annotation.points:
-            line_path.lineTo(*point)
-
-        line_path.lineTo(*annotation.points[0])
-        painter.drawPath(line_path)
-
-        if annotation.hovered:
-            painter.fillPath(line_path, QColor(*color, 100))
-
-    @staticmethod
-    def integer_to_color(integer: int) -> tuple[int, int, int]:
-        integer = str(integer).encode('utf-8')
-        hash_code = int(hashlib.sha256(integer).hexdigest(), 16)
-
-        red = hash_code % 255
-        green = (hash_code // 255) % 255
-        blue = (hash_code // 65025) % 255
-
-        return red, green, blue
+            Drawer.draw_annotation(self, painter, annotation)
