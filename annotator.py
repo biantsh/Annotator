@@ -4,24 +4,26 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
+from app import __appname__
 from app.actions import Actions
 from app.canvas import Canvas
 from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
+from app.settings import Settings
 from app.toolbar import ToolBar
 
-QtCore.QDir.addSearchPath('icon', 'resources/icons/')
-
-__appname__ = 'Annotator'
 __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
+QtCore.QDir.addSearchPath('icon', 'resources/icons/')
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.resize(800, 500)
+
+        self.settings = Settings()
 
         self.image_controller = ImageController()
         self.label_map_controller = LabelMapController()

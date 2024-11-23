@@ -39,4 +39,4 @@ class ToolBar(QToolBar):
 
 class ToolButton(QToolButton):
     def minimumSizeHint(self) -> QSize:
-        return QSize(75, 60)
+        return QSize(70, 60)

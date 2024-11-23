@@ -9,18 +9,14 @@ if TYPE_CHECKING:
 
 
 def open_dir(parent: 'MainWindow') -> None:
+    image_dir_setting = 'default_image_dir'
+
+    path = parent.settings.get(image_dir_setting)
     title = 'Select Image Directory'
 
-    if dir_path := QFileDialog.getExistingDirectory(parent, title):
+    if dir_path := QFileDialog.getExistingDirectory(parent, title, path):
+        parent.settings.set(image_dir_setting, dir_path)
         parent.open_dir(dir_path)
-
-
-def open_labels(parent: 'MainWindow') -> None:
-    title = 'Select Label Map'
-    ext = 'Text Files (*.txt)'
-
-    if file_path := QFileDialog.getOpenFileName(parent, title, '', ext)[0]:
-        parent.open_label_map(file_path)
 
 
 def next_image(parent: 'MainWindow') -> None:
@@ -31,23 +27,43 @@ def prev_image(parent: 'MainWindow') -> None:
     parent.prev_image()
 
 
+def open_labels(parent: 'MainWindow') -> None:
+    label_path_setting = 'default_label_path'
+
+    path = parent.settings.get(label_path_setting)
+    title = 'Select Label Map'
+    ext = 'Text Files (*.txt)'
+
+    if file_path := QFileDialog.getOpenFileName(parent, title, path, ext)[0]:
+        parent.settings.set(label_path_setting, file_path)
+        parent.open_label_map(file_path)
+
+
 def generate_annos(parent: 'MainWindow') -> None:
     print('Generating detections...')
 
 
 def import_annos(parent: 'MainWindow') -> None:
+    import_path_setting = 'default_import_path'
+
+    path = parent.settings.get(import_path_setting)
     title = 'Select Annotations File'
     ext = 'JSON Files (*.json)'
 
-    if file_path := QFileDialog.getOpenFileName(parent, title, '', ext)[0]:
+    if file_path := QFileDialog.getOpenFileName(parent, title, path, ext)[0]:
+        parent.settings.set(import_path_setting, file_path)
         parent.import_annotations(file_path)
 
 
 def export_annos(parent: 'MainWindow') -> None:
+    export_path_setting = 'default_export_path'
+
+    path = parent.settings.get(export_path_setting)
     title = 'Select Output File'
     ext = 'JSON Files (*.json)'
 
-    if file_path := QFileDialog.getSaveFileName(parent, title, '', ext)[0]:
+    if file_path := QFileDialog.getSaveFileName(parent, title, path, ext)[0]:
+        parent.settings.set(export_path_setting, file_path)
         parent.export_annotations(file_path)
 
 
