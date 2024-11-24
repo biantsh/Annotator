@@ -6,12 +6,14 @@ from PyQt6.QtGui import (
     QPixmap,
     QPainter,
     QMouseEvent,
-    QPaintEvent
+    QPaintEvent,
+    QAction
 )
 from PyQt6.QtWidgets import QWidget
 
 from app.drawing import Drawer
 from app.enums.annotation import HoverType
+from app.menus import AnnotationContextMenu
 from app.objects import Annotation
 
 if TYPE_CHECKING:
@@ -32,6 +34,12 @@ class Canvas(QWidget):
 
         self.drawer = Drawer()
         self.setMouseTracking(True)
+
+        delete_anno = QAction(parent=self)
+        delete_anno.setShortcut('Del')
+
+        delete_anno.triggered.connect(self.delete_annotation)
+        self.addAction(delete_anno)
 
     def _get_center_offset(self) -> tuple[int, int]:
         canvas = super().size()
@@ -72,61 +80,18 @@ class Canvas(QWidget):
         self.annotations = annotations
         self.update()
 
-    def set_cursor_shape(self,
-                         hover_type: HoverType,
-                         left_clicked: bool
-                         ) -> None:
-        cursor = Qt.CursorShape.ArrowCursor
+    def rename_annotation(self) -> None:
+        pass
 
-        match hover_type, left_clicked:
-            case HoverType.FULL, True:
-                cursor = Qt.CursorShape.ClosedHandCursor
-            case HoverType.FULL, False:
-                cursor = Qt.CursorShape.OpenHandCursor
-            case HoverType.TOP | HoverType.BOTTOM, _:
-                cursor = Qt.CursorShape.SizeVerCursor
-            case HoverType.LEFT | HoverType.RIGHT, _:
-                cursor = Qt.CursorShape.SizeHorCursor
-            case HoverType.TOP_LEFT | HoverType.BOTTOM_RIGHT, _:
-                cursor = Qt.CursorShape.SizeFDiagCursor
-            case HoverType.TOP_RIGHT | HoverType.BOTTOM_LEFT, _:
-                cursor = Qt.CursorShape.SizeBDiagCursor
+    def hide_annotation(self) -> None:
+        pass
 
-        self.setCursor(cursor)
-
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        offset_x, offset_y = self._get_center_offset()
-        scale = self.get_max_scale()
-
-        left_clicked = bool(Qt.MouseButton.LeftButton & event.buttons())
-        mouse_position = ((event.pos().x() - offset_x) / scale,
-                          (event.pos().y() - offset_y) / scale)
-
-        if left_clicked:
-            if self.hovered_anno:
-                self.drawer.move_annotation(
-                    self, self.hovered_anno, mouse_position)
-
-        else:
-            self.hovered_anno = self.drawer.set_hovered_annotation(
-                self, self.annotations, mouse_position)
-
-        hover_type = self.hovered_anno.hovered \
-            if self.hovered_anno else HoverType.NONE
-        self.set_cursor_shape(hover_type, left_clicked)
-
+    def delete_annotation(self) -> None:
+        self.annotations = list(filter(
+            lambda anno: not anno.selected, self.annotations))
         self.update()
-        self.drawer.mouse_position = mouse_position
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        self.mouseMoveEvent(event)
-
-        if Qt.MouseButton.LeftButton & event.buttons():
-            self.mouseLeftPressEvent()
-        elif Qt.MouseButton.RightButton & event.buttons():
-            self.mouseRightPressEvent()
-
-    def mouseLeftPressEvent(self) -> None:
+    def set_selected_annotation(self) -> None:
         for anno in self.annotations:
             anno.selected = False
 
@@ -135,8 +100,75 @@ class Canvas(QWidget):
         if self.selected_anno:
             self.selected_anno.selected = True
 
-    def mouseRightPressEvent(self) -> None:
-        pass
+    def get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
+        offset_x, offset_y = self._get_center_offset()
+        scale = self.get_max_scale()
+
+        return (int((event.pos().x() - offset_x) / scale),
+                int((event.pos().y() - offset_y) / scale))
+
+    def update_cursor(self, event: QMouseEvent) -> None:
+        left_clicked = bool(Qt.MouseButton.LeftButton & event.buttons())
+        hover_type = self.hovered_anno.hovered \
+            if self.hovered_anno else HoverType.NONE
+
+        cursor = Qt.CursorShape.ArrowCursor
+
+        match left_clicked, hover_type:
+            case True, HoverType.FULL:
+                cursor = Qt.CursorShape.ClosedHandCursor
+            case False, HoverType.FULL:
+                cursor = Qt.CursorShape.OpenHandCursor
+            case _, HoverType.TOP | HoverType.BOTTOM:
+                cursor = Qt.CursorShape.SizeVerCursor
+            case _, HoverType.LEFT | HoverType.RIGHT:
+                cursor = Qt.CursorShape.SizeHorCursor
+            case _, HoverType.TOP_LEFT | HoverType.BOTTOM_RIGHT:
+                cursor = Qt.CursorShape.SizeFDiagCursor
+            case _, HoverType.TOP_RIGHT | HoverType.BOTTOM_LEFT:
+                cursor = Qt.CursorShape.SizeBDiagCursor
+
+        self.setCursor(cursor)
+        self.update()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        cursor_position = self.get_cursor_position(event)
+
+        if Qt.MouseButton.LeftButton & event.buttons():
+            if self.hovered_anno:
+                self.drawer.move_annotation(
+                    self, self.hovered_anno, cursor_position)
+
+        else:
+            self.hovered_anno = self.drawer.set_hovered_annotation(
+                self, self.annotations, cursor_position)
+
+        self.update_cursor(event)
+        self.drawer.cursor_position = cursor_position
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        cursor_position = self.get_cursor_position(event)
+
+        self.hovered_anno = self.drawer.set_hovered_annotation(
+            self, self.annotations, cursor_position)
+
+        self.update_cursor(event)
+        self.drawer.cursor_position = cursor_position
+
+        if Qt.MouseButton.LeftButton & event.buttons():
+            self.mouseLeftPressEvent()
+        elif Qt.MouseButton.RightButton & event.buttons():
+            self.mouseRightPressEvent(event)
+
+    def mouseLeftPressEvent(self) -> None:
+        self.set_selected_annotation()
+
+    def mouseRightPressEvent(self, event: QMouseEvent) -> None:
+        if self.hovered_anno:
+            self.set_selected_annotation()
+
+            context_menu = AnnotationContextMenu(self)
+            context_menu.exec(event.globalPosition().toPoint())
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.mouseMoveEvent(event)

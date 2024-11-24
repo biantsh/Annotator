@@ -12,17 +12,17 @@ if TYPE_CHECKING:
 
 class Drawer:
     def __init__(self) -> None:
-        self.mouse_position = None
+        self.cursor_position = None
 
     def move_annotation(self,
                         canvas: 'Canvas',
                         annotation: Annotation,
                         mouse_position: tuple[int, int]
                         ) -> None:
-        if self.mouse_position is None:
+        if self.cursor_position is None:
             return
 
-        old_x, old_y = self.mouse_position
+        old_x, old_y = self.cursor_position
         new_x, new_y = mouse_position
 
         delta_x, delta_y = new_x - old_x, new_y - old_y
