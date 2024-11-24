@@ -11,6 +11,7 @@ from PyQt6.QtGui import (
 from PyQt6.QtWidgets import QWidget
 
 from app.drawing import Drawer
+from app.enums.annotation import HoverType
 from app.objects import Annotation
 
 if TYPE_CHECKING:
@@ -69,14 +70,37 @@ class Canvas(QWidget):
         self.annotations = annotations
         self.update()
 
+    def set_cursor_shape(self,
+                         hover_type: HoverType,
+                         left_clicked: bool
+                         ) -> None:
+        cursor = Qt.CursorShape.ArrowCursor
+
+        match hover_type, left_clicked:
+            case HoverType.FULL, True:
+                cursor = Qt.CursorShape.ClosedHandCursor
+            case HoverType.FULL, False:
+                cursor = Qt.CursorShape.OpenHandCursor
+            case HoverType.TOP | HoverType.BOTTOM, _:
+                cursor = Qt.CursorShape.SizeVerCursor
+            case HoverType.LEFT | HoverType.RIGHT, _:
+                cursor = Qt.CursorShape.SizeHorCursor
+            case HoverType.TOP_LEFT | HoverType.BOTTOM_RIGHT, _:
+                cursor = Qt.CursorShape.SizeFDiagCursor
+            case HoverType.TOP_RIGHT | HoverType.BOTTOM_LEFT, _:
+                cursor = Qt.CursorShape.SizeBDiagCursor
+
+        self.setCursor(cursor)
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         offset_x, offset_y = self._get_center_offset()
         scale = self.get_max_scale()
 
+        left_clicked = bool(Qt.MouseButton.LeftButton & event.buttons())
         mouse_position = ((event.pos().x() - offset_x) / scale,
                           (event.pos().y() - offset_y) / scale)
 
-        if Qt.MouseButton.LeftButton & event.buttons():
+        if left_clicked:
             if self.hovered_anno:
                 self.drawer.move_annotation(
                     self, self.hovered_anno, mouse_position)
@@ -85,8 +109,18 @@ class Canvas(QWidget):
             self.hovered_anno = self.drawer.set_hovered_annotation(
                 self, self.annotations, mouse_position)
 
+        hover_type = self.hovered_anno.hovered \
+            if self.hovered_anno else HoverType.NONE
+        self.set_cursor_shape(hover_type, left_clicked)
+
         self.update()
         self.drawer.mouse_position = mouse_position
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self.mouseMoveEvent(event)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter()

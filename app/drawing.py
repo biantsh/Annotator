@@ -94,8 +94,8 @@ class Drawer:
         color = Drawer.integer_to_color(annotation.category_id)
         left, top, right, bottom = annotation.position
 
-        width = round(6 / canvas.get_max_scale())
-        width = max(width, 4)
+        width = round(12 / canvas.get_max_scale())
+        width = max(width, 8)
 
         area_fill_coords = {
             'full': [left, top, right, bottom],
@@ -133,8 +133,8 @@ class Drawer:
                                ) -> Annotation | None:
         hovered = None
 
-        edge_width = round(12 / canvas.get_max_scale())
-        edge_width = max(edge_width, 8)
+        edge_width = round(8 / canvas.get_max_scale())
+        edge_width = max(edge_width, 4)
 
         for annotation in annotations[::-1]:  # Prioritize newer annos
             hovered_type = annotation.get_hovered(mouse_position, edge_width)

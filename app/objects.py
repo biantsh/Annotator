@@ -88,15 +88,15 @@ class Annotation(Bbox):
                     ) -> HoverType:
         x_pos, y_pos = mouse_position
 
-        if not (self.left <= x_pos <= self.right and
-                self.top <= y_pos <= self.bottom):
+        if not (self.left - edge_width <= x_pos <= self.right + edge_width and
+                self.top - edge_width <= y_pos <= self.bottom + edge_width):
             return HoverType.NONE
 
         # Check if hovering near an edge
-        top = self.top <= y_pos <= self.top + edge_width
-        left = self.left <= x_pos <= self.left + edge_width
-        right = self.right - edge_width <= x_pos <= self.right
-        bottom = self.bottom - edge_width <= y_pos <= self.bottom
+        top = abs(y_pos - self.top) <= edge_width
+        left = abs(x_pos - self.left) <= edge_width
+        right = abs(x_pos - self.right) <= edge_width
+        bottom = abs(y_pos - self.bottom) <= edge_width
 
         hover_type = HoverType.NONE
         hover_type |= top and HoverType.TOP
