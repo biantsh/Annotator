@@ -77,6 +77,7 @@ class Annotation(Bbox):
     def __init__(self, position: tuple[int, ...], category_id: int) -> None:
         super().__init__(position, category_id)
         self.hovered = HoverType.NONE
+        self.selected = False
 
     @classmethod
     def from_bbox(cls, bbox: Bbox) -> 'Annotation':

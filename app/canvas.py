@@ -26,7 +26,9 @@ class Canvas(QWidget):
         super().__init__(parent)
         self.pixmap = QPixmap()
         self.annotations = []
+
         self.hovered_anno = None
+        self.selected_anno = None
 
         self.drawer = Drawer()
         self.setMouseTracking(True)
@@ -118,6 +120,23 @@ class Canvas(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         self.mouseMoveEvent(event)
+
+        if Qt.MouseButton.LeftButton & event.buttons():
+            self.mouseLeftPressEvent()
+        elif Qt.MouseButton.RightButton & event.buttons():
+            self.mouseRightPressEvent()
+
+    def mouseLeftPressEvent(self) -> None:
+        for anno in self.annotations:
+            anno.selected = False
+
+        self.selected_anno = self.hovered_anno
+
+        if self.selected_anno:
+            self.selected_anno.selected = True
+
+    def mouseRightPressEvent(self) -> None:
+        pass
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.mouseMoveEvent(event)

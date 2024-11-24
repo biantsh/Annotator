@@ -65,8 +65,14 @@ class Drawer:
                         painter: QPainter,
                         annotation: Annotation
                         ) -> None:
-        color = Drawer.integer_to_color(annotation.category_id)
-        pen = QPen(QColor(*color, 155))
+        if annotation.selected:
+            outline_color = 255, 255, 255
+            opacity = 255
+        else:
+            outline_color = Drawer.integer_to_color(annotation.category_id)
+            opacity = 155
+
+        pen = QPen(QColor(*outline_color, opacity))
 
         line_width = round(2 / canvas.get_max_scale())
         line_width = max(line_width, 1)
@@ -83,7 +89,7 @@ class Drawer:
         line_path.lineTo(*annotation.points[0])
         painter.drawPath(line_path)
 
-        if annotation.hovered != HoverType.NONE:
+        if annotation.selected or annotation.hovered != HoverType.NONE:
             Drawer.fill_annotation(canvas, painter, annotation)
 
     @staticmethod
@@ -114,6 +120,9 @@ class Drawer:
         for hover_type, areas in HOVER_AREAS.items():
             if annotation.hovered & hover_type:
                 areas_to_fill.update(areas)
+
+        if annotation.selected and not areas_to_fill:
+            areas_to_fill.add('full')
 
         for area_name in areas_to_fill:
             left, top, right, bot = area_fill_coords[area_name]
