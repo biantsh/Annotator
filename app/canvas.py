@@ -78,7 +78,8 @@ class Canvas(QWidget):
 
         if Qt.MouseButton.LeftButton & event.buttons():
             if self.hovered_anno:
-                self.drawer.move_annotation(self.hovered_anno, mouse_position)
+                self.drawer.move_annotation(
+                    self, self.hovered_anno, mouse_position)
 
         else:
             self.hovered_anno = self.drawer.set_hovered_annotation(
