@@ -40,6 +40,11 @@ def setup_dark_theme(app: QApplication) -> None:
             background-color: rgb(53, 53, 53);
             height: 1.5px;
         }
+        QToolBar::separator {
+            background-color: rgb(53, 53, 53);
+            height: 1.5px;
+            margin-bottom: 6px;
+        }
         QToolTip {
             border: 1px solid rgb(80, 80, 80);
             background-color: rgb(53, 53, 53);
