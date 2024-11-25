@@ -11,6 +11,7 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
+from app.utils import setup_dark_theme
 from app.widgets.toolbar import ToolBar
 
 __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
@@ -80,10 +81,11 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication([])
-    app.setStyle('Fusion')
 
     app.setApplicationName(__appname__)
     app.setWindowIcon(QIcon('icon:annotator.png'))
+
+    setup_dark_theme(app)
 
     window = MainWindow()
     window.showMaximized()
