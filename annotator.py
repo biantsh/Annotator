@@ -4,7 +4,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
 from app import __appname__
-from app.actions import Actions
+from app.actions import ToolBarActions
 from app.canvas import Canvas
 from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
@@ -30,8 +30,8 @@ class MainWindow(QMainWindow):
         self.annotation_controller = AnnotationController()
         self.button_controller = ButtonController(self)
 
-        self.actions = Actions(self).actions
-        self.addToolBar(__toolbar_area__, ToolBar(self.actions))
+        self.toolbar_actions = ToolBarActions(self).actions
+        self.addToolBar(__toolbar_area__, ToolBar(self.toolbar_actions))
 
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
@@ -80,9 +80,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QApplication([])
-
-    app.setApplicationName(__appname__)
+    app = QApplication([__appname__])
     app.setWindowIcon(QIcon('icon:annotator.png'))
 
     setup_dark_theme(app)

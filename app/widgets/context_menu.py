@@ -108,9 +108,10 @@ class AnnotationContextMenu(ContextMenu):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
-        self.add_action('Rename', parent.rename_annotation, False)
-        self.add_action('Hide', parent.hide_annotation, False)
+        self.add_action('Copy', parent.copy_annotations, False)
+        self.add_action('Rename', parent.rename_annotations, False)
+        self.add_action('Hide', parent.hide_annotations, False)
 
         self.addSeparator()
 
-        self.add_action('Delete', parent.delete_annotation, True)
+        self.add_action('Delete', parent.delete_annotations, True)

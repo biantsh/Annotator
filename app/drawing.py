@@ -77,7 +77,7 @@ class Drawer:
         pen = QPen(QColor(*outline_color, opacity))
 
         line_width = round(2 / canvas.get_max_scale())
-        line_width = max(line_width, 1)
+        line_width = max(line_width, 2)
 
         pen.setWidth(line_width)
         painter.setPen(pen)
