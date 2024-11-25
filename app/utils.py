@@ -30,6 +30,23 @@ def setup_dark_theme(app: QApplication) -> None:
     palette.setColor(QPalette.ColorRole.Highlight, medium_gray_2)
     palette.setColor(QPalette.ColorRole.HighlightedText, white)
 
+    app.setStyleSheet("""
+        QMenu {
+            border: 1px solid rgb(80, 80, 80);
+            background-color: rgb(33, 33, 33);
+            color: rgb(200, 200, 200);
+        }
+        QMenu::separator {
+            background-color: rgb(53, 53, 53);
+            height: 1.5px;
+        }
+        QToolTip {
+            border: 1px solid rgb(80, 80, 80);
+            background-color: rgb(53, 53, 53);
+            color: rgb(200, 200, 200);
+        }
+    """)
+
     app.setPalette(palette)
 
 
