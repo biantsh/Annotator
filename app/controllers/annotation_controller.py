@@ -57,7 +57,10 @@ class AnnotationController:
                 continue
 
             category_id = category_id_map[category_id]
-            self.bboxes[image_name].append(Bbox.from_xywh(bbox, category_id))
+            label_name = self.labels[category_id - 1]
+
+            self.bboxes[image_name].append(
+                Bbox.from_xywh(bbox, category_id, label_name))
 
     def export_annotations(self, output_path: str) -> None:
         coco_dataset = {

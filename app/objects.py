@@ -2,16 +2,25 @@ from app.enums.annotation import HoverType
 
 
 class Bbox:
-    def __init__(self, position: tuple[int, ...], category_id: int) -> None:
+    def __init__(self,
+                 position: tuple[int, ...],
+                 category_id: int,
+                 label_name: str
+                 ) -> None:
         self.position = position
         self.category_id = category_id
+        self.label_name = label_name
 
     @classmethod
-    def from_xywh(cls, position: tuple[int, ...], category_id: int) -> 'Bbox':
+    def from_xywh(cls,
+                  position: tuple[int, ...],
+                  category_id: int,
+                  label_name
+                  ) -> 'Bbox':
         x_min, y_min, width, height = position
         x_max, y_max = x_min + width, y_min + height
 
-        return cls((x_min, y_min, x_max, y_max), category_id)
+        return cls((x_min, y_min, x_max, y_max), category_id, label_name)
 
     @property
     def points(self) -> tuple[tuple[int, int], ...]:
@@ -74,14 +83,19 @@ class Bbox:
 
 
 class Annotation(Bbox):
-    def __init__(self, position: tuple[int, ...], category_id: int) -> None:
-        super().__init__(position, category_id)
+    def __init__(self,
+                 position: tuple[int, ...],
+                 category_id: int,
+                 label_name: str
+                 ) -> None:
+        super().__init__(position, category_id, label_name)
         self.hovered = HoverType.NONE
         self.selected = False
+        self.hidden = False
 
     @classmethod
     def from_bbox(cls, bbox: Bbox) -> 'Annotation':
-        return cls(bbox.position, bbox.category_id)
+        return cls(bbox.position, bbox.category_id, bbox.label_name)
 
     def get_hovered(self,
                     mouse_position: tuple[int, int],

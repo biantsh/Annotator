@@ -81,11 +81,10 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication([])
-    app.setStyle('fusion')
+    app.setStyle('Fusion')
+
     app.setApplicationName(__appname__)
     app.setWindowIcon(QIcon('icon:annotator.png'))
-
-    qdarktheme.setup_theme()
 
     window = MainWindow()
     window.showMaximized()

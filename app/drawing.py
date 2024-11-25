@@ -1,10 +1,10 @@
-import hashlib
 from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QPainter, QPainterPath, QPen, QColor
 
 from app.enums.annotation import HoverType, HOVER_AREAS
 from app.objects import Annotation
+from app.utils import text_to_color
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
@@ -69,7 +69,7 @@ class Drawer:
             outline_color = 255, 255, 255
             opacity = 255
         else:
-            outline_color = Drawer.integer_to_color(annotation.category_id)
+            outline_color = text_to_color(annotation.label_name)
             opacity = 155
 
         pen = QPen(QColor(*outline_color, opacity))
@@ -97,7 +97,7 @@ class Drawer:
                         painter: QPainter,
                         annotation: Annotation
                         ) -> None:
-        color = Drawer.integer_to_color(annotation.category_id)
+        color = text_to_color(annotation.label_name)
         left, top, right, bottom = annotation.position
 
         width = round(12 / canvas.get_max_scale())
@@ -154,14 +154,3 @@ class Drawer:
                 hovered = annotation
 
         return hovered
-
-    @staticmethod
-    def integer_to_color(integer: int) -> tuple[int, int, int]:
-        integer = str(integer).encode('utf-8')
-        hash_code = int(hashlib.sha256(integer).hexdigest(), 16)
-
-        red = hash_code % 255
-        green = (hash_code // 255) % 255
-        blue = (hash_code // 65025) % 255
-
-        return red, green, blue

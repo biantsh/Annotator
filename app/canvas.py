@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QWidget
 
 from app.drawing import Drawer
 from app.enums.annotation import HoverType
-from app.menus import AnnotationContextMenu
+from app.menus import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation
 
 if TYPE_CHECKING:
@@ -84,7 +84,8 @@ class Canvas(QWidget):
         pass
 
     def hide_annotation(self) -> None:
-        pass
+        self.selected_anno.hidden = True
+        self.update()
 
     def delete_annotation(self) -> None:
         self.annotations = list(filter(
@@ -99,6 +100,12 @@ class Canvas(QWidget):
 
         if self.selected_anno:
             self.selected_anno.selected = True
+
+    def get_hidden_annotations(self) -> list[Annotation]:
+        return [anno for anno in self.annotations if anno.hidden]
+
+    def get_visible_annotations(self) -> list[Annotation]:
+        return [anno for anno in self.annotations if not anno.hidden]
 
     def get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
         offset_x, offset_y = self._get_center_offset()
@@ -133,6 +140,7 @@ class Canvas(QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         cursor_position = self.get_cursor_position(event)
+        annotations = self.get_visible_annotations()
 
         if Qt.MouseButton.LeftButton & event.buttons():
             if self.hovered_anno:
@@ -141,16 +149,17 @@ class Canvas(QWidget):
 
         else:
             self.hovered_anno = self.drawer.set_hovered_annotation(
-                self, self.annotations, cursor_position)
+                self, annotations, cursor_position)
 
         self.update_cursor(event)
         self.drawer.cursor_position = cursor_position
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         cursor_position = self.get_cursor_position(event)
+        annotations = self.get_visible_annotations()
 
         self.hovered_anno = self.drawer.set_hovered_annotation(
-            self, self.annotations, cursor_position)
+            self, annotations, cursor_position)
 
         self.update_cursor(event)
         self.drawer.cursor_position = cursor_position
@@ -166,9 +175,12 @@ class Canvas(QWidget):
     def mouseRightPressEvent(self, event: QMouseEvent) -> None:
         if self.hovered_anno:
             self.set_selected_annotation()
-
             context_menu = AnnotationContextMenu(self)
-            context_menu.exec(event.globalPosition().toPoint())
+
+        else:
+            context_menu = CanvasContextMenu(self)
+
+        context_menu.exec(event.globalPosition().toPoint())
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.mouseMoveEvent(event)
@@ -184,5 +196,5 @@ class Canvas(QWidget):
 
         painter.drawPixmap(0, 0, self.pixmap)
 
-        for annotation in self.annotations:
+        for annotation in self.get_visible_annotations():
             Drawer.draw_annotation(self, painter, annotation)

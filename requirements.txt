@@ -1,4 +1,4 @@
 natsort>=8.1.0
 platformdirs>=4.3.0
+pyenchant>=3.2.0
 pyqt6>=6.0
-pyqtdarktheme>2.1.0
