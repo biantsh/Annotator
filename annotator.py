@@ -1,4 +1,3 @@
-import qdarktheme
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
@@ -12,7 +11,7 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
-from app.toolbar import ToolBar
+from app.widgets.toolbar import ToolBar
 
 __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
 QtCore.QDir.addSearchPath('icon', 'resources/icons/')

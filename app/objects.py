@@ -90,6 +90,7 @@ class Annotation(Bbox):
                  ) -> None:
         super().__init__(position, category_id, label_name)
         self.hovered = HoverType.NONE
+        self.highlighted = False
         self.selected = False
         self.hidden = False
 

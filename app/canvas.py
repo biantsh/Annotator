@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QWidget
 
 from app.drawing import Drawer
 from app.enums.annotation import HoverType
-from app.menus import AnnotationContextMenu, CanvasContextMenu
+from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation
 
 if TYPE_CHECKING:

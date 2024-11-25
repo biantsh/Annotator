@@ -65,7 +65,9 @@ class Drawer:
                         painter: QPainter,
                         annotation: Annotation
                         ) -> None:
-        if annotation.selected:
+        highlighted = annotation.highlighted or annotation.selected
+
+        if highlighted:
             outline_color = 255, 255, 255
             opacity = 255
         else:
@@ -89,7 +91,7 @@ class Drawer:
         line_path.lineTo(*annotation.points[0])
         painter.drawPath(line_path)
 
-        if annotation.selected or annotation.hovered != HoverType.NONE:
+        if highlighted or annotation.hovered != HoverType.NONE:
             Drawer.fill_annotation(canvas, painter, annotation)
 
     @staticmethod
@@ -97,6 +99,8 @@ class Drawer:
                         painter: QPainter,
                         annotation: Annotation
                         ) -> None:
+        highlighted = annotation.highlighted or annotation.selected
+
         color = text_to_color(annotation.label_name)
         left, top, right, bottom = annotation.position
 
@@ -121,7 +125,7 @@ class Drawer:
             if annotation.hovered & hover_type:
                 areas_to_fill.update(areas)
 
-        if annotation.selected and not areas_to_fill:
+        if highlighted and not areas_to_fill:
             areas_to_fill.add('full')
 
         for area_name in areas_to_fill:

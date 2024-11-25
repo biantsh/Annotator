@@ -7,17 +7,11 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QWidgetAction,
     QWidget,
-    QCheckBox,
     QLabel
 )
 
-from app.objects import Annotation
-from app.styles.style_sheets import (
-    CheckBoxStyleSheet,
-    LabelStyleSheet,
-    WidgetStyleSheet
-)
-from app.utils import text_to_color, pretty_text
+from app.styles.style_sheets import LabelStyleSheet, WidgetStyleSheet
+from app.widgets.check_box import AnnoCheckBox
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
@@ -31,7 +25,7 @@ class ContextMenu(QMenu):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
-    def add_menu_item(self, item: QWidget, binding: Callable) -> None:
+    def add_menu_item(self, item: QWidget, binding: Callable = None) -> None:
         widget_action = QWidgetAction(self)
 
         widget = QWidget()
@@ -43,9 +37,10 @@ class ContextMenu(QMenu):
         layout.setContentsMargins(*self.margins)
         layout.addWidget(item)
 
-        widget_action.setDefaultWidget(widget)
-        widget_action.triggered.connect(binding)
+        if binding:
+            widget_action.triggered.connect(binding)
 
+        widget_action.setDefaultWidget(widget)
         self.addAction(widget_action)
 
     def add_action(self,
@@ -57,16 +52,6 @@ class ContextMenu(QMenu):
         label.setStyleSheet(str(LabelStyleSheet(risky)))
 
         self.add_menu_item(label, binding)
-
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        event_type = event.type()
-
-        if event_type in (QEvent.Type.HoverEnter, QEvent.Type.HoverMove):
-            obj.setStyleSheet(f'background-color: {self.hover_color};')
-        elif event_type == QEvent.Type.HoverLeave:
-            obj.setStyleSheet(f'background-color: {self.background_color};')
-
-        return super().eventFilter(obj, event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if (Qt.MouseButton.RightButton & event.buttons()
@@ -81,6 +66,16 @@ class ContextMenu(QMenu):
             return
 
         super().mouseReleaseEvent(event)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        event_type = event.type()
+
+        if event_type in (QEvent.Type.HoverEnter, QEvent.Type.HoverMove):
+            obj.setStyleSheet(f'background-color: {self.hover_color};')
+        elif event_type == QEvent.Type.HoverLeave:
+            obj.setStyleSheet(f'background-color: {self.background_color};')
+
+        return super().eventFilter(obj, event)
 
 
 class CanvasContextMenu(ContextMenu):
@@ -103,33 +98,8 @@ class CanvasContextMenu(ContextMenu):
         self.addSeparator()
 
         for annotation in parent.annotations[::-1]:  # Prioritize newer annos
-            self.add_anno_checkbox(parent, annotation)
-
-    def add_anno_checkbox(self,
-                          parent: 'Canvas',
-                          annotation: Annotation
-                          ) -> None:
-        def flip_hidden(annotation: Annotation) -> None:
-            if not annotation:
-                return
-
-            annotation.hidden = not annotation.hidden
-            parent.update()
-
-        checkbox = QCheckBox()
-        checkbox.setChecked(not annotation.hidden)
-        checkbox.stateChanged.connect(lambda: flip_hidden(annotation))
-
-        label = pretty_text(annotation.label_name)
-        padded_length = len(label) + 15
-
-        checkbox.setText(label.ljust(padded_length))
-        checkbox_color = text_to_color(annotation.label_name)
-
-        checkbox.setStyleSheet(str(CheckBoxStyleSheet(
-            checkbox_color, self.background_color)))
-
-        self.add_menu_item(checkbox, flip_hidden)
+            checkbox = AnnoCheckBox(parent, annotation, self.background_color)
+            self.add_menu_item(checkbox, None)
 
 
 class AnnotationContextMenu(ContextMenu):
