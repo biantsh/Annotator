@@ -51,5 +51,5 @@ class WidgetStyleSheet(StyleSheet):
 
         self.style_sheet = f"""
             background-color: {background_color};
-            min-width: 53
+            min-width: 80
         """
