@@ -1,17 +1,19 @@
 from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent
-from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import (
     QMenu,
     QHBoxLayout,
     QWidgetAction,
-    QWidget,
-    QLabel
+    QWidget
 )
 
-from app.styles.style_sheets import LabelStyleSheet, WidgetStyleSheet
-from app.widgets.check_box import AnnoCheckBox
+from app.styles.style_sheets import WidgetStyleSheet
+from app.widgets.menu_item import (
+    ContextMenuItem,
+    ContextButton,
+    ContextCheckBox
+)
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
@@ -25,9 +27,14 @@ class ContextMenu(QMenu):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
-    def add_menu_item(self, item: QWidget, binding: Callable = None) -> None:
-        widget_action = QWidgetAction(self)
+        self.menu_items = []
+        self.widgets = []
 
+    def add_item(self,
+                 item: ContextMenuItem,
+                 binding: Callable = None
+                 ) -> None:
+        """Wrap the item inside a WidgetAction and add it to the menu."""
         widget = QWidget()
         widget.installEventFilter(self)
         widget.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
@@ -37,49 +44,58 @@ class ContextMenu(QMenu):
         layout.setContentsMargins(*self.margins)
         layout.addWidget(item)
 
+        widget_action = QWidgetAction(self)
+        widget_action.setDefaultWidget(widget)
+
         if binding:
             widget_action.triggered.connect(binding)
 
-        widget_action.setDefaultWidget(widget)
         self.addAction(widget_action)
+        self.menu_items.append(item)
+        self.widgets.append(widget)
 
-    def add_action(self,
-                   label_text: str,
-                   binding: Callable,
-                   risky: bool
-                   ) -> None:
-        label = QLabel(label_text)
-        label.setStyleSheet(str(LabelStyleSheet(risky)))
+    def on_mouse_click(self, source: QObject) -> None:
+        source_widget = source.layout().itemAt(0).widget()
+        source_widget.on_mouse_click()
 
-        self.add_menu_item(label, binding)
+        if isinstance(source_widget, ContextButton):
+            self.close()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        if (Qt.MouseButton.RightButton & event.buttons()
-                and self.rect().contains(event.pos())):
-            return
+    def on_mouse_enter(self, source: QObject) -> None:
+        source_widget = source.layout().itemAt(0).widget()
 
-        super().mousePressEvent(event)
+        for widget, menu_item in zip(self.widgets, self.menu_items):
+            widget.setStyleSheet(f'background-color: {self.background_color};')
+            menu_item.on_mouse_leave()
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if (Qt.MouseButton.RightButton == event.button()
-                and self.rect().contains(event.pos())):
-            return
+        source.setStyleSheet(f'background-color: {self.hover_color};')
+        source_widget.on_mouse_enter()
 
-        super().mouseReleaseEvent(event)
+    def on_mouse_leave(self, source: QObject) -> None:
+        source_widget = source.layout().itemAt(0).widget()
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        source.setStyleSheet(f'background-color: {self.background_color};')
+        source_widget.on_mouse_leave()
+
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
         event_type = event.type()
 
-        if event_type in (QEvent.Type.HoverEnter, QEvent.Type.HoverMove):
-            obj.setStyleSheet(f'background-color: {self.hover_color};')
-        elif event_type == QEvent.Type.HoverLeave:
-            obj.setStyleSheet(f'background-color: {self.background_color};')
+        if event_type in (event.Type.MouseButtonPress,
+                          event.Type.MouseButtonDblClick):
+            self.on_mouse_click(source)
 
-        return super().eventFilter(obj, event)
+        elif event_type in (event.Type.HoverEnter,
+                            event.Type.HoverMove):
+            self.on_mouse_enter(source)
+
+        elif event_type == event.Type.HoverLeave:
+            self.on_mouse_leave(source)
+
+        return True
 
 
 class CanvasContextMenu(ContextMenu):
-    margins = 10, 7, 0, 7
+    margins = 10, 11, 0, 11
 
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
@@ -94,12 +110,11 @@ class CanvasContextMenu(ContextMenu):
 
             parent.update()
 
-        self.add_action(text, set_hidden_all, False)
+        self.add_item(ContextButton(parent, set_hidden_all, text, False))
         self.addSeparator()
 
         for annotation in parent.annotations[::-1]:  # Prioritize newer annos
-            checkbox = AnnoCheckBox(parent, annotation, self.background_color)
-            self.add_menu_item(checkbox, None)
+            self.add_item(ContextCheckBox(parent, annotation), None)
 
 
 class AnnotationContextMenu(ContextMenu):
@@ -108,10 +123,15 @@ class AnnotationContextMenu(ContextMenu):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
-        self.add_action('Copy', parent.copy_annotations, False)
-        self.add_action('Rename', parent.rename_annotations, False)
-        self.add_action('Hide', parent.hide_annotations, False)
+        buttons = (
+            ContextButton(parent, parent.copy_annotations, 'Copy', False),
+            ContextButton(parent, parent.rename_annotations, 'Rename', False),
+            ContextButton(parent, parent.hide_annotations, 'Hide', False),
+            ContextButton(parent, parent.delete_annotations, 'Delete', True)
+        )
 
-        self.addSeparator()
+        for button in buttons:
+            if button.risky:
+                self.addSeparator()
 
-        self.add_action('Delete', parent.delete_annotations, True)
+            self.add_item(button)
