@@ -137,11 +137,11 @@ class Canvas(QWidget):
         self.add_selected_annotation()
 
     def add_selected_annotation(self) -> None:
-        if not self.hovered_anno:
+        if not self.hovered_anno or self.hovered_anno in self.selected_annos:
             return
 
-        self.hovered_anno.selected = True
         self.selected_annos.append(self.hovered_anno)
+        self.hovered_anno.selected = True
 
     def get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
         offset_x, offset_y = self._get_center_offset()
