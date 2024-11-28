@@ -83,8 +83,11 @@ def setup_dark_theme(app: QApplication) -> None:
     light_gray = QColor(200, 200, 200)
 
     palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Base, dark_gray)
+    palette.setColor(QPalette.ColorRole.Text, light_gray)
     palette.setColor(QPalette.ColorRole.Window, dark_gray)
     palette.setColor(QPalette.ColorRole.WindowText, light_gray)
+    palette.setColor(QPalette.ColorRole.Button, dark_gray)
     palette.setColor(QPalette.ColorRole.ButtonText, light_gray)
 
     app.setPalette(palette)
