@@ -174,22 +174,6 @@ class Canvas(QWidget):
         self.setCursor(cursor)
         self.update()
 
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        cursor_position = self.get_cursor_position(event)
-        annotations = self.get_visible_annotations()
-
-        if Qt.MouseButton.LeftButton & event.buttons():
-            if self.hovered_anno:
-                self.drawer.move_annotation(
-                    self, self.hovered_anno, cursor_position)
-
-        else:
-            self.hovered_anno = self.drawer.set_hovered_annotation(
-                self, annotations, cursor_position)
-
-        self.update_cursor(event)
-        self.drawer.cursor_position = cursor_position
-
     def mousePressEvent(self, event: QMouseEvent) -> None:
         cursor_position = self.get_cursor_position(event)
         annotations = self.get_visible_annotations()
@@ -220,6 +204,22 @@ class Canvas(QWidget):
             context_menu = CanvasContextMenu(self)
 
         context_menu.exec(event.globalPosition().toPoint())
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        cursor_position = self.get_cursor_position(event)
+        annotations = self.get_visible_annotations()
+
+        if Qt.MouseButton.LeftButton & event.buttons():
+            if self.hovered_anno:
+                self.drawer.move_annotation(
+                    self, self.hovered_anno, cursor_position)
+
+        else:
+            self.hovered_anno = self.drawer.set_hovered_annotation(
+                self, annotations, cursor_position)
+
+        self.update_cursor(event)
+        self.drawer.cursor_position = cursor_position
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.mouseMoveEvent(event)
