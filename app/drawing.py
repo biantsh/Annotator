@@ -4,62 +4,13 @@ from PyQt6.QtGui import QPainter, QPainterPath, QPen, QColor
 
 from app.enums.annotation import HoverType, HOVER_AREAS
 from app.objects import Annotation
-from app.utils import text_to_color
+from app.utils import clip_value, text_to_color
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
 
 class Drawer:
-    def __init__(self) -> None:
-        self.cursor_position = None
-
-    def move_annotation(self,
-                        canvas: 'Canvas',
-                        annotation: Annotation,
-                        mouse_position: tuple[int, int]
-                        ) -> None:
-        if self.cursor_position is None:
-            return
-
-        old_x, old_y = self.cursor_position
-        new_x, new_y = mouse_position
-
-        delta_x, delta_y = new_x - old_x, new_y - old_y
-        x_min, y_min, x_max, y_max = annotation.position
-
-        hover_type = annotation.hovered
-
-        right_border, left_border = canvas.pixmap.width(), 0
-        bottom_border, top_border = canvas.pixmap.height(), 0
-
-        if ((delta_x > 0 and x_max + delta_x < right_border) or
-                (delta_x < 0 and x_min + delta_x > left_border)):
-            if hover_type & HoverType.LEFT or hover_type == HoverType.FULL:
-                x_min += delta_x
-            if hover_type & HoverType.RIGHT or hover_type == HoverType.FULL:
-                x_max += delta_x
-
-        if ((delta_y > 0 and y_max + delta_y < bottom_border) or
-                (delta_y < 0 and y_min + delta_y > top_border)):
-            if hover_type & HoverType.TOP or hover_type == HoverType.FULL:
-                y_min += delta_y
-            if hover_type & HoverType.BOTTOM or hover_type == HoverType.FULL:
-                y_max += delta_y
-
-        # Flip the left/right and top/bottom hover types
-        if x_min > x_max:
-            annotation.hovered += HoverType.LEFT \
-                if hover_type & HoverType.LEFT else -HoverType.LEFT
-        if y_min > y_max:
-            annotation.hovered += HoverType.TOP \
-                if hover_type & HoverType.TOP else -HoverType.TOP
-
-        x_min, x_max = sorted([x_min, x_max])
-        y_min, y_max = sorted([y_min, y_max])
-
-        annotation.position = x_min, y_min, x_max, y_max
-
     @staticmethod
     def draw_annotation(canvas: 'Canvas',
                         painter: QPainter,
@@ -76,7 +27,7 @@ class Drawer:
 
         pen = QPen(QColor(*outline_color, opacity))
 
-        line_width = round(2 / canvas.get_max_scale())
+        line_width = round(2 / canvas.get_scale())
         line_width = max(line_width, 2)
 
         pen.setWidth(line_width)
@@ -104,7 +55,7 @@ class Drawer:
         color = text_to_color(annotation.label_name)
         left, top, right, bottom = annotation.position
 
-        width = round(12 / canvas.get_max_scale())
+        width = round(12 / canvas.get_scale())
         width = max(width, 8)
 
         area_fill_coords = {
@@ -131,6 +82,11 @@ class Drawer:
         for area_name in areas_to_fill:
             left, top, right, bot = area_fill_coords[area_name]
 
+            left = clip_value(left, annotation.left, annotation.right)
+            right = clip_value(right, annotation.left, annotation.right)
+            top = clip_value(top, annotation.top, annotation.bottom)
+            bot = clip_value(bot, annotation.top, annotation.bottom)
+
             fill_path = QPainterPath()
             fill_path.moveTo(left, top)
 
@@ -138,23 +94,3 @@ class Drawer:
                 fill_path.lineTo(*point)
 
             painter.fillPath(fill_path, QColor(*color, 100))
-
-    @staticmethod
-    def set_hovered_annotation(canvas: 'Canvas',
-                               annotations: list[Annotation],
-                               mouse_position: tuple[int, int]
-                               ) -> Annotation | None:
-        hovered = None
-
-        edge_width = round(8 / canvas.get_max_scale())
-        edge_width = max(edge_width, 4)
-
-        for annotation in annotations[::-1]:  # Prioritize newer annos
-            hovered_type = annotation.get_hovered(mouse_position, edge_width)
-            annotation.hovered = HoverType.NONE
-
-            if hovered_type != HoverType.NONE and hovered is None:
-                annotation.hovered = hovered_type
-                hovered = annotation
-
-        return hovered

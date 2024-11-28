@@ -7,6 +7,7 @@ from PyQt6.QtGui import (
     QPixmap,
     QPainter,
     QMouseEvent,
+    QKeyEvent,
     QPaintEvent
 )
 from PyQt6.QtWidgets import QWidget
@@ -14,6 +15,8 @@ from PyQt6.QtWidgets import QWidget
 from app.actions import CanvasActions
 from app.drawing import Drawer
 from app.enums.annotation import HoverType
+from app.handlers.keyboard import KeyboardHandler
+from app.handlers.mouse import MouseHandler
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation
 
@@ -30,28 +33,32 @@ class Canvas(QWidget):
         self.parent = parent
 
         self.pixmap = QPixmap()
-        self.annotations = []
-
-        self.hovered_anno = None
-        self.selected_annos = []
-
         self.drawer = Drawer()
+
+        self.annotations = []
+        self.selected_annos = []
+        self.hovered_anno = None
+
+        self.mouse_handler = MouseHandler(self)
+        self.keyboard_handler = KeyboardHandler(self)
+
         self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         for action in CanvasActions(self).actions.values():
             self.addAction(action)
 
-    def _get_center_offset(self) -> tuple[int, int]:
+    def get_center_offset(self) -> tuple[int, int]:
         canvas = super().size()
         image = self.pixmap
 
-        scale = self.get_max_scale()
+        scale = self.get_scale()
         offset_x = (canvas.width() - image.width() * scale) / 2
         offset_y = (canvas.height() - image.height() * scale) / 2
 
         return int(offset_x), int(offset_y)
 
-    def get_max_scale(self) -> float:
+    def get_scale(self) -> float:
         if self.pixmap.isNull():
             return 1.0
 
@@ -86,6 +93,35 @@ class Canvas(QWidget):
     def get_hidden_annotations(self) -> list[Annotation]:
         return [anno for anno in self.annotations if anno.hidden]
 
+    def set_hovered_annotation(self, mouse_position: tuple[int, int]) -> None:
+        annotations = self.get_visible_annotations()
+        self.hovered_anno = None
+
+        edge_width = round(8 / self.get_scale())
+        edge_width = max(edge_width, 4)
+
+        for annotation in annotations[::-1]:  # Prioritize newer annos
+            hovered_type = annotation.get_hovered(mouse_position, edge_width)
+            annotation.hovered = HoverType.NONE
+
+            if hovered_type != HoverType.NONE and self.hovered_anno is None:
+                annotation.hovered = hovered_type
+                self.hovered_anno = annotation
+
+    def set_selected_annotation(self, annotation: Annotation) -> None:
+        for anno in self.annotations:
+            anno.selected = False
+
+        self.selected_annos = []
+        self.add_selected_annotation(annotation)
+
+    def add_selected_annotation(self, annotation: Annotation) -> None:
+        if not annotation or annotation in self.selected_annos:
+            return
+
+        self.selected_annos.append(annotation)
+        annotation.selected = True
+
     def hide_annotations(self) -> None:
         should_hide = not any(anno.hidden for anno in self.selected_annos)
 
@@ -94,11 +130,85 @@ class Canvas(QWidget):
 
         self.update()
 
-    def delete_annotations(self) -> None:
-        self.annotations = list(filter(
-            lambda anno: not anno.selected, self.annotations))
+    def create_annotation(self) -> None:
+        pass
 
+    def move_annotation(self,
+                        annotation: Annotation,
+                        delta: tuple[int, int]
+                        ) -> None:
+        x_min, y_min, x_max, y_max = annotation.position
+        delta_x, delta_y = delta
+
+        hover_type = annotation.hovered
+
+        right_border, left_border = self.pixmap.width(), 0
+        bottom_border, top_border = self.pixmap.height(), 0
+
+        if hover_type not in (HoverType.TOP, HoverType.BOTTOM):
+            can_move_left = left_border <= x_min + delta_x <= right_border
+            can_move_right = left_border <= x_max + delta_x <= right_border
+
+            if hover_type & HoverType.LEFT and can_move_left:
+                x_min += delta_x
+
+            elif (hover_type & HoverType.RIGHT) and can_move_right:
+                x_max += delta_x
+
+            elif can_move_left and can_move_right:
+                x_min += delta_x
+                x_max += delta_x
+
+        if hover_type not in (HoverType.LEFT, HoverType.RIGHT):
+            can_move_top = top_border < y_min + delta_y < bottom_border
+            can_move_bottom = top_border < y_max + delta_y < bottom_border
+
+            if (hover_type & HoverType.TOP) and can_move_top:
+                y_min += delta_y
+
+            elif (hover_type & HoverType.BOTTOM) and can_move_bottom:
+                y_max += delta_y
+
+            elif can_move_top and can_move_bottom:
+                y_min += delta_y
+                y_max += delta_y
+
+        # Flip the left/right and top/bottom hover types
+        if x_min > x_max:
+            annotation.hovered += HoverType.LEFT \
+                if hover_type & HoverType.LEFT else -HoverType.LEFT
+        if y_min > y_max:
+            annotation.hovered += HoverType.TOP \
+                if hover_type & HoverType.TOP else -HoverType.TOP
+
+        x_min, x_max = sorted([x_min, x_max])
+        y_min, y_max = sorted([y_min, y_max])
+
+        annotation.position = x_min, y_min, x_max, y_max
+
+    def move_annotation_arrow(self, pressed_keys: set[int]) -> None:
+        if not self.selected_annos:
+            return
+
+        delta_x, delta_y = 0, 0
+
+        if Qt.Key.Key_Up in pressed_keys:
+            delta_y -= 1
+        if Qt.Key.Key_Down in pressed_keys:
+            delta_y += 1
+        if Qt.Key.Key_Left in pressed_keys:
+            delta_x -= 1
+        if Qt.Key.Key_Right in pressed_keys:
+            delta_x += 1
+
+        selected_anno = self.selected_annos[-1]
+        self.set_selected_annotation(selected_anno)
+
+        self.move_annotation(selected_anno, (delta_x, delta_y))
         self.update()
+
+    def rename_annotations(self) -> None:
+        pass
 
     def copy_annotations(self) -> None:
         all_annotations = self.annotations[::-1]
@@ -126,31 +236,13 @@ class Canvas(QWidget):
 
         self.update()
 
-    def rename_annotations(self) -> None:
-        pass
+    def delete_annotations(self) -> None:
+        self.annotations = list(filter(
+            lambda anno: not anno.selected, self.annotations))
 
-    def set_selected_annotation(self) -> None:
-        for anno in self.annotations:
-            anno.selected = False
+        self.update()
 
-        self.selected_annos = []
-        self.add_selected_annotation()
-
-    def add_selected_annotation(self) -> None:
-        if not self.hovered_anno or self.hovered_anno in self.selected_annos:
-            return
-
-        self.selected_annos.append(self.hovered_anno)
-        self.hovered_anno.selected = True
-
-    def get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
-        offset_x, offset_y = self._get_center_offset()
-        scale = self.get_max_scale()
-
-        return (int((event.pos().x() - offset_x) / scale),
-                int((event.pos().y() - offset_y) / scale))
-
-    def update_cursor(self, event: QMouseEvent) -> None:
+    def set_cursor_icon(self, event: QMouseEvent) -> None:
         left_clicked = bool(Qt.MouseButton.LeftButton & event.buttons())
         hover_type = self.hovered_anno.hovered \
             if self.hovered_anno else HoverType.NONE
@@ -174,30 +266,18 @@ class Canvas(QWidget):
         self.setCursor(cursor)
         self.update()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        cursor_position = self.get_cursor_position(event)
-        annotations = self.get_visible_annotations()
+    def on_mouse_press(self, cursor_position: tuple[int, int]) -> None:
+        self.set_hovered_annotation(cursor_position)
 
-        self.hovered_anno = self.drawer.set_hovered_annotation(
-            self, annotations, cursor_position)
-
-        self.update_cursor(event)
-        self.drawer.cursor_position = cursor_position
-
-        if Qt.MouseButton.LeftButton & event.buttons():
-            self.mouseLeftPressEvent(event)
-        elif Qt.MouseButton.RightButton & event.buttons():
-            self.mouseRightPressEvent(event)
-
-    def mouseLeftPressEvent(self, event: QMouseEvent) -> None:
+    def on_mouse_left_press(self, event: QMouseEvent) -> None:
         if Qt.KeyboardModifier.ControlModifier & event.modifiers():
-            self.add_selected_annotation()
+            self.add_selected_annotation(self.hovered_anno)
         else:
-            self.set_selected_annotation()
+            self.set_selected_annotation(self.hovered_anno)
 
-    def mouseRightPressEvent(self, event: QMouseEvent) -> None:
+    def on_mouse_right_press(self, event: QMouseEvent) -> None:
         if self.hovered_anno:
-            self.set_selected_annotation()
+            self.set_selected_annotation(self.hovered_anno)
             context_menu = AnnotationContextMenu(self)
 
         else:
@@ -205,24 +285,29 @@ class Canvas(QWidget):
 
         context_menu.exec(event.globalPosition().toPoint())
 
+    def on_mouse_left_drag(self, cursor_shift: tuple[int, int]) -> None:
+        if not self.hovered_anno:
+            return
+
+        self.move_annotation(self.hovered_anno, cursor_shift)
+
+    def on_mouse_hover(self, cursor_position: tuple[int, int]) -> None:
+        self.set_hovered_annotation(cursor_position)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.mouse_handler.mousePressEvent(event)
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        cursor_position = self.get_cursor_position(event)
-        annotations = self.get_visible_annotations()
-
-        if Qt.MouseButton.LeftButton & event.buttons():
-            if self.hovered_anno:
-                self.drawer.move_annotation(
-                    self, self.hovered_anno, cursor_position)
-
-        else:
-            self.hovered_anno = self.drawer.set_hovered_annotation(
-                self, annotations, cursor_position)
-
-        self.update_cursor(event)
-        self.drawer.cursor_position = cursor_position
+        self.mouse_handler.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        self.mouseMoveEvent(event)
+        self.mouse_handler.mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        self.keyboard_handler.keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        self.keyboard_handler.keyReleaseEvent(event)
 
     def paintEvent(self, _: QPaintEvent) -> None:
         painter = QPainter()
@@ -230,10 +315,10 @@ class Canvas(QWidget):
 
         painter.setRenderHints(__antialiasing__ | __pixmap_transform__)
 
-        painter.translate(QPoint(*self._get_center_offset()))
-        painter.scale(*[self.get_max_scale()] * 2)
+        painter.translate(QPoint(*self.get_center_offset()))
+        painter.scale(*[self.get_scale()] * 2)
 
         painter.drawPixmap(0, 0, self.pixmap)
 
         for annotation in self.get_visible_annotations():
-            Drawer.draw_annotation(self, painter, annotation)
+            self.drawer.draw_annotation(self, painter, annotation)

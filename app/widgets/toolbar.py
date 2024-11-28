@@ -32,6 +32,7 @@ class ToolBar(QToolBar):
 
             button = ToolButton()
             button.setDefaultAction(action)
+            button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             button.setToolButtonStyle(__tool_button_style__)
 
             self.addWidget(button)

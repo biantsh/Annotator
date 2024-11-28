@@ -5,6 +5,10 @@ import enchant
 us_dict = enchant.Dict('en_US')
 
 
+def clip_value(value: float, mininum: float, maximum: float) -> float:
+    return min(max(value, mininum), maximum)
+
+
 def text_to_color(text: str) -> tuple[int, int, int]:
     hash_code = int(hashlib.sha256(text.encode('utf-8')).hexdigest(), 16)
 
