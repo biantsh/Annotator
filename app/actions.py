@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Any
 
-from PyQt6.QtCore import QObject
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QFileDialog
+from PyQt6.QtWidgets import QWidget, QFileDialog
 
 if TYPE_CHECKING:
     from annotator import MainWindow
@@ -80,14 +79,18 @@ def create_keypoints(parent: 'MainWindow') -> None:
 def delete_annotations(parent: 'Canvas') -> None:
     parent.delete_annotations()
 
+
 def copy_annotations(parent: 'Canvas') -> None:
     parent.copy_annotations()
+
 
 def paste_annotations(parent: 'Canvas') -> None:
     parent.paste_annotations()
 
+
 def hide_annotations(parent: 'Canvas') -> None:
     parent.hide_annotations()
+
 
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
@@ -110,13 +113,19 @@ __canvas_actions__ = (
 
 
 class Actions(ABC):
-    def __init__(self, parent: QObject, actions: tuple[tuple]) -> None:
+    def __init__(self, parent: QWidget, actions: tuple[tuple, ...]) -> None:
         self.actions = {action_name: self._create_action(parent, *args)
                         for action_name, *args in actions}
 
     @staticmethod
     @abstractmethod
-    def _create_action(parent: QObject, *args) -> QAction:
+    def _create_action(parent: QWidget,
+                       binding: Callable,
+                       shortcut: str,
+                       text: str,
+                       icon: str,
+                       enabled: bool
+                       ) -> QAction:
         raise NotImplementedError
 
 
@@ -149,7 +158,8 @@ class CanvasActions(Actions):
     @staticmethod
     def _create_action(parent: 'Canvas',
                        binding: Callable,
-                       shortcut: str
+                       shortcut: str,
+                       *args: Any
                        ) -> QAction:
         action = QAction(parent=parent)
         action.setShortcut(shortcut)

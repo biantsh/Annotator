@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 
 class ContextMenu(QMenu):
-    background_color = '#2a2b2f'
-    hover_color = '#46464a'
+    background_color = 'rgb(33, 33, 33)'
+    hover_color = 'rgb(53, 53, 53)'
     margins = 0, 0, 0, 0
 
     def __init__(self, parent: 'Canvas') -> None:

@@ -1,0 +1,26 @@
+QToolBar {
+    border-right: 1px solid rgb(53, 53, 53);
+}
+QToolBar QToolButton {
+    margin-top: 5px;
+}
+QToolBar::separator {
+    background-color: rgb(53, 53, 53);
+    height: 1px;
+    margin-top: 7px;
+    margin-bottom: 3px;
+}
+QToolBar::handle {
+    width: 0px;
+}
+QToolTip {
+    min-width: 0px;
+    max-width: 0px;
+}
+QMenu {
+    border: 1px solid rgb(53, 53, 53);
+}
+QMenu::separator {
+    background-color: rgb(53, 53, 53);
+    height: 1.5px;
+}

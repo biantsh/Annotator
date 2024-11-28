@@ -1,6 +1,6 @@
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPalette, QColor
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
 from app import __appname__
@@ -11,7 +11,6 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
-from app.utils import setup_dark_theme
 from app.widgets.toolbar import ToolBar
 
 __toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
@@ -79,8 +78,24 @@ class MainWindow(QMainWindow):
         self.annotation_controller.export_annotations(output_path)
 
 
+def setup_dark_theme(app: QApplication) -> None:
+    dark_gray = QColor(33, 33, 33)
+    light_gray = QColor(200, 200, 200)
+
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, dark_gray)
+    palette.setColor(QPalette.ColorRole.WindowText, light_gray)
+    palette.setColor(QPalette.ColorRole.ButtonText, light_gray)
+
+    app.setPalette(palette)
+
+    with open('app/styles/app.qss', 'r') as qss_file:
+        app.setStyleSheet(qss_file.read())
+
+
 if __name__ == '__main__':
     app = QApplication([__appname__])
+    app.setApplicationName(__appname__)
     app.setWindowIcon(QIcon('icon:annotator.png'))
 
     setup_dark_theme(app)
