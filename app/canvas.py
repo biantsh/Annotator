@@ -7,8 +7,7 @@ from PyQt6.QtGui import (
     QPixmap,
     QPainter,
     QMouseEvent,
-    QPaintEvent,
-    QAction
+    QPaintEvent
 )
 from PyQt6.QtWidgets import QWidget
 
@@ -102,10 +101,12 @@ class Canvas(QWidget):
         self.update()
 
     def copy_annotations(self) -> None:
-        copied_annotations = (copy.deepcopy(self.selected_annos)
-                              or copy.deepcopy(self.annotations))
+        all_annotations = self.annotations[::-1]
 
-        self.parent.annotation_controller.clipboard = copied_annotations
+        selected = [anno for anno in all_annotations if anno.selected]
+        to_copy = selected or all_annotations
+
+        self.parent.annotation_controller.clipboard = copy.deepcopy(to_copy)
 
     def paste_annotations(self) -> None:
         pasted_annotations = self.parent.annotation_controller.clipboard
