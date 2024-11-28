@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 class ContextMenu(QMenu):
     background_color = 'rgb(33, 33, 33)'
     hover_color = 'rgb(53, 53, 53)'
-    margins = 0, 0, 0, 0
+    button_margins = 10, 6, 0, 6
+    checkbox_margins = 10, 11, 0, 11
 
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
@@ -41,7 +42,12 @@ class ContextMenu(QMenu):
         widget.setStyleSheet(str(WidgetStyleSheet(self.background_color)))
 
         layout = QHBoxLayout(widget)
-        layout.setContentsMargins(*self.margins)
+
+        if isinstance(item, ContextButton):
+            layout.setContentsMargins(*self.button_margins)
+        else:
+            layout.setContentsMargins(*self.checkbox_margins)
+
         layout.addWidget(item)
 
         widget_action = QWidgetAction(self)
@@ -95,8 +101,6 @@ class ContextMenu(QMenu):
 
 
 class CanvasContextMenu(ContextMenu):
-    margins = 10, 11, 0, 11
-
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
@@ -118,8 +122,6 @@ class CanvasContextMenu(ContextMenu):
 
 
 class AnnotationContextMenu(ContextMenu):
-    margins = 10, 6, 0, 6
-
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
