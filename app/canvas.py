@@ -7,6 +7,7 @@ from PyQt6.QtGui import (
     QPixmap,
     QPainter,
     QMouseEvent,
+    QWheelEvent,
     QKeyEvent,
     QPaintEvent
 )
@@ -17,6 +18,7 @@ from app.drawing import Drawer
 from app.enums.annotation import HoverType
 from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
+from app.handlers.zoom import ZoomHandler
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation
 
@@ -40,21 +42,38 @@ class Canvas(QWidget):
         self.hovered_anno = None
 
         self.mouse_handler = MouseHandler(self)
-        self.keyboard_handler = KeyboardHandler(self)
-
         self.setMouseTracking(True)
+
+        self.keyboard_handler = KeyboardHandler(self)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+        self.zoom_handler = ZoomHandler(self)
 
         for action in CanvasActions(self).actions.values():
             self.addAction(action)
 
+    def _is_cursor_in_bounds(self, cursor_position: tuple[int, int]) -> bool:
+        x_pos, y_pos = cursor_position
+
+        offset_x, offset_y = self.get_center_offset()
+        scale = self.get_scale()
+
+        pixmap_size = self.pixmap.size()
+        width, height = pixmap_size.width(), pixmap_size.height()
+
+        return (0 <= x_pos - offset_x <= width * scale
+                and 0 <= y_pos - offset_y <= height * scale)
+
     def get_center_offset(self) -> tuple[int, int]:
-        canvas = super().size()
+        canvas = self.size()
         image = self.pixmap
 
         scale = self.get_scale()
         offset_x = (canvas.width() - image.width() * scale) / 2
         offset_y = (canvas.height() - image.height() * scale) / 2
+
+        offset_x += self.zoom_handler.pan_x
+        offset_y += self.zoom_handler.pan_y
 
         return int(offset_x), int(offset_y)
 
@@ -68,10 +87,12 @@ class Canvas(QWidget):
         canvas_aspect = canvas.width() / canvas.height()
         image_aspect = image.width() / image.height()
 
-        if canvas_aspect < image_aspect:
-            return canvas.width() / image.width()
+        scale = canvas.height() / image.height()
 
-        return canvas.height() / image.height()
+        if canvas_aspect < image_aspect:
+            scale = canvas.width() / image.width()
+
+        return scale * self.zoom_handler.zoom_level
 
     def reset(self) -> None:
         self.pixmap = QPixmap()
@@ -294,6 +315,27 @@ class Canvas(QWidget):
     def on_mouse_hover(self, cursor_position: tuple[int, int]) -> None:
         self.set_hovered_annotation(cursor_position)
 
+    def on_mouse_middle_press(self, cursor_position: tuple[int, int]) -> None:
+        if not self._is_cursor_in_bounds(cursor_position):
+            return
+
+        self.zoom_handler.toggle_zoom(cursor_position)
+        self.update()
+
+    def on_scroll_up(self, cursor_position: tuple[int, int]) -> None:
+        if not self._is_cursor_in_bounds(cursor_position):
+            return
+
+        self.zoom_handler.zoom_in(cursor_position)
+        self.update()
+
+    def on_scroll_down(self, cursor_position: tuple[int, int]) -> None:
+        if not self._is_cursor_in_bounds(cursor_position):
+            return
+
+        self.zoom_handler.zoom_out(cursor_position)
+        self.update()
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         self.mouse_handler.mousePressEvent(event)
 
@@ -302,6 +344,9 @@ class Canvas(QWidget):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.mouse_handler.mouseReleaseEvent(event)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        self.mouse_handler.wheelEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         self.keyboard_handler.keyPressEvent(event)

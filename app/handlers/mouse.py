@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QMouseEvent, QWheelEvent
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
@@ -29,6 +29,9 @@ class MouseHandler:
             self.parent.on_mouse_left_press(event)
         elif Qt.MouseButton.RightButton & event.buttons():
             self.parent.on_mouse_right_press(event)
+        elif Qt.MouseButton.MiddleButton & event.buttons():
+            position = event.position()
+            self.parent.on_mouse_middle_press((position.x(), position.y()))
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         cursor_position = self._get_cursor_position(event)
@@ -47,4 +50,16 @@ class MouseHandler:
         self.parent.set_cursor_icon(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if Qt.MouseButton.MiddleButton & event.buttons():
+            return
+
         self.mouseMoveEvent(event)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        angle_delta = event.angleDelta().y()
+        position = event.position()
+
+        if angle_delta > 0:
+            self.parent.on_scroll_up((position.x(), position.y()))
+        elif angle_delta < 0:
+            self.parent.on_scroll_down((position.x(), position.y()))
