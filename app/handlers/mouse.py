@@ -10,7 +10,9 @@ if TYPE_CHECKING:
 class MouseHandler:
     def __init__(self, parent: 'Canvas') -> None:
         self.parent = parent
+
         self.cursor_position = 0, 0
+        self.global_position = None
 
         self.left_clicked = False
         self.right_clicked = False
@@ -40,18 +42,17 @@ class MouseHandler:
             self.parent.on_mouse_middle_press((pos_x, pos_y))
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        cursor_position = self._get_cursor_position(event)
-
         prev_cursor_position = self.cursor_position
-        self.cursor_position = cursor_position
+
+        self.cursor_position = self._get_cursor_position(event)
+        self.global_position = event.globalPosition().toPoint()
 
         if Qt.MouseButton.LeftButton & event.buttons():
-            if self.cursor_position:
-                old_x, old_y = prev_cursor_position
-                new_x, new_y = cursor_position
+            new_x, new_y = self.cursor_position
+            old_x, old_y = prev_cursor_position
 
-                delta_x, delta_y = new_x - old_x, new_y - old_y
-                self.parent.on_mouse_left_drag((delta_x, delta_y))
+            delta_x, delta_y = new_x - old_x, new_y - old_y
+            self.parent.on_mouse_left_drag((delta_x, delta_y))
 
         else:
             self.parent.on_mouse_hover()

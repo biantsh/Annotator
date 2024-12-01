@@ -1,5 +1,4 @@
 import copy
-from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import (
@@ -19,21 +18,21 @@ from app.enums.annotation import AnnotatingState, HoverType
 from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
 from app.handlers.zoom import ZoomHandler
+from app.widgets.combo_box import ComboBox
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation
 from app.utils import clip_value
-
-if TYPE_CHECKING:
-    from annotator import MainWindow
 
 __antialiasing__ = QPainter.RenderHint.Antialiasing
 __pixmap_transform__ = QPainter.RenderHint.SmoothPixmapTransform
 
 
 class Canvas(QWidget):
-    def __init__(self, parent: 'MainWindow') -> None:
-        super().__init__(parent)
-        self.parent = parent
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.labels = []
+        self.clipboard = []
 
         self.pixmap = QPixmap()
         self.drawer = Drawer()
@@ -230,7 +229,19 @@ class Canvas(QWidget):
         x_min, x_max = sorted((x_min, x_max))
         y_min, y_max = sorted((y_min, y_max))
 
-        annotation = Annotation((x_min, y_min, x_max, y_max), 1, 'person')
+        cursor_position = self.mouse_handler.global_position
+        x_pos, y_pos = cursor_position.x(), cursor_position.y()
+
+        combo_box = ComboBox(self, self.labels)
+        combo_box.exec(QPoint(x_pos - combo_box.width() // 2, y_pos - 20))
+
+        label_name = combo_box.selected_value
+        if not label_name:
+            return
+
+        position = (x_min, y_min, x_max, y_max)
+        category_id = self.labels.index(label_name)
+        annotation = Annotation(position, category_id, label_name)
 
         self.annotations.append(annotation)
         self.set_selected_annotation(annotation)
@@ -310,7 +321,18 @@ class Canvas(QWidget):
         self.update()
 
     def rename_annotations(self) -> None:
-        pass
+        cursor_position = self.mouse_handler.global_position
+        x_pos, y_pos = cursor_position.x(), cursor_position.y()
+
+        combo_box = ComboBox(self, self.labels)
+        combo_box.exec(QPoint(x_pos, y_pos + 20))
+
+        label_name = combo_box.selected_value
+        if not label_name:
+            return
+
+        self.selected_annos[-1].label_name = label_name
+        self.selected_annos[-1].category_id = self.labels.index(label_name)
 
     def copy_annotations(self) -> None:
         all_annotations = self.annotations[::-1]
@@ -318,13 +340,10 @@ class Canvas(QWidget):
         selected = [anno for anno in all_annotations if anno.selected]
         to_copy = selected or all_annotations
 
-        self.parent.annotation_controller.clipboard = copy.deepcopy(to_copy)
+        self.clipboard = copy.deepcopy(to_copy)
 
     def paste_annotations(self) -> None:
-        self.set_annotating_state(AnnotatingState.IDLE)
-
-        pasted_annotations = self.parent.annotation_controller.clipboard
-        pasted_annotations = copy.deepcopy(pasted_annotations)
+        pasted_annotations = copy.deepcopy(self.clipboard)
 
         for annotation in pasted_annotations:
             annotation.hovered = HoverType.NONE
@@ -338,7 +357,7 @@ class Canvas(QWidget):
         self.annotations.extend(pasted_annotations[::-1])
         self.selected_annos = pasted_annotations
 
-        self.update()
+        self.set_annotating_state(AnnotatingState.IDLE)
 
     def delete_annotations(self) -> None:
         self.annotations = list(filter(

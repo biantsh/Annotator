@@ -31,10 +31,10 @@ class ContextMenu(QMenu):
         self.menu_items = []
         self.widgets = []
 
-    def add_item(self,
-                 item: ContextMenuItem,
-                 binding: Callable = None
-                 ) -> None:
+    def _add_item(self,
+                  item: ContextMenuItem,
+                  binding: Callable = None
+                  ) -> None:
         """Wrap the item inside a WidgetAction and add it to the menu."""
         widget = QWidget()
         widget.installEventFilter(self)
@@ -90,8 +90,7 @@ class ContextMenu(QMenu):
                           event.Type.MouseButtonDblClick):
             self.on_mouse_click(source)
 
-        elif event_type in (event.Type.HoverEnter,
-                            event.Type.HoverMove):
+        elif event_type == event.Type.HoverMove:
             self.on_mouse_enter(source)
 
         elif event_type == event.Type.HoverLeave:
@@ -114,11 +113,11 @@ class CanvasContextMenu(ContextMenu):
 
             parent.update()
 
-        self.add_item(ContextButton(parent, set_hidden_all, text, False))
+        self._add_item(ContextButton(parent, set_hidden_all, text, False))
         self.addSeparator()
 
         for annotation in parent.annotations[::-1]:  # Prioritize newer annos
-            self.add_item(ContextCheckBox(parent, annotation), None)
+            self._add_item(ContextCheckBox(parent, annotation), None)
 
 
 class AnnotationContextMenu(ContextMenu):
@@ -136,4 +135,4 @@ class AnnotationContextMenu(ContextMenu):
             if button.risky:
                 self.addSeparator()
 
-            self.add_item(button)
+            self._add_item(button)

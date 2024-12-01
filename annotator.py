@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         self.toolbar_actions = ToolBarActions(self).actions
         self.addToolBar(__toolbar_area__, ToolBar(self.toolbar_actions))
 
-        self.canvas = Canvas(self)
+        self.canvas = Canvas()
         self.setCentralWidget(self.canvas)
 
     def _on_image_change(self) -> None:
@@ -58,7 +58,9 @@ class MainWindow(QMainWindow):
 
     def open_label_map(self, label_map_path: str) -> None:
         self.label_map_controller.load_labels(label_map_path)
+
         self.annotation_controller.labels = self.label_map_controller.labels
+        self.canvas.labels = self.label_map_controller.labels
 
         self.button_controller.set_enabled_buttons()
 

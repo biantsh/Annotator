@@ -12,7 +12,6 @@ class AnnotationController:
         self.images = {}
 
         self.bboxes = defaultdict(lambda: [])
-        self.clipboard = []
 
     def get_annotations(self, image_name: str) -> list[Annotation]:
         return [Annotation.from_bbox(bbox) for bbox in self.bboxes[image_name]]
