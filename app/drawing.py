@@ -12,20 +12,12 @@ if TYPE_CHECKING:
 
 class Drawer:
     @staticmethod
-    def draw_annotation(canvas: 'Canvas',
-                        painter: QPainter,
-                        annotation: Annotation
-                        ) -> None:
-        highlighted = annotation.highlighted or annotation.selected
-
-        if highlighted:
-            outline_color = 255, 255, 255
-            opacity = 255
-        else:
-            outline_color = text_to_color(annotation.label_name)
-            opacity = 155
-
-        pen = QPen(QColor(*outline_color, opacity))
+    def _draw_path(canvas: 'Canvas',
+                   painter: QPainter,
+                   point_groups: tuple[tuple[tuple[float, float], ...], ...],
+                   color: tuple[float, ...]
+                   ) -> None:
+        pen = QPen(QColor(*color))
 
         line_width = round(2 / canvas.get_scale())
         line_width = max(line_width, 2)
@@ -34,13 +26,78 @@ class Drawer:
         painter.setPen(pen)
 
         line_path = QPainterPath()
-        line_path.moveTo(*annotation.points[0])
 
-        for point in annotation.points:
-            line_path.lineTo(*point)
+        for point_group in point_groups:
+            line_path.moveTo(*point_group[0])
 
-        line_path.lineTo(*annotation.points[0])
+            for point in point_group:
+                line_path.lineTo(*point)
+
+            line_path.lineTo(*point_group[0])
+
         painter.drawPath(line_path)
+
+    @staticmethod
+    def _draw_rectangle(canvas: 'Canvas',
+                        painter: QPainter,
+                        position: tuple[float, ...],
+                        color: tuple[float, ...]
+                        ) -> None:
+        x_min, y_min, x_max, y_max = position
+
+        points = (
+            (x_max, y_min),
+            (x_max, y_max),
+            (x_min, y_max),
+            (x_min, y_min)
+        )
+
+        Drawer._draw_path(canvas, painter, (points, ), color)
+
+    @staticmethod
+    def draw_crosshair(canvas: 'Canvas',
+                       painter: QPainter,
+                       position: tuple[int, int]
+                       ) -> None:
+        pos_x, pos_y = position
+        point_groups = (
+            ((pos_x, 0), (pos_x, canvas.pixmap.height()), ),
+            ((0, pos_y), (canvas.pixmap.width(), pos_y), )
+        )
+
+        Drawer._draw_path(canvas, painter, point_groups, (0, 0, 0, 100))
+
+    @staticmethod
+    def draw_candidate_annotation(canvas: 'Canvas',
+                                  painter: QPainter,
+                                  first_corner: tuple[float, float],
+                                  second_corner: tuple[float, float]
+                                  ) -> None:
+        x_min, y_min = first_corner
+        x_max, y_max = second_corner
+
+        x_min = clip_value(x_min, 0, canvas.pixmap.width())
+        y_min = clip_value(y_min, 0, canvas.pixmap.height())
+        x_max = clip_value(x_max, 0, canvas.pixmap.width())
+        y_max = clip_value(y_max, 0, canvas.pixmap.height())
+
+        position = x_min, y_min, x_max, y_max
+        Drawer._draw_rectangle(canvas, painter, position, (0, 0, 0, 100))
+
+    @staticmethod
+    def draw_annotation(canvas: 'Canvas',
+                        painter: QPainter,
+                        annotation: Annotation
+                        ) -> None:
+        highlighted = annotation.highlighted or annotation.selected
+
+        if highlighted:
+            outline_color = 255, 255, 255, 255
+        else:
+            outline_color = [*text_to_color(annotation.label_name), 155]
+
+        position = annotation.position
+        Drawer._draw_rectangle(canvas, painter, position, outline_color)
 
         if highlighted or annotation.hovered != HoverType.NONE:
             Drawer.fill_annotation(canvas, painter, annotation)

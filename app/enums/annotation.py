@@ -1,6 +1,12 @@
 from enum import IntEnum
 
 
+class AnnotatingState(IntEnum):
+    IDLE = 0
+    READY = 1
+    DRAWING = 2
+
+
 class HoverType(IntEnum):
     """Enum specifying which part of an annotation is hovered.
 
