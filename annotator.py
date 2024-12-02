@@ -1,3 +1,6 @@
+import os
+import sys
+
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPalette, QColor, QCloseEvent
@@ -13,8 +16,11 @@ from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
 from app.widgets.toolbar import ToolBar
 
-__toolbar_area__ = Qt.ToolBarArea.LeftToolBarArea
-QtCore.QDir.addSearchPath('icon', 'resources/icons/')
+__basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
+__stylepath__ = os.path.join(__basepath__, 'app', 'styles', 'app.qss')
+__iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
+
+QtCore.QDir.addSearchPath('icon', __iconpath__)
 
 
 class MainWindow(QMainWindow):
@@ -30,7 +36,8 @@ class MainWindow(QMainWindow):
         self.button_controller = ButtonController(self)
 
         self.toolbar_actions = ToolBarActions(self).actions
-        self.addToolBar(__toolbar_area__, ToolBar(self.toolbar_actions))
+        self.addToolBar(Qt.ToolBarArea.LeftToolBarArea,
+                        ToolBar(self.toolbar_actions))
 
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
@@ -103,7 +110,7 @@ def setup_dark_theme(application: QApplication) -> None:
 
     application.setPalette(palette)
 
-    with open('app/styles/app.qss', 'r') as qss_file:
+    with open(__stylepath__, 'r') as qss_file:
         application.setStyleSheet(qss_file.read())
 
 

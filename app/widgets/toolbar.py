@@ -23,6 +23,8 @@ class ToolBar(QToolBar):
     def __init__(self, actions: dict[str, QAction]) -> None:
         super().__init__()
 
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
+
         for action_name in self.toolbar_actions:
             if action_name == '__separator__':
                 self.addSeparator()

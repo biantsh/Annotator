@@ -39,7 +39,7 @@ class CheckBoxStyleSheet(StyleSheet):
             }}
         
             ::indicator {{
-                border: 1px solid gray;
+                border: 1px solid rgb(53, 53, 53);
                 border-radius: 2px;
             }}
             
