@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import rapidfuzz
+from rapidfuzz.fuzz import partial_ratio
 from PyQt6.QtCore import Qt, QObject, QEvent
 from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import (
@@ -52,7 +53,7 @@ class ComboBox(QMenu):
         layout = QHBoxLayout(widget)
         layout.addWidget(item)
 
-        margins = [4] * 4 if isinstance(item, QLineEdit) else [4, 6] * 2
+        margins = [4, 6] * 2 if isinstance(item, QLineEdit) else [4, 8] * 2
         layout.setContentsMargins(*margins)
 
         widget_action = QWidgetAction(self)
@@ -64,10 +65,11 @@ class ComboBox(QMenu):
         target = target.lower().replace(' ', '_')
         labels = self.labels
 
-        process = rapidfuzz.process
-        scorer = rapidfuzz.fuzz.partial_ratio
+        matches = rapidfuzz.process.extract(target,
+                                            labels,
+                                            scorer=partial_ratio,
+                                            limit=self.num_labels)
 
-        matches = process.extract(target, labels, scorer=scorer, limit=5)
         return [match[0] for match in matches]
 
     def _on_text_changed(self) -> None:

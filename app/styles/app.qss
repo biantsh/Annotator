@@ -25,14 +25,14 @@ QMenu QLineEdit {
     border: 1px solid rgb(80, 80, 80);
     color: rgb(200, 200, 200);
     font-weight: bold;
-    min-height: 20px;
-    max-height: 20px;
-}
-QMenu QLabel {
-    font-weight: bold;
-    padding-bottom: 3px;
+    min-height: 24px;
+    max-height: 24px;
 }
 QMenu::separator {
     background-color: rgb(53, 53, 53);
     height: 1.5px;
+}
+ComboBox QLabel {
+    font-weight: bold;
+    padding-bottom: 3px;
 }
