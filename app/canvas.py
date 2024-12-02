@@ -32,6 +32,8 @@ class Canvas(QWidget):
         super().__init__()
 
         self.labels = []
+        self.previous_label = None
+
         self.clipboard = []
 
         self.pixmap = QPixmap()
@@ -214,7 +216,7 @@ class Canvas(QWidget):
 
         self.update()
 
-    def create_annotation(self) -> None:
+    def create_annotation(self, label_name: str = None) -> None:
         x_min, y_min = self.anno_first_corner
         x_max, y_max = self.mouse_handler.cursor_position
 
@@ -229,15 +231,18 @@ class Canvas(QWidget):
         x_min, x_max = sorted((x_min, x_max))
         y_min, y_max = sorted((y_min, y_max))
 
-        cursor_position = self.mouse_handler.global_position
-        x_pos, y_pos = cursor_position.x(), cursor_position.y()
-
-        combo_box = ComboBox(self, self.labels)
-        combo_box.exec(QPoint(x_pos - combo_box.width() // 2, y_pos - 20))
-
-        label_name = combo_box.selected_value
         if not label_name:
-            return
+            cursor_position = self.mouse_handler.global_position
+            x_pos, y_pos = cursor_position.x(), cursor_position.y()
+
+            combo_box = ComboBox(self, self.labels)
+            combo_box.exec(QPoint(x_pos - combo_box.width() // 2, y_pos - 20))
+
+            label_name = combo_box.selected_value
+            if not label_name:
+                return
+
+        self.previous_label = label_name
 
         position = (x_min, y_min, x_max, y_max)
         category_id = self.labels.index(label_name)
@@ -376,7 +381,11 @@ class Canvas(QWidget):
             self.set_annotating_state(AnnotatingState.DRAWING)
 
         elif self.annotating_state == AnnotatingState.DRAWING:
-            self.create_annotation()
+            if Qt.KeyboardModifier.ControlModifier & event.modifiers():
+                self.create_annotation(self.previous_label)
+            else:
+                self.create_annotation()
+
             self.set_annotating_state(AnnotatingState.IDLE)
 
         self.update()
