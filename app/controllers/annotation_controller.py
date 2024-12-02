@@ -1,23 +1,68 @@
 import json
+import os
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from natsort import os_sorted
 
 from app.objects import Bbox, Annotation
 
+if TYPE_CHECKING:
+    from annotator import MainWindow
+
 
 class AnnotationController:
-    def __init__(self) -> None:
+    def __init__(self, parent: 'MainWindow') -> None:
+        self.parent = parent
+
         self.labels = []
         self.images = {}
-
         self.bboxes = defaultdict(lambda: [])
 
     def get_annotations(self, image_name: str) -> list[Annotation]:
-        return [Annotation.from_bbox(bbox) for bbox in self.bboxes[image_name]]
+        image_dir = self.parent.image_controller.image_dir
+        annotator_dir = os.path.join(image_dir, '.annotator')
 
-    def save_annotations(self, image_name: str, output_path: str) -> None:
-        """Save annotations for a single image"""
+        json_name = f'{os.path.splitext(image_name)[0]}.json'
+        json_path = os.path.join(annotator_dir, json_name)
+
+        if not os.path.exists(json_path):
+            return []
+
+        with open(json_path, 'r') as json_file:
+            json_content = json.load(json_file)
+
+        return [Annotation(
+            anno['position'], anno['category_id'], anno['label_name'])
+            for anno in json_content['annotations']
+        ]
+
+    def save_annotations(self,
+                         image_name: str,
+                         image_size: tuple[int, int],
+                         annotations: list[Annotation]
+                         ) -> None:
+        image_dir = self.parent.image_controller.image_dir
+        annotator_dir = os.path.join(image_dir, '.annotator')
+
+        os.makedirs(annotator_dir, exist_ok=True)
+
+        json_name = f'{os.path.splitext(image_name)[0]}.json'
+        json_path = os.path.join(annotator_dir, json_name)
+
+        image_width, image_height = image_size
+        annotation_info = [{
+            'position': anno.position,
+            'label_name': anno.label_name,
+            'category_id': anno.category_id
+        } for anno in annotations]
+
+        with open(json_path, 'w') as json_file:
+            json.dump({
+                'image_width': image_width,
+                'image_height': image_height,
+                'annotations': annotation_info
+            }, json_file, indent=2)
 
     def import_annotations(self, annotations_path: str) -> None:
         with open(annotations_path, 'r') as json_file:

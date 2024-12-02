@@ -7,17 +7,21 @@ from PyQt6.QtGui import QImageReader
 
 class ImageController:
     def __init__(self) -> None:
+        self.image_dir = None
+
         self.image_paths = []
         self.num_images = 0
         self.index = 0
 
-    def load_images(self, dir_path: str) -> None:
+    def load_images(self, image_dir: str) -> None:
+        self.image_dir = image_dir
+
         image_paths = []
         self.index = 0
 
         for extension in QImageReader.supportedImageFormats():
             extension = extension.data().decode()
-            image_paths.extend(glob.glob(f'{dir_path}/*.{extension}'))
+            image_paths.extend(glob.glob(f'{image_dir}/*.{extension}'))
 
         self.image_paths = os_sorted(image_paths)
         self.num_images = len(self.image_paths)

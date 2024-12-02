@@ -1,6 +1,8 @@
 import copy
+import os
+from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtGui import (
     QImageReader,
     QPixmap,
@@ -23,19 +25,28 @@ from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation
 from app.utils import clip_value
 
+if TYPE_CHECKING:
+    from annotator import MainWindow
+
 __antialiasing__ = QPainter.RenderHint.Antialiasing
 __pixmap_transform__ = QPainter.RenderHint.SmoothPixmapTransform
 
 
 class Canvas(QWidget):
-    def __init__(self) -> None:
+    def __init__(self, parent: 'MainWindow') -> None:
         super().__init__()
+        self.parent = parent
 
         self.labels = []
+        self.clipboard = []
         self.previous_label = None
 
-        self.clipboard = []
+        self.unsaved_changes = False
+        self.auto_save_timer = QTimer()
+        self.auto_save_timer.timeout.connect(self.save_progress)
+        self.auto_save_timer.start(3000)
 
+        self.image_name = None
         self.pixmap = QPixmap()
         self.drawer = Drawer()
 
@@ -104,6 +115,16 @@ class Canvas(QWidget):
 
         self.update()
 
+    def save_progress(self) -> None:
+        if not self.unsaved_changes:
+            return
+
+        self.unsaved_changes = False
+        image_size = self.pixmap.width(), self.pixmap.height()
+
+        self.parent.annotation_controller.save_annotations(
+            self.image_name, image_size, self.annotations)
+
     def update(self) -> None:
         self.update_cursor_icon()
         super().update()
@@ -142,6 +163,7 @@ class Canvas(QWidget):
     def load_image(self, image_path: str) -> None:
         self.reset()
 
+        self.image_name = os.path.basename(image_path)
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
 
@@ -245,11 +267,12 @@ class Canvas(QWidget):
         self.previous_label = label_name
 
         position = (x_min, y_min, x_max, y_max)
-        category_id = self.labels.index(label_name)
+        category_id = self.labels.index(label_name) + 1
         annotation = Annotation(position, category_id, label_name)
 
         self.annotations.append(annotation)
         self.set_selected_annotation(annotation)
+        self.unsaved_changes = True
 
     def move_annotation(self,
                         annotation: Annotation,
@@ -278,8 +301,8 @@ class Canvas(QWidget):
                 x_max += delta_x
 
         if hover_type not in (HoverType.LEFT, HoverType.RIGHT):
-            can_move_top = top_border < y_min + delta_y < bottom_border
-            can_move_bottom = top_border < y_max + delta_y < bottom_border
+            can_move_top = top_border <= y_min + delta_y <= bottom_border
+            can_move_bottom = top_border <= y_max + delta_y <= bottom_border
 
             if (hover_type & HoverType.TOP) and can_move_top:
                 y_min += delta_y
@@ -303,6 +326,7 @@ class Canvas(QWidget):
         y_min, y_max = sorted([y_min, y_max])
 
         annotation.position = x_min, y_min, x_max, y_max
+        self.unsaved_changes = True
 
     def move_annotation_arrow(self, pressed_keys: set[int]) -> None:
         if not self.selected_annos:
@@ -323,6 +347,8 @@ class Canvas(QWidget):
         self.set_selected_annotation(selected_anno)
 
         self.move_annotation(selected_anno, (delta_x, delta_y))
+        self.unsaved_changes = True
+
         self.update()
 
     def rename_annotations(self) -> None:
@@ -336,8 +362,11 @@ class Canvas(QWidget):
         if not label_name:
             return
 
-        self.selected_annos[-1].label_name = label_name
-        self.selected_annos[-1].category_id = self.labels.index(label_name)
+        for annotation in self.selected_annos:
+            annotation.label_name = label_name
+            annotation.category_id = self.labels.index(label_name) + 1
+
+        self.unsaved_changes = True
 
     def copy_annotations(self) -> None:
         all_annotations = self.annotations[::-1]
@@ -363,11 +392,13 @@ class Canvas(QWidget):
         self.selected_annos = pasted_annotations
 
         self.set_annotating_state(AnnotatingState.IDLE)
+        self.unsaved_changes = True
 
     def delete_annotations(self) -> None:
         self.annotations = list(filter(
             lambda anno: not anno.selected, self.annotations))
 
+        self.unsaved_changes = True
         self.update()
 
     def on_mouse_left_press(self, event: QMouseEvent) -> None:
