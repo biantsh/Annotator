@@ -56,8 +56,8 @@ class MainWindow(QMainWindow):
         if not self.label_map_controller.labels:
             return
 
-        annotations = self.annotation_controller.get_annotations(image_name)
-        self.canvas.load_annotations(annotations)
+        anno_info = self.annotation_controller.load_annotations(image_name)
+        self.canvas.load_annotations(anno_info['annotations'])
 
     def open_dir(self, dir_path: str) -> None:
         self.image_controller.load_images(dir_path)

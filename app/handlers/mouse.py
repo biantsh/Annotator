@@ -33,11 +33,11 @@ class MouseHandler:
             self.left_clicked = True
             self.parent.on_mouse_left_press(event)
 
-        elif Qt.MouseButton.RightButton & event.buttons():
+        if Qt.MouseButton.RightButton & event.buttons():
             self.right_clicked = True
             self.parent.on_mouse_right_press(event)
 
-        elif Qt.MouseButton.MiddleButton & event.buttons():
+        if Qt.MouseButton.MiddleButton & event.buttons():
             self.middle_clicked = True
             self.parent.on_mouse_middle_press((pos_x, pos_y))
 
