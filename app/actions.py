@@ -81,6 +81,14 @@ def create_keypoints(parent: 'MainWindow') -> None:
     print('Creating keypoints...')
 
 
+def rename_annotations(parent: 'Canvas') -> None:
+    parent.rename_annotations()
+
+
+def hide_annotations(parent: 'Canvas') -> None:
+    parent.hide_annotations()
+
+
 def delete_annotations(parent: 'Canvas') -> None:
     parent.delete_annotations()
 
@@ -91,10 +99,6 @@ def copy_annotations(parent: 'Canvas') -> None:
 
 def paste_annotations(parent: 'Canvas') -> None:
     parent.paste_annotations()
-
-
-def hide_annotations(parent: 'Canvas') -> None:
-    parent.hide_annotations()
 
 
 __toolbar_actions__ = (
@@ -110,8 +114,9 @@ __toolbar_actions__ = (
 )
 
 __canvas_actions__ = (
-    ('delete_annos', delete_annotations, 'Del'),
     ('hide_annos', hide_annotations, 'Ctrl+H'),
+    ('rename_annos', rename_annotations, 'Ctrl+R'),
+    ('delete_annos', delete_annotations, 'Del'),
     ('copy_annos', copy_annotations, 'Ctrl+C'),
     ('paste_annos', paste_annotations, 'Ctrl+V')
 )
