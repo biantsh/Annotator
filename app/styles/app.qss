@@ -1,5 +1,7 @@
 QToolBar {
     border-right: 1px solid rgb(53, 53, 53);
+    margin-left: 0px;
+    margin-right: 0px;
 }
 QToolBar QToolButton {
     margin-top: 5px;

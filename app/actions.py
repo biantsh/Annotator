@@ -42,10 +42,6 @@ def open_labels(parent: 'MainWindow') -> None:
         parent.open_label_map(file_path)
 
 
-def generate_annos(parent: 'MainWindow') -> None:
-    print('Generating detections...')
-
-
 def import_annos(parent: 'MainWindow') -> None:
     import_path_setting = 'default_import_path'
 
@@ -112,13 +108,12 @@ def paste_annotations(parent: 'Canvas') -> None:
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
-    ('prev_image',  prev_image, 'A', 'Previous', 'prev.png', False),
+    ('prev_image',  prev_image, 'A', 'Back', 'prev.png', False),
     ('open_labels', open_labels, 'Ctrl+P', 'Labels', 'label_map.png', True),
-    ('generate', generate_annos, 'Ctrl+G', 'Generate', 'generate.png', False),
     ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
-    ('bbox', create_bbox, 'W', 'Bbox', 'bbox.png', False),
-    ('keypoints', create_keypoints, 'E', 'Keypoints', 'keypoints.png', False)
+    ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
+    ('keypoints', create_keypoints, 'E', 'Points', 'keypoints.png', False)
 )
 
 __canvas_actions__ = (

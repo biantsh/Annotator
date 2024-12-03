@@ -10,7 +10,6 @@ class ButtonController:
         'prev_image'
     }
     requires_label_map = {
-        'generate',
         'import',
         'export',
         'bbox'

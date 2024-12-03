@@ -12,7 +12,6 @@ class ToolBar(QToolBar):
         'next_image',
         'prev_image',
         '__separator__',
-        'generate',
         'import',
         'export',
         '__separator__',
@@ -41,5 +40,5 @@ class ToolBar(QToolBar):
 
 
 class ToolButton(QToolButton):
-    def minimumSizeHint(self) -> QSize:
-        return QSize(75, 60)
+    def sizeHint(self):
+        return QSize(70, 60)
