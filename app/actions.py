@@ -77,6 +77,14 @@ def create_bbox(parent: 'MainWindow') -> None:
         parent.canvas.set_annotating_state(AnnotatingState.IDLE)
 
 
+def quick_create_bbox(parent: 'Canvas') -> None:
+    if not parent.labels:
+        return
+
+    create_bbox(parent.parent)
+    parent.quick_create = parent.annotating_state == AnnotatingState.READY
+
+
 def create_keypoints(parent: 'MainWindow') -> None:
     print('Creating keypoints...')
 
@@ -114,6 +122,7 @@ __toolbar_actions__ = (
 )
 
 __canvas_actions__ = (
+    ('quick_create_bbox', quick_create_bbox, 'E'),
     ('hide_annos', hide_annotations, 'Ctrl+H'),
     ('rename_annos', rename_annotations, 'Ctrl+R'),
     ('delete_annos', delete_annotations, 'Del'),

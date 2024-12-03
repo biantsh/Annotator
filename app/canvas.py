@@ -39,6 +39,8 @@ class Canvas(QWidget):
 
         self.labels = []
         self.clipboard = []
+
+        self.quick_create = False
         self.previous_label = None
 
         self.unsaved_changes = False
@@ -412,8 +414,9 @@ class Canvas(QWidget):
             self.set_annotating_state(AnnotatingState.DRAWING)
 
         elif self.annotating_state == AnnotatingState.DRAWING:
-            if Qt.KeyboardModifier.ControlModifier & event.modifiers():
+            if self.quick_create:
                 self.create_annotation(self.previous_label)
+                self.quick_create = False
             else:
                 self.create_annotation()
 
