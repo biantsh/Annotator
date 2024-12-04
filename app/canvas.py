@@ -128,6 +128,7 @@ class Canvas(QWidget):
             self.image_name, image_size, self.annotations)
 
     def update(self) -> None:
+        self.set_hovered_annotation()
         self.update_cursor_icon()
         super().update()
 
@@ -214,9 +215,11 @@ class Canvas(QWidget):
         for annotation in annotations[::-1]:  # Prioritize newer annos
             hovered_type = annotation.get_hovered(mouse_position, edge_width)
 
-            if hovered_type != HoverType.NONE and self.hovered_anno is None:
+            if hovered_type != HoverType.NONE:
                 annotation.hovered = hovered_type
                 self.hovered_anno = annotation
+
+                return
 
     def set_selected_annotation(self, annotation: Annotation | None) -> None:
         for anno in self.annotations:
@@ -445,7 +448,6 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_hover(self) -> None:
-        self.set_hovered_annotation()
         self.update()
 
     def on_mouse_middle_press(self, cursor_position: tuple[int, int]) -> None:
