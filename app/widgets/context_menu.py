@@ -1,6 +1,7 @@
 from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent
+from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import (
     QMenu,
     QHBoxLayout,
@@ -31,6 +32,7 @@ class ContextMenu(QMenu, QWidget):
     def __init__(self, parent: 'Canvas') -> None:
         QMenu.__init__(self, parent)
         QWidget.__init__(self)
+        self.parent = parent
 
         self.setWindowFlag(__windowtype__)
         self.setAttribute(__background__)
@@ -89,6 +91,11 @@ class ContextMenu(QMenu, QWidget):
 
         source.setStyleSheet(f'background-color: {self.background_color};')
         source_widget.on_mouse_leave()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Escape:
+            self.parent.on_escape()
+            self.close()
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         event_type = event.type()

@@ -499,6 +499,15 @@ class Canvas(QWidget):
         self.zoom_handler.zoom_out(cursor_position)
         self.update()
 
+    def on_escape(self) -> None:
+        self.set_annotating_state(AnnotatingState.IDLE)
+
+        for annotation in self.annotations:
+            self.unselect_annotation(annotation)
+            annotation.highlighted = False
+
+        self.update()
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         self.mouse_handler.mousePressEvent(event)
 

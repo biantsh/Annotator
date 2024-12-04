@@ -113,6 +113,10 @@ def paste_annotations_replace(parent: 'Canvas') -> None:
     parent.paste_annotations(replace_existing=True)
 
 
+def escape(parent: 'Canvas') -> None:
+    parent.on_escape()
+
+
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
@@ -132,7 +136,8 @@ __canvas_actions__ = (
     ('delete_annos', delete_annotations, 'Del'),
     ('copy_annos', copy_annotations, 'Ctrl+C'),
     ('paste_annos', paste_annotations, 'Ctrl+Shift+V'),
-    ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V')
+    ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V'),
+    ('escape', escape, 'Esc')
 )
 
 

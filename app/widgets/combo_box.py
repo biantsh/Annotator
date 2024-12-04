@@ -26,6 +26,7 @@ class ComboBox(QMenu, QWidget):
     def __init__(self, parent: 'Canvas', labels: list[str]) -> None:
         QMenu.__init__(self, parent)
         QWidget.__init__(self)
+        self.parent = parent
 
         self.setWindowFlag(__windowtype__)
         self.setAttribute(__background__)
@@ -93,6 +94,9 @@ class ComboBox(QMenu, QWidget):
             index -= 1
         elif event.key() == Qt.Key.Key_Down:
             index += 1
+        elif event.key() == Qt.Key.Key_Escape:
+            self.parent.on_escape()
+            self.close()
 
         self.selected_index = clip_value(index, 0, self.num_labels - 1)
         self.update()
