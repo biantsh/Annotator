@@ -18,17 +18,21 @@ from app.widgets.menu_item import (
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
+__windowtype__ = Qt.WindowType.FramelessWindowHint
 __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 
 
-class ContextMenu(QMenu):
+class ContextMenu(QMenu, QWidget):
     background_color = 'rgba(33, 33, 33, 0.75)'
     hover_color = 'rgba(53, 53, 53, 0.75)'
     button_margins = 10, 6, 0, 6
     checkbox_margins = 10, 11, 0, 11
 
     def __init__(self, parent: 'Canvas') -> None:
-        super().__init__(parent)
+        QMenu.__init__(self, parent)
+        QWidget.__init__(self)
+
+        self.setWindowFlag(__windowtype__)
         self.setAttribute(__background__)
 
         self.menu_items = []
@@ -93,10 +97,12 @@ class ContextMenu(QMenu):
                           event.Type.MouseButtonDblClick):
             self.on_mouse_click(source)
 
-        elif event_type == event.Type.Enter:
-            self.on_mouse_enter(source)
+        elif event_type == event.Type.HoverMove:
+            # Prevent triggering outside the widget on Linux
+            if event.position().x() >= 0 and event.position().y() >= 0:
+                self.on_mouse_enter(source)
 
-        elif event_type == event.Type.Leave:
+        elif event_type == event.Type.HoverLeave:
             self.on_mouse_leave(source)
 
         return True

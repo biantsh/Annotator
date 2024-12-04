@@ -21,6 +21,7 @@ QToolTip {
 }
 QMenu {
     background-color: transparent;
+    border: 0px;
 }
 QMenu QLineEdit {
     background-color: rgba(53, 53, 53, 0.5);

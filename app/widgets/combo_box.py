@@ -18,12 +18,16 @@ from app.utils import clip_value, pretty_text, text_to_color
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
+__windowtype__ = Qt.WindowType.FramelessWindowHint
 __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 
 
-class ComboBox(QMenu):
+class ComboBox(QMenu, QWidget):
     def __init__(self, parent: 'Canvas', labels: list[str]) -> None:
-        super().__init__(parent)
+        QMenu.__init__(self, parent)
+        QWidget.__init__(self)
+
+        self.setWindowFlag(__windowtype__)
         self.setAttribute(__background__)
 
         self.selected_index = 0

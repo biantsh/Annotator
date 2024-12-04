@@ -263,7 +263,7 @@ class Canvas(QWidget):
             x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
             combo_box = ComboBox(self, self.labels)
-            combo_box.exec(QPoint(x_pos - combo_box.width() // 2, y_pos - 20))
+            combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
 
             label_name = combo_box.selected_value
             if not label_name:
@@ -357,6 +357,9 @@ class Canvas(QWidget):
         self.update()
 
     def rename_annotations(self) -> None:
+        if not self.selected_annos:
+            return
+
         cursor_position = self.mouse_handler.global_position
         x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
