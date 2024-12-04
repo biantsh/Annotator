@@ -93,10 +93,10 @@ class ContextMenu(QMenu):
                           event.Type.MouseButtonDblClick):
             self.on_mouse_click(source)
 
-        elif event_type == event.Type.HoverMove:
+        elif event_type == event.Type.Enter:
             self.on_mouse_enter(source)
 
-        elif event_type == event.Type.HoverLeave:
+        elif event_type == event.Type.Leave:
             self.on_mouse_leave(source)
 
         return True
