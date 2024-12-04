@@ -236,8 +236,10 @@ class Canvas(QWidget):
         annotation.selected = True
 
     def unselect_annotation(self, annotation: Annotation) -> None:
-        self.selected_annos.remove(annotation)
         annotation.selected = False
+
+        if annotation in self.selected_annos:
+            self.selected_annos.remove(annotation)
 
     def select_all(self) -> None:
         for annotation in self.annotations:
@@ -394,7 +396,13 @@ class Canvas(QWidget):
 
         self.clipboard = copy.deepcopy(to_copy)
 
-    def paste_annotations(self) -> None:
+    def paste_annotations(self, replace_existing: bool) -> None:
+        if replace_existing:  # Delete existing annotations
+            for annotation in self.annotations:
+                self.add_selected_annotation(annotation)
+
+            self.delete_annotations()
+
         pasted_annotations = copy.deepcopy(self.clipboard)
 
         for annotation in pasted_annotations:

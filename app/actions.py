@@ -106,7 +106,11 @@ def copy_annotations(parent: 'Canvas') -> None:
 
 
 def paste_annotations(parent: 'Canvas') -> None:
-    parent.paste_annotations()
+    parent.paste_annotations(replace_existing=False)
+
+
+def paste_annotations_replace(parent: 'Canvas') -> None:
+    parent.paste_annotations(replace_existing=True)
 
 
 __toolbar_actions__ = (
@@ -127,7 +131,8 @@ __canvas_actions__ = (
     ('rename_annos', rename_annotations, 'Ctrl+R'),
     ('delete_annos', delete_annotations, 'Del'),
     ('copy_annos', copy_annotations, 'Ctrl+C'),
-    ('paste_annos', paste_annotations, 'Ctrl+V')
+    ('paste_annos', paste_annotations, 'Ctrl+Shift+V'),
+    ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V')
 )
 
 
