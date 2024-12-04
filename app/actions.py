@@ -85,12 +85,16 @@ def create_keypoints(parent: 'MainWindow') -> None:
     print('Creating keypoints...')
 
 
-def rename_annotations(parent: 'Canvas') -> None:
-    parent.rename_annotations()
+def select_all(parent: 'Canvas') -> None:
+    parent.select_all()
 
 
 def hide_annotations(parent: 'Canvas') -> None:
     parent.hide_annotations()
+
+
+def rename_annotations(parent: 'Canvas') -> None:
+    parent.rename_annotations()
 
 
 def delete_annotations(parent: 'Canvas') -> None:
@@ -118,6 +122,7 @@ __toolbar_actions__ = (
 
 __canvas_actions__ = (
     ('quick_create_bbox', quick_create_bbox, 'E'),
+    ('select_all', select_all, 'Ctrl+A'),
     ('hide_annos', hide_annotations, 'Ctrl+H'),
     ('rename_annos', rename_annotations, 'Ctrl+R'),
     ('delete_annos', delete_annotations, 'Del'),

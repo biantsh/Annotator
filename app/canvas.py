@@ -235,6 +235,16 @@ class Canvas(QWidget):
         self.selected_annos.append(annotation)
         annotation.selected = True
 
+    def unselect_annotation(self, annotation: Annotation) -> None:
+        self.selected_annos.remove(annotation)
+        annotation.selected = False
+
+    def select_all(self) -> None:
+        for annotation in self.annotations:
+            self.add_selected_annotation(annotation)
+
+        self.update()
+
     def hide_annotations(self) -> None:
         should_hide = not any(anno.hidden for anno in self.selected_annos)
 
@@ -409,12 +419,19 @@ class Canvas(QWidget):
         self.unsaved_changes = True
         self.update()
 
+    def on_annotation_left_press(self, event: QMouseEvent) -> None:
+        if Qt.KeyboardModifier.ControlModifier & event.modifiers():
+            if self.hovered_anno in self.selected_annos:
+                self.unselect_annotation(self.hovered_anno)
+
+            else:
+                self.add_selected_annotation(self.hovered_anno)
+        else:
+            self.set_selected_annotation(self.hovered_anno)
+
     def on_mouse_left_press(self, event: QMouseEvent) -> None:
         if self.annotating_state == AnnotatingState.IDLE:
-            if Qt.KeyboardModifier.ControlModifier & event.modifiers():
-                self.add_selected_annotation(self.hovered_anno)
-            else:
-                self.set_selected_annotation(self.hovered_anno)
+            self.on_annotation_left_press(event)
 
         elif self.annotating_state == AnnotatingState.READY:
             self.set_annotating_state(AnnotatingState.DRAWING)
