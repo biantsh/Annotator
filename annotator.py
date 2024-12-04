@@ -85,6 +85,10 @@ class MainWindow(QMainWindow):
         self.image_controller.prev_image()
         self.reload()
 
+    def go_to_image(self, index: int) -> None:
+        self.image_controller.go_to_image(index)
+        self.reload()
+
     def import_annotations(self, annotations_path: str) -> None:
         self.annotation_controller.import_annotations(annotations_path)
         self.reload()

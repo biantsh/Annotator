@@ -4,6 +4,8 @@ import os
 from natsort import os_sorted
 from PyQt6.QtGui import QImageReader
 
+from app.utils import clip_value
+
 
 class ImageController:
     def __init__(self) -> None:
@@ -36,7 +38,10 @@ class ImageController:
         return f'{self.get_image_name()} [{self.index + 1}/{self.num_images}]'
 
     def next_image(self) -> None:
-        self.index = (self.index + 1) % self.num_images
+        self.index = clip_value(self.index + 1, 0, self.num_images - 1)
 
     def prev_image(self) -> None:
-        self.index = (self.index - 1) % self.num_images
+        self.index = clip_value(self.index - 1, 0, self.num_images - 1)
+
+    def go_to_image(self, index: int) -> None:
+        self.index = clip_value(index - 1, 0, self.num_images - 1)
