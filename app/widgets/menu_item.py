@@ -1,6 +1,6 @@
 from typing import Callable, TYPE_CHECKING
 
-from PyQt6.QtCore import QEvent
+from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtWidgets import QLabel, QCheckBox
 
 from app.objects import Annotation
@@ -9,6 +9,8 @@ from app.styles.style_sheets import LabelStyleSheet, CheckBoxStyleSheet
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
+
+__background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 
 
 class ContextMenuItem:
@@ -31,6 +33,7 @@ class ContextButton(QLabel, ContextMenuItem):
                  ) -> None:
         QLabel.__init__(self, text)
         ContextMenuItem.__init__(self)
+        self.setAttribute(__background__)
 
         self.on_mouse_click = binding
         self.parent = parent

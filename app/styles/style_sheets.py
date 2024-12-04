@@ -35,6 +35,7 @@ class CheckBoxStyleSheet(StyleSheet):
 
         self.style_sheet = f"""
             QCheckBox {{
+                background-color: transparent;
                 font-weight: bold;
             }}
         

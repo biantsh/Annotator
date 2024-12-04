@@ -18,10 +18,13 @@ from app.utils import clip_value, pretty_text, text_to_color
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
+__background__ = Qt.WidgetAttribute.WA_TranslucentBackground
+
 
 class ComboBox(QMenu):
     def __init__(self, parent: 'Canvas', labels: list[str]) -> None:
         super().__init__(parent)
+        self.setAttribute(__background__)
 
         self.selected_index = 0
         self.selected_value = None
@@ -33,6 +36,7 @@ class ComboBox(QMenu):
         self.label_widgets = [QLabel() for _ in range(self.num_labels)]
 
         self.text_widget = QLineEdit()
+        self.text_widget.setAttribute(__background__)
         self.text_widget.setPlaceholderText('Category')
         self.text_widget.returnPressed.connect(self._select)
         self.text_widget.textChanged.connect(self._on_text_changed)

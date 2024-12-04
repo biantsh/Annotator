@@ -18,15 +18,18 @@ from app.widgets.menu_item import (
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
+__background__ = Qt.WidgetAttribute.WA_TranslucentBackground
+
 
 class ContextMenu(QMenu):
-    background_color = 'rgb(33, 33, 33)'
-    hover_color = 'rgb(53, 53, 53)'
+    background_color = 'rgba(33, 33, 33, 0.75)'
+    hover_color = 'rgba(53, 53, 53, 0.75)'
     button_margins = 10, 6, 0, 6
     checkbox_margins = 10, 11, 0, 11
 
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
+        self.setAttribute(__background__)
 
         self.menu_items = []
         self.widgets = []

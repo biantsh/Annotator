@@ -20,10 +20,10 @@ QToolTip {
     max-width: 0px;
 }
 QMenu {
-    border: 1px solid rgb(53, 53, 53);
+    background-color: transparent;
 }
 QMenu QLineEdit {
-    background-color: rgb(53, 53, 53);
+    background-color: rgba(53, 53, 53, 0.5);
     border: 1px solid rgb(80, 80, 80);
     color: rgb(200, 200, 200);
     font-weight: bold;
@@ -31,8 +31,11 @@ QMenu QLineEdit {
     max-height: 24px;
 }
 QMenu::separator {
-    background-color: rgb(53, 53, 53);
+    background-color: rgba(53, 53, 53, 0.75);
     height: 1.5px;
+}
+ComboBox {
+    background-color: rgba(33, 33, 33, 0.75)
 }
 ComboBox QLabel {
     font-weight: bold;
