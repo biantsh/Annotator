@@ -1,6 +1,7 @@
 from typing import Callable, TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QEvent
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QLabel, QCheckBox
 
 from app.objects import Annotation
@@ -14,7 +15,10 @@ __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 
 
 class ContextMenuItem:
-    def on_mouse_click(self) -> None:
+    def on_left_click(self) -> None:
+        pass
+
+    def on_right_click(self) -> None:
         pass
 
     def on_mouse_enter(self) -> None:
@@ -35,7 +39,9 @@ class ContextButton(QLabel, ContextMenuItem):
         ContextMenuItem.__init__(self)
         self.setAttribute(__background__)
 
-        self.on_mouse_click = binding
+        self.on_left_click = binding
+        self.on_right_click = binding
+
         self.parent = parent
         self.risky = risky
 
@@ -58,7 +64,8 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.setText(label.ljust(padded_length))
         checkbox_color = text_to_color(self.annotation.label_name)
 
-        self.setStyleSheet(str(CheckBoxStyleSheet(checkbox_color)))
+        selected = annotation.selected
+        self.setStyleSheet(str(CheckBoxStyleSheet(selected, checkbox_color)))
 
     def on_mouse_enter(self) -> None:
         self.annotation.highlighted = True
@@ -68,11 +75,35 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.annotation.highlighted = False
         self.parent.update()
 
-    def on_mouse_click(self) -> None:
+    def on_left_click(self) -> None:
         self.annotation.hidden = not self.annotation.hidden
-        self.setChecked(not self.annotation.hidden)
+        if self.annotation.hidden and self.annotation.selected:
+            self.parent.selected_annos.remove(self.annotation)
+            self.annotation.selected = False
 
+        self.update()
         self.parent.update()
 
-    def mousePressEvent(self, event: QEvent) -> None:
-        self.on_mouse_click()
+    def on_right_click(self) -> None:
+        if self.annotation.selected:
+            self.parent.unselect_annotation(self.annotation)
+        else:
+            self.parent.add_selected_annotation(self.annotation)
+
+        self.update()
+        self.parent.update()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if Qt.MouseButton.LeftButton & event.button():
+            self.on_left_click()
+        elif Qt.MouseButton.RightButton & event.button():
+            self.on_right_click()
+
+    def update(self) -> None:
+        selected = self.annotation.selected
+        checkbox_color = text_to_color(self.annotation.label_name)
+
+        self.setStyleSheet(str(CheckBoxStyleSheet(selected, checkbox_color)))
+        self.setChecked(not self.annotation.hidden)
+
+        super().update()

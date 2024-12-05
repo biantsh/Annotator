@@ -240,6 +240,7 @@ class Canvas(QWidget):
 
         self.selected_annos.append(annotation)
         annotation.selected = True
+        annotation.hidden = False
 
     def unselect_annotation(self, annotation: Annotation) -> None:
         annotation.selected = False
@@ -258,6 +259,7 @@ class Canvas(QWidget):
 
         for anno in self.selected_annos:
             anno.hidden = should_hide
+            anno.selected &= not should_hide
 
         self.update()
 
@@ -396,7 +398,7 @@ class Canvas(QWidget):
         self.unsaved_changes = True
 
     def copy_annotations(self) -> None:
-        all_annotations = self.annotations[::-1]
+        all_annotations = self.get_visible_annotations()[::-1]
 
         selected = [anno for anno in all_annotations if anno.selected]
         to_copy = selected or all_annotations
@@ -404,13 +406,15 @@ class Canvas(QWidget):
         self.clipboard = copy.deepcopy(to_copy)
 
     def paste_annotations(self, replace_existing: bool) -> None:
+        pasted_annotations = copy.deepcopy(self.clipboard)
+        if not pasted_annotations:
+            return
+
         if replace_existing:  # Delete existing annotations
             for annotation in self.annotations:
                 self.add_selected_annotation(annotation)
 
             self.delete_annotations()
-
-        pasted_annotations = copy.deepcopy(self.clipboard)
 
         for annotation in pasted_annotations:
             annotation.hovered = HoverType.NONE

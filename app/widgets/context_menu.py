@@ -27,7 +27,7 @@ class ContextMenu(QMenu, QWidget):
     background_color = 'rgba(33, 33, 33, 0.75)'
     hover_color = 'rgba(53, 53, 53, 0.75)'
     button_margins = 10, 6, 0, 6
-    checkbox_margins = 10, 11, 0, 11
+    checkbox_margins = 10, 11, 0, 8
 
     def __init__(self, parent: 'Canvas') -> None:
         QMenu.__init__(self, parent)
@@ -69,14 +69,22 @@ class ContextMenu(QMenu, QWidget):
         self.menu_items.append(item)
         self.widgets.append(widget)
 
-    def on_mouse_click(self, source: QObject) -> None:
+    def on_mouse_click(self, source: QObject, event: QEvent) -> None:
         source_widget = source.layout().itemAt(0).widget()
-        source_widget.on_mouse_click()
+
+        if Qt.MouseButton.LeftButton & event.button():
+            source_widget.on_left_click()
+        elif Qt.MouseButton.RightButton & event.button():
+            source_widget.on_right_click()
 
         if isinstance(source_widget, ContextButton):
             self.close()
 
-    def on_mouse_enter(self, source: QObject) -> None:
+    def on_mouse_enter(self, source: QObject, event: QEvent) -> None:
+        # Prevent triggering outside the widget on Linux
+        if event.position().x() < 0 or event.position().y() < 0:
+            return
+
         source_widget = source.layout().itemAt(0).widget()
 
         for widget, menu_item in zip(self.widgets, self.menu_items):
@@ -102,12 +110,10 @@ class ContextMenu(QMenu, QWidget):
 
         if event_type in (event.Type.MouseButtonPress,
                           event.Type.MouseButtonDblClick):
-            self.on_mouse_click(source)
+            self.on_mouse_click(source, event)
 
         elif event_type == event.Type.HoverMove:
-            # Prevent triggering outside the widget on Linux
-            if event.position().x() >= 0 and event.position().y() >= 0:
-                self.on_mouse_enter(source)
+            self.on_mouse_enter(source, event)
 
         elif event_type == event.Type.HoverLeave:
             self.on_mouse_leave(source)

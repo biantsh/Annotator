@@ -30,13 +30,22 @@ class LabelStyleSheet(StyleSheet):
 
 
 class CheckBoxStyleSheet(StyleSheet):
-    def __init__(self, checkbox_color: tuple[int, int, int]) -> None:
+    def __init__(self,
+                 selected: bool,
+                 checkbox_color: tuple[int, int, int]
+                 ) -> None:
         super().__init__()
+
+        underline = '1px solid rgba(255, 255, 255, 0.80)' \
+            if selected else 'none'
 
         self.style_sheet = f"""
             QCheckBox {{
                 background-color: transparent;
                 font-weight: bold;
+                border-bottom: {underline};
+                margin-right: 10px;
+                padding-bottom: 3px
             }}
         
             ::indicator {{
