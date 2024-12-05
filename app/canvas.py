@@ -550,7 +550,7 @@ class Canvas(QWidget):
 
         painter.drawPixmap(0, 0, self.pixmap)
 
-        for annotation in self.get_visible_annotations():
+        for annotation in self.annotations:
             self.drawer.draw_annotation(self, painter, annotation)
 
         cursor_position = self.mouse_handler.cursor_position

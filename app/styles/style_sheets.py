@@ -36,7 +36,7 @@ class CheckBoxStyleSheet(StyleSheet):
                  ) -> None:
         super().__init__()
 
-        underline = '1px solid rgba(255, 255, 255, 0.80)' \
+        underline = '1px solid rgba(255, 255, 255, 0.85)' \
             if selected else 'none'
 
         self.style_sheet = f"""
