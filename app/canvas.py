@@ -128,7 +128,9 @@ class Canvas(QWidget):
             self.image_name, image_size, self.annotations)
 
     def update(self) -> None:
-        self.set_hovered_annotation()
+        if self.annotating_state != AnnotatingState.RESIZING:
+            self.set_hovered_annotation()
+
         self.update_cursor_icon()
         super().update()
 
@@ -137,7 +139,8 @@ class Canvas(QWidget):
             self.setCursor(Qt.CursorShape.ArrowCursor)
             return
 
-        if self.annotating_state != AnnotatingState.IDLE:
+        if self.annotating_state in (AnnotatingState.READY,
+                                     AnnotatingState.DRAWING):
             self.setCursor(Qt.CursorShape.CrossCursor)
             return
 
@@ -192,9 +195,12 @@ class Canvas(QWidget):
             self.set_selected_annotation(None)
             self.set_hovered_annotation()
 
-        else:
+        elif state == AnnotatingState.DRAWING:
             self.annotating_state = AnnotatingState.DRAWING
             self.anno_first_corner = self.mouse_handler.cursor_position
+
+        elif state == AnnotatingState.RESIZING:
+            self.annotating_state = AnnotatingState.RESIZING
 
         self.update()
 
@@ -366,6 +372,7 @@ class Canvas(QWidget):
         self.move_annotation(selected_anno, (delta_x, delta_y))
         self.unsaved_changes = True
 
+        self.set_annotating_state(AnnotatingState.RESIZING)
         self.update()
 
     def rename_annotations(self) -> None:
@@ -473,6 +480,8 @@ class Canvas(QWidget):
             return
 
         self.move_annotation(self.hovered_anno, cursor_shift)
+
+        self.set_annotating_state(AnnotatingState.RESIZING)
         self.update()
 
     def on_mouse_hover(self) -> None:

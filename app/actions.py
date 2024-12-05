@@ -67,7 +67,8 @@ def export_annos(parent: 'MainWindow') -> None:
 
 
 def create_bbox(parent: 'MainWindow') -> None:
-    if parent.canvas.annotating_state == AnnotatingState.IDLE:
+    if parent.canvas.annotating_state in (AnnotatingState.IDLE,
+                                          AnnotatingState.RESIZING):
         parent.canvas.set_annotating_state(AnnotatingState.READY)
     else:
         parent.canvas.set_annotating_state(AnnotatingState.IDLE)

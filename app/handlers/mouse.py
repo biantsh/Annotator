@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMouseEvent, QWheelEvent
 
+from app.enums.annotation import AnnotatingState
+
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
@@ -55,6 +57,9 @@ class MouseHandler:
             self.parent.on_mouse_left_drag((delta_x, delta_y))
 
         else:
+            if self.parent.annotating_state == AnnotatingState.RESIZING:
+                self.parent.set_annotating_state(AnnotatingState.IDLE)
+
             self.parent.on_mouse_hover()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:

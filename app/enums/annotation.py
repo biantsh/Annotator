@@ -5,6 +5,7 @@ class AnnotatingState(IntEnum):
     IDLE = 0
     READY = 1
     DRAWING = 2
+    RESIZING = 3
 
 
 class HoverType(IntEnum):
