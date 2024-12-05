@@ -89,17 +89,23 @@ class Drawer:
                         painter: QPainter,
                         annotation: Annotation
                         ) -> None:
-        highlighted = annotation.highlighted or annotation.selected
+        hidden = annotation.hidden
+        selected = annotation.selected
+        highlighted = annotation.highlighted
 
-        if highlighted:
-            outline_color = 255, 255, 255, 255
-        else:
-            outline_color = [*text_to_color(annotation.label_name), 155]
+        if hidden and not highlighted:
+            return
+
+        outline_color = (255, 255, 255, 255) if highlighted or selected else \
+            [*text_to_color(annotation.label_name), 155]
 
         position = annotation.position
         Drawer._draw_rectangle(canvas, painter, position, outline_color)
 
-        if highlighted or annotation.hovered != HoverType.NONE:
+        if hidden:
+            return
+
+        if highlighted or selected or annotation.hovered != HoverType.NONE:
             Drawer.fill_annotation(canvas, painter, annotation)
 
     @staticmethod
