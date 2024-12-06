@@ -18,7 +18,11 @@ from app.widgets.toolbar import ToolBar
 
 __basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
 __stylepath__ = os.path.join(__basepath__, 'app', 'styles', 'app.qss')
-__iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
+
+__respath__ = os.path.join(__basepath__, 'resources')
+__iconpath__ = os.path.join(__respath__, 'icons')
+__screenpath__ = os.path.join(__respath__, 'screens')
+__homepath__ = os.path.join(__screenpath__, 'home_screen.png')
 
 QtCore.QDir.addSearchPath('icon', __iconpath__)
 
@@ -42,8 +46,11 @@ class MainWindow(QMainWindow):
         self.canvas = Canvas(self)
         self.setCentralWidget(self.canvas)
 
+        self.canvas.load_image(__homepath__)
+
     def reload(self) -> None:
         if not self.image_controller.image_paths:
+            self.canvas.load_image(__homepath__)
             return
 
         image_path = self.image_controller.get_image_path()

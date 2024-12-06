@@ -122,7 +122,7 @@ __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
     ('prev_image',  prev_image, 'A', 'Back', 'prev.png', False),
-    ('open_labels', open_labels, 'Ctrl+P', 'Labels', 'label_map.png', True),
+    ('open_labels', open_labels, 'Ctrl+L', 'Labels', 'label_map.png', True),
     ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
