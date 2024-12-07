@@ -4,7 +4,7 @@ import sys
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPalette, QColor, QCloseEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow
+from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from app import __appname__
 from app.actions import ToolBarActions
@@ -14,6 +14,7 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
+from app.widgets.home_screen import HomeScreen
 from app.widgets.toolbar import ToolBar
 
 __basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
@@ -30,7 +31,7 @@ QtCore.QDir.addSearchPath('icon', __iconpath__)
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.resize(800, 500)
+        self.setMinimumSize(1000, 600)
 
         self.settings = Settings()
 
@@ -43,16 +44,17 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.ToolBarArea.LeftToolBarArea,
                         ToolBar(self.toolbar_actions))
 
+        self.home_screen = HomeScreen(__homepath__)
         self.canvas = Canvas(self)
-        self.setCentralWidget(self.canvas)
 
-        self.canvas.load_image(__homepath__)
+        self.screens = QStackedWidget()
+        self.screens.addWidget(self.home_screen)
+        self.screens.addWidget(self.canvas)
+
+        self.setCentralWidget(self.screens)
+        self.screens.setCurrentWidget(self.home_screen)
 
     def reload(self) -> None:
-        if not self.image_controller.image_paths:
-            self.canvas.load_image(__homepath__)
-            return
-
         image_path = self.image_controller.get_image_path()
         image_name = self.image_controller.get_image_name()
 
@@ -70,10 +72,15 @@ class MainWindow(QMainWindow):
         self.image_controller.load_images(dir_path)
         self.canvas.reset()
 
-        self.setWindowTitle(__appname__)
+        if self.image_controller.image_paths:
+            self.screens.setCurrentWidget(self.canvas)
+            self.reload()
+
+        else:
+            self.screens.setCurrentWidget(self.home_screen)
+            self.setWindowTitle(__appname__)
 
         self.button_controller.set_enabled_buttons()
-        self.reload()
 
     def open_label_map(self, label_map_path: str) -> None:
         self.label_map_controller.load_labels(label_map_path)
@@ -81,8 +88,10 @@ class MainWindow(QMainWindow):
         self.annotation_controller.labels = self.label_map_controller.labels
         self.canvas.labels = self.label_map_controller.labels
 
+        if self.image_controller.image_paths:
+            self.reload()
+
         self.button_controller.set_enabled_buttons()
-        self.reload()
 
     def next_image(self) -> None:
         self.image_controller.next_image()
