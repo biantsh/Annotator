@@ -248,9 +248,16 @@ class Canvas(QWidget):
         if annotation in self.selected_annos:
             self.selected_annos.remove(annotation)
 
+        self.update()
+
     def select_all(self) -> None:
+        should_select = len(self.selected_annos) != len(self.annotations)
+
         for annotation in self.annotations:
-            self.add_selected_annotation(annotation)
+            if should_select:
+                self.add_selected_annotation(annotation)
+            else:
+                self.unselect_annotation(annotation)
 
         self.update()
 
@@ -259,7 +266,6 @@ class Canvas(QWidget):
 
         for anno in self.selected_annos:
             anno.hidden = should_hide
-            anno.selected &= not should_hide
 
         self.update()
 
@@ -396,9 +402,10 @@ class Canvas(QWidget):
             annotation.category_id = self.labels.index(label_name) + 1
 
         self.unsaved_changes = True
+        self.update()
 
     def copy_annotations(self) -> None:
-        all_annotations = self.get_visible_annotations()[::-1]
+        all_annotations = self.annotations[::-1]
 
         selected = [anno for anno in all_annotations if anno.selected]
         to_copy = selected or all_annotations
@@ -432,10 +439,17 @@ class Canvas(QWidget):
         self.unsaved_changes = True
 
     def delete_annotations(self) -> None:
-        self.annotations = list(filter(
-            lambda anno: not anno.selected, self.annotations))
+        filtered_annos = []
 
-        self.unsaved_changes = True
+        for anno in self.annotations:
+            if anno.selected:
+                self.unsaved_changes = True
+            else:
+                filtered_annos.append(anno)
+
+            self.unselect_annotation(anno)
+
+        self.annotations = filtered_annos
         self.update()
 
     def on_annotation_left_press(self, event: QMouseEvent) -> None:
@@ -449,10 +463,7 @@ class Canvas(QWidget):
             self.set_selected_annotation(self.hovered_anno)
 
     def on_mouse_left_press(self, event: QMouseEvent) -> None:
-        if self.annotating_state == AnnotatingState.IDLE:
-            self.on_annotation_left_press(event)
-
-        elif self.annotating_state == AnnotatingState.READY:
+        if self.annotating_state == AnnotatingState.READY:
             self.set_annotating_state(AnnotatingState.DRAWING)
 
         elif self.annotating_state == AnnotatingState.DRAWING:
@@ -463,6 +474,9 @@ class Canvas(QWidget):
                 self.create_annotation()
 
             self.set_annotating_state(AnnotatingState.IDLE)
+
+        else:
+            self.on_annotation_left_press(event)
 
         self.update()
 

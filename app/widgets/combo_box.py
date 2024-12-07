@@ -95,7 +95,6 @@ class ComboBox(QMenu, QWidget):
         elif event.key() == Qt.Key.Key_Down:
             index += 1
         elif event.key() == Qt.Key.Key_Escape:
-            self.parent.on_escape()
             self.close()
 
         self.selected_index = clip_value(index, 0, self.num_labels - 1)

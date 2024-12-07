@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget
 )
 
+from app.enums.annotation import AnnotatingState
 from app.styles.style_sheets import WidgetStyleSheet
 from app.widgets.menu_item import (
     ContextMenuItem,
@@ -100,16 +101,42 @@ class ContextMenu(QMenu, QWidget):
         source.setStyleSheet(f'background-color: {self.background_color};')
         source_widget.on_mouse_leave()
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+    def on_key_press(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Escape:
-            self.parent.on_escape()
             self.close()
+
+        elif event.key() == Qt.Key.Key_A:
+            self.parent.parent.prev_image()
+            self.close()
+
+        elif event.key() == Qt.Key.Key_D:
+            self.parent.parent.next_image()
+            self.close()
+
+        elif event.key() == Qt.Key.Key_W:
+            self.parent.set_annotating_state(AnnotatingState.READY)
+            self.close()
+
+        elif event.key() == Qt.Key.Key_E:
+            self.parent.set_annotating_state(AnnotatingState.READY)
+            self.parent.quick_create = True
+            self.close()
+
+        elif event.text().isdigit():
+            self.parent.keyPressEvent(event)
+            self.close()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        self.on_key_press(event)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         event_type = event.type()
 
-        if event_type in (event.Type.MouseButtonPress,
-                          event.Type.MouseButtonDblClick):
+        if event_type == event.Type.KeyPress:
+            self.on_key_press(event)
+
+        elif event_type in (event.Type.MouseButtonPress,
+                            event.Type.MouseButtonDblClick):
             self.on_mouse_click(source, event)
 
         elif event_type == event.Type.HoverMove:
@@ -120,26 +147,74 @@ class ContextMenu(QMenu, QWidget):
 
         return True
 
+    def update(self) -> None:
+        for item in self.menu_items:
+            item.update()
+
+        super().update()
+
 
 class CanvasContextMenu(ContextMenu):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
-        hidden_annos = parent.get_hidden_annotations()
+        self.parent = parent
+        self.redraw_widgets()
+
+    def redraw_widgets(self) -> None:
+        self.menu_items = []
+        self.widgets = []
+        self.clear()
+
+        hidden_annos = self.parent.get_hidden_annotations()
         text, should_hide = ('Show All', False) \
             if hidden_annos else ('Hide All', True)
 
         def set_hidden_all() -> None:
-            for anno in parent.annotations:
+            for anno in self.parent.annotations:
                 anno.hidden = should_hide
 
-            parent.update()
+            self.parent.update()
 
-        self._add_item(ContextButton(parent, set_hidden_all, text, False))
+        self._add_item(ContextButton(self.parent, set_hidden_all, text, False))
         self.addSeparator()
 
-        for annotation in parent.annotations[::-1]:  # Prioritize newer annos
-            self._add_item(ContextCheckBox(parent, annotation), None)
+        for annotation in self.parent.annotations[::-1]:
+            self._add_item(ContextCheckBox(self.parent, annotation), None)
+
+    def on_key_press(self, event: QKeyEvent) -> None:
+        ctrl_pressed = event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        shift_pressed = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+
+        if ctrl_pressed and event.key() == Qt.Key.Key_C:
+            self.parent.copy_annotations()
+
+        elif ctrl_pressed and shift_pressed and event.key() == Qt.Key.Key_V:
+            self.parent.paste_annotations(replace_existing=False)
+            self.redraw_widgets()
+
+        elif ctrl_pressed and event.key() == Qt.Key.Key_V:
+            self.parent.paste_annotations(replace_existing=True)
+            self.redraw_widgets()
+
+        elif ctrl_pressed and event.key() == Qt.Key.Key_A:
+            self.parent.select_all()
+            self.update()
+
+        elif ctrl_pressed and event.key() == Qt.Key.Key_H:
+            self.parent.hide_annotations()
+            self.update()
+
+        elif ctrl_pressed and event.key() == Qt.Key.Key_R:
+            self.parent.rename_annotations()
+            self.update()
+
+        elif event.key() == Qt.Key.Key_Delete:
+            self.parent.delete_annotations()
+            self.redraw_widgets()
+
+        else:
+            super().on_key_press(event)
 
 
 class AnnotationContextMenu(ContextMenu):

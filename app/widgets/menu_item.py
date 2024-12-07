@@ -56,16 +56,7 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.parent = parent
         self.annotation = annotation
 
-        self.setChecked(not self.annotation.hidden)
-
-        label = pretty_text(self.annotation.label_name)
-        padded_length = len(label) + 15
-
-        self.setText(label.ljust(padded_length))
-        checkbox_color = text_to_color(self.annotation.label_name)
-
-        selected = annotation.selected
-        self.setStyleSheet(str(CheckBoxStyleSheet(selected, checkbox_color)))
+        self.update()
 
     def on_mouse_enter(self) -> None:
         self.annotation.highlighted = True
@@ -77,9 +68,6 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
 
     def on_left_click(self) -> None:
         self.annotation.hidden = not self.annotation.hidden
-        if self.annotation.hidden and self.annotation.selected:
-            self.parent.selected_annos.remove(self.annotation)
-            self.annotation.selected = False
 
         self.update()
         self.parent.update()
@@ -103,7 +91,11 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         selected = self.annotation.selected
         checkbox_color = text_to_color(self.annotation.label_name)
 
+        label = pretty_text(self.annotation.label_name)
+        padded_length = len(label) + 15
+
         self.setStyleSheet(str(CheckBoxStyleSheet(selected, checkbox_color)))
         self.setChecked(not self.annotation.hidden)
+        self.setText(label.ljust(padded_length))
 
         super().update()
