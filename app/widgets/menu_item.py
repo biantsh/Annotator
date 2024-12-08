@@ -10,6 +10,7 @@ from app.styles.style_sheets import LabelStyleSheet, CheckBoxStyleSheet
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
+    from app.widgets.context_menu import ContextMenu
 
 __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 
@@ -49,10 +50,15 @@ class ContextButton(QLabel, ContextMenuItem):
 
 
 class ContextCheckBox(QCheckBox, ContextMenuItem):
-    def __init__(self, parent: 'Canvas', annotation: Annotation) -> None:
+    def __init__(self,
+                 canvas: 'Canvas',
+                 parent: 'ContextMenu',
+                 annotation: Annotation
+                 ) -> None:
         QCheckBox.__init__(self)
         ContextMenuItem.__init__(self)
 
+        self.canvas = canvas
         self.parent = parent
         self.annotation = annotation
 
@@ -60,26 +66,29 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
 
     def on_mouse_enter(self) -> None:
         self.annotation.highlighted = True
-        self.parent.update()
+        self.canvas.update()
 
     def on_mouse_leave(self) -> None:
         self.annotation.highlighted = False
-        self.parent.update()
+        self.canvas.update()
 
     def on_left_click(self) -> None:
         self.annotation.hidden = not self.annotation.hidden
 
         self.update()
-        self.parent.update()
+        self.canvas.update()
 
     def on_right_click(self) -> None:
         if self.annotation.selected:
-            self.parent.unselect_annotation(self.annotation)
+            self.canvas.unselect_annotation(self.annotation)
         else:
-            self.parent.add_selected_annotation(self.annotation)
+            self.canvas.add_selected_annotation(self.annotation)
 
         self.update()
-        self.parent.update()
+        self.canvas.update()
+
+    def keyPressEvent(self, event) -> None:
+        self.parent.keyPressEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if Qt.MouseButton.LeftButton & event.button():

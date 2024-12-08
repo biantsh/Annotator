@@ -242,6 +242,19 @@ class Canvas(QWidget):
         annotation.selected = True
         annotation.hidden = False
 
+    def select_next_annotation(self) -> None:
+        selected_idx = -1  # Newest annotation
+
+        if len(self.selected_annos) > 1:
+            selected_idx = self.annotations.index(self.selected_annos[-1])
+        elif len(self.selected_annos) == 1:
+            selected_idx = self.annotations.index(self.selected_annos[0]) - 1
+
+        selected_idx %= len(self.annotations)
+
+        self.set_selected_annotation(self.annotations[selected_idx])
+        self.update()
+
     def unselect_annotation(self, annotation: Annotation) -> None:
         annotation.selected = False
 

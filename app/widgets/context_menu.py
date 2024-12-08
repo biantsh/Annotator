@@ -105,7 +105,7 @@ class ContextMenu(QMenu, QWidget):
         if event.key() == Qt.Key.Key_Escape:
             self.close()
 
-        elif event.key() == Qt.Key.Key_A:
+        if event.key() == Qt.Key.Key_A:
             self.parent.parent.prev_image()
             self.close()
 
@@ -132,11 +132,8 @@ class ContextMenu(QMenu, QWidget):
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         event_type = event.type()
 
-        if event_type == event.Type.KeyPress:
-            self.on_key_press(event)
-
-        elif event_type in (event.Type.MouseButtonPress,
-                            event.Type.MouseButtonDblClick):
+        if event_type in (event.Type.MouseButtonPress,
+                          event.Type.MouseButtonDblClick):
             self.on_mouse_click(source, event)
 
         elif event_type == event.Type.HoverMove:
@@ -180,7 +177,8 @@ class CanvasContextMenu(ContextMenu):
         self.addSeparator()
 
         for annotation in self.parent.annotations[::-1]:
-            self._add_item(ContextCheckBox(self.parent, annotation), None)
+            check_box = ContextCheckBox(self.parent, self, annotation)
+            self._add_item(check_box, None)
 
     def on_key_press(self, event: QKeyEvent) -> None:
         ctrl_pressed = event.modifiers() & Qt.KeyboardModifier.ControlModifier
@@ -197,16 +195,20 @@ class CanvasContextMenu(ContextMenu):
             self.parent.paste_annotations(replace_existing=True)
             self.redraw_widgets()
 
-        elif ctrl_pressed and event.key() == Qt.Key.Key_A:
-            self.parent.select_all()
-            self.update()
-
         elif ctrl_pressed and event.key() == Qt.Key.Key_H:
             self.parent.hide_annotations()
             self.update()
 
         elif ctrl_pressed and event.key() == Qt.Key.Key_R:
             self.parent.rename_annotations()
+            self.update()
+
+        elif ctrl_pressed and event.key() == Qt.Key.Key_A:
+            self.parent.select_all()
+            self.update()
+
+        elif event.key() == Qt.Key.Key_Space:
+            self.parent.select_next_annotation()
             self.update()
 
         elif event.key() == Qt.Key.Key_Delete:

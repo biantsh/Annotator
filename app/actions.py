@@ -86,6 +86,10 @@ def create_keypoints(parent: 'MainWindow') -> None:
     print('Creating keypoints...')
 
 
+def select_next(parent: 'Canvas') -> None:
+    parent.select_next_annotation()
+
+
 def select_all(parent: 'Canvas') -> None:
     parent.select_all()
 
@@ -131,6 +135,7 @@ __toolbar_actions__ = (
 
 __canvas_actions__ = (
     ('quick_create_bbox', quick_create_bbox, 'E'),
+    ('select_next', select_next, 'Space'),
     ('select_all', select_all, 'Ctrl+A'),
     ('hide_annos', hide_annotations, 'Ctrl+H'),
     ('rename_annos', rename_annotations, 'Ctrl+R'),
