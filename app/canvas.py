@@ -255,14 +255,6 @@ class Canvas(QWidget):
         self.set_selected_annotation(self.annotations[selected_idx])
         self.update()
 
-    def unselect_annotation(self, annotation: Annotation) -> None:
-        annotation.selected = False
-
-        if annotation in self.selected_annos:
-            self.selected_annos.remove(annotation)
-
-        self.update()
-
     def select_all(self) -> None:
         should_select = len(self.selected_annos) != len(self.annotations)
 
@@ -271,6 +263,20 @@ class Canvas(QWidget):
                 self.add_selected_annotation(annotation)
             else:
                 self.unselect_annotation(annotation)
+
+        self.update()
+
+    def unselect_annotation(self, annotation: Annotation) -> None:
+        annotation.selected = False
+
+        if annotation in self.selected_annos:
+            self.selected_annos.remove(annotation)
+
+        self.update()
+
+    def unselect_all(self) -> None:
+        for annotation in self.selected_annos:
+            self.unselect_annotation(annotation)
 
         self.update()
 

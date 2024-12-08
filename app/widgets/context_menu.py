@@ -224,11 +224,27 @@ class AnnotationContextMenu(ContextMenu):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__(parent)
 
+        def _copy() -> None:
+            parent.copy_annotations()
+            parent.unselect_all()
+
+        def _rename() -> None:
+            parent.rename_annotations()
+            parent.unselect_all()
+
+        def _hide() -> None:
+            parent.hide_annotations()
+            parent.unselect_all()
+
+        def _delete() -> None:
+            parent.delete_annotations()
+            parent.unselect_all()
+
         buttons = (
-            ContextButton(parent, parent.copy_annotations, 'Copy', False),
-            ContextButton(parent, parent.rename_annotations, 'Rename', False),
-            ContextButton(parent, parent.hide_annotations, 'Hide', False),
-            ContextButton(parent, parent.delete_annotations, 'Delete', True)
+            ContextButton(parent, _copy, 'Copy', False),
+            ContextButton(parent, _rename, 'Rename', False),
+            ContextButton(parent, _hide, 'Hide', False),
+            ContextButton(parent, _delete, 'Delete', True)
         )
 
         for button in buttons:
