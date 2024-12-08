@@ -37,7 +37,7 @@ class CheckBoxStyleSheet(StyleSheet):
         super().__init__()
 
         underline = '1px solid rgba(255, 255, 255, 0.85)' \
-            if selected else 'none'
+            if selected else '1px solid transparent'
 
         self.style_sheet = f"""
             QCheckBox {{
