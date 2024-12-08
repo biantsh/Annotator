@@ -25,7 +25,8 @@ __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 class ComboBox(QMenu, QWidget):
     def __init__(self, parent: 'Canvas', labels: list[str]) -> None:
         QMenu.__init__(self, parent)
-        QWidget.__init__(self)
+        QWidget.__init__(self, parent)
+
         self.parent = parent
 
         self.setWindowFlag(__windowtype__)

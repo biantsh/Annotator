@@ -32,7 +32,8 @@ class ContextMenu(QMenu, QWidget):
 
     def __init__(self, parent: 'Canvas') -> None:
         QMenu.__init__(self, parent)
-        QWidget.__init__(self)
+        QWidget.__init__(self, parent)
+
         self.parent = parent
 
         self.setWindowFlag(__windowtype__)
