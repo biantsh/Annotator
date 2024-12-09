@@ -220,6 +220,9 @@ class ActionHandler:
         self.parent.unsaved_changes = True
         self.parent.update()
 
+        if isinstance(action, (ActionCreate, ActionDelete)):
+            self.parent.parent.annotation_list.redraw_widgets()
+
         return action
 
     def redo(self) -> Action | None:
@@ -235,5 +238,8 @@ class ActionHandler:
 
         self.parent.unsaved_changes = True
         self.parent.update()
+
+        if isinstance(action, (ActionCreate, ActionDelete)):
+            self.parent.parent.annotation_list.redraw_widgets()
 
         return action

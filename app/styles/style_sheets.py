@@ -15,7 +15,6 @@ class WidgetStyleSheet(StyleSheet):
 
         self.style_sheet = f"""
             background-color: {background_color};
-            min-width: 80
         """
 
 
@@ -44,8 +43,9 @@ class CheckBoxStyleSheet(StyleSheet):
                 background-color: transparent;
                 font-weight: bold;
                 border-bottom: {underline};
+                border-left: none;
                 margin-right: 10px;
-                padding-bottom: 3px
+                padding-bottom: 3px;
             }}
         
             ::indicator {{

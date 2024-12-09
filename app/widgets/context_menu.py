@@ -39,6 +39,7 @@ class ContextMenu(QMenu, QWidget):
 
         self.setWindowFlag(__windowtype__)
         self.setAttribute(__background__)
+        self.setMinimumWidth(80)
 
         self.menu_items = []
         self.widgets = []
@@ -73,7 +74,16 @@ class ContextMenu(QMenu, QWidget):
         self.widgets.append(widget)
 
     def on_mouse_click(self, source: QObject, event: QEvent) -> None:
-        source_widget = source.layout().itemAt(0).widget()
+        # TODO: ContextButton doesn't recognize click if clicking on
+        #  padding area (ContextCheckBox is fine)
+        if isinstance(source.layout().itemAt(0).widget(), ContextButton):
+            source_widget = source.childAt(event.position().toPoint())
+
+            if source_widget is None:
+                return
+
+        else:
+            source_widget = source.layout().itemAt(0).widget()
 
         if Qt.MouseButton.LeftButton & event.button():
             source_widget.on_left_click()
@@ -166,20 +176,43 @@ class CanvasContextMenu(ContextMenu):
         self.clear()
 
         hidden_annos = self.parent.get_hidden_annotations()
-        text, should_hide = ('Show All', False) \
-            if hidden_annos else ('Hide All', True)
+        text, should_hide = ('Show All', False) if hidden_annos else ('Hide All', True)
 
         def set_hidden_all() -> None:
             for anno in self.parent.annotations:
                 anno.hidden = should_hide
-
             self.parent.update()
 
-        self._add_item(ContextButton(self.parent, set_hidden_all, text, False))
+        def pin_menu() -> None:
+            self.parent.parent.annotation_list.setVisible(True)
+            self.parent.pin_annotation_list = True
+
+        main_button = ContextButton(self.parent, set_hidden_all, text, False)
+        secondary_button = ContextButton(self.parent, pin_menu, ' \u276F ', False)
+
+        composite_widget = QWidget()
+        composite_widget.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        composite_widget.installEventFilter(self)
+        composite_widget.setStyleSheet(str(WidgetStyleSheet(self.background_color)))
+
+        layout = QHBoxLayout(composite_widget)
+        layout.setContentsMargins(*self.button_margins)
+        layout.setSpacing(0)
+
+        layout.addWidget(main_button, 85)
+        layout.addWidget(secondary_button, 15)
+
+        widget_action = QWidgetAction(self)
+        widget_action.setDefaultWidget(composite_widget)
+        self.addAction(widget_action)
+
+        self.menu_items.append(main_button)
+        self.widgets.append(composite_widget)
+
         self.addSeparator()
 
         for annotation in self.parent.annotations[::-1]:
-            check_box = ContextCheckBox(self.parent, self, annotation)
+            check_box = ContextCheckBox(self.parent, annotation)
             self._add_item(check_box, None)
 
     def on_key_press(self, event: QKeyEvent) -> None:

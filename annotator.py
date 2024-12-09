@@ -4,7 +4,11 @@ import sys
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPalette, QColor, QCloseEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QStackedWidget
+)
 
 from app import __appname__
 from app.actions import ToolBarActions
@@ -14,7 +18,9 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
-from app.widgets.home_screen import HomeScreen
+from app.widgets.annotation_list import AnnotationList
+from app.screens.home_screen import HomeScreen
+from app.screens.main_screen import MainScreen
 from app.widgets.toolbar import ToolBar
 
 __basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
@@ -44,12 +50,15 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.ToolBarArea.LeftToolBarArea,
                         ToolBar(self.toolbar_actions))
 
-        self.home_screen = HomeScreen(__homepath__)
         self.canvas = Canvas(self)
+        self.annotation_list = AnnotationList(self)
+
+        self.home_screen = HomeScreen(__homepath__)
+        self.main_screen = MainScreen(self)
 
         self.screens = QStackedWidget()
         self.screens.addWidget(self.home_screen)
-        self.screens.addWidget(self.canvas)
+        self.screens.addWidget(self.main_screen)
 
         self.setCentralWidget(self.screens)
         self.screens.setCurrentWidget(self.home_screen)
@@ -66,14 +75,16 @@ class MainWindow(QMainWindow):
             return
 
         anno_info = self.annotation_controller.load_annotations(image_name)
+
         self.canvas.load_annotations(anno_info['annotations'])
+        self.annotation_list.redraw_widgets()
 
     def open_dir(self, dir_path: str) -> None:
         self.image_controller.load_images(dir_path)
         self.canvas.reset()
 
         if self.image_controller.image_paths:
-            self.screens.setCurrentWidget(self.canvas)
+            self.screens.setCurrentWidget(self.main_screen)
             self.reload()
 
         else:

@@ -80,6 +80,8 @@ class Canvas(QWidget):
         for action in CanvasActions(self).actions.values():
             self.addAction(action)
 
+        self.pin_annotation_list = False
+
     def _is_cursor_in_bounds(self) -> bool:
         x_pos, y_pos = self.mouse_handler.cursor_position
 
@@ -142,6 +144,8 @@ class Canvas(QWidget):
             self.set_hovered_annotation()
 
         self.update_cursor_icon()
+        self.parent.annotation_list.update()
+
         super().update()
 
     def update_cursor_icon(self) -> None:
@@ -352,6 +356,8 @@ class Canvas(QWidget):
         self.set_selected_annotation(annotation)
         self.unsaved_changes = True
 
+        self.parent.annotation_list.redraw_widgets()
+
     def move_annotation(self,
                         annotation: Annotation,
                         delta: tuple[int, int]
@@ -499,6 +505,8 @@ class Canvas(QWidget):
         self.selected_annos = pasted_annotations
 
         self.set_annotating_state(AnnotatingState.IDLE)
+
+        self.parent.annotation_list.redraw_widgets()
         self.unsaved_changes = True
 
     def delete_selected(self) -> None:
@@ -518,6 +526,8 @@ class Canvas(QWidget):
 
         self.annotations = filtered_annos
         self.unsaved_changes = True
+
+        self.parent.annotation_list.redraw_widgets()
         self.update()
 
     def on_annotation_left_press(self, event: QMouseEvent) -> None:
@@ -556,6 +566,9 @@ class Canvas(QWidget):
             context_menu = AnnotationContextMenu(self)
 
         else:
+            if self.pin_annotation_list:
+                return
+
             context_menu = CanvasContextMenu(self)
 
         context_menu.exec(event.globalPosition().toPoint())
