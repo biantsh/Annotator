@@ -122,8 +122,9 @@ class Canvas(QWidget):
 
     def reset(self) -> None:
         self.set_annotating_state(AnnotatingState.IDLE)
-        self.annotations = []
+        self.set_selected_annotation(None)
 
+        self.annotations = []
         self.pixmap = QPixmap()
         self.zoom_handler.reset()
 
@@ -488,8 +489,12 @@ class Canvas(QWidget):
             self.delete_selected()
 
         pasted_anno_info = []
+        self.set_selected_annotation(None)
 
-        for annotation in pasted_annotations:
+        for annotation in pasted_annotations[::-1]:
+            if annotation in self.annotations:
+                continue
+
             annotation.hovered = HoverType.NONE
             annotation.selected = True
             annotation.hidden = False
@@ -497,20 +502,17 @@ class Canvas(QWidget):
             anno_info = annotation.position, annotation.label_name
             pasted_anno_info.append(anno_info)
 
-        for annotation in self.annotations:
-            annotation.selected = False
-
-        action = ActionCreate(self, pasted_anno_info)
-        self.action_handler.register_action(action)
-
-        # Add pasted annotations in the same order they were selected
-        self.annotations.extend(pasted_annotations[::-1])
-        self.selected_annos = pasted_annotations
+            self.annotations.append(annotation)
+            self.add_selected_annotation(annotation)
 
         self.set_annotating_state(AnnotatingState.IDLE)
 
-        self.parent.annotation_list.redraw_widgets()
-        self.unsaved_changes = True
+        if pasted_anno_info:
+            action = ActionCreate(self, pasted_anno_info)
+            self.action_handler.register_action(action)
+
+            self.parent.annotation_list.redraw_widgets()
+            self.unsaved_changes = True
 
     def delete_selected(self) -> None:
         filtered_annos = []

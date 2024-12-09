@@ -94,6 +94,10 @@ class Annotation(Bbox):
         self.selected = False
         self.hidden = False
 
+    def __eq__(self, other: 'Annotation') -> bool:
+        return (self.position == other.position
+                and self.label_name == other.label_name)
+
     @classmethod
     def from_bbox(cls, bbox: Bbox) -> 'Annotation':
         return cls(bbox.position, bbox.category_id, bbox.label_name)
