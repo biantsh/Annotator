@@ -11,7 +11,7 @@ from app.widgets.menu_item import ContextButton
 if TYPE_CHECKING:
     from annotator import MainWindow
 
-__size_policy__ = QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+__size_policy__ = QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
 
 
 class AnnotationList(QWidget):
@@ -23,63 +23,46 @@ class AnnotationList(QWidget):
         super().__init__(parent)
         self.parent = parent
 
-        self.setStyleSheet('border-left: 1px solid rgb(53, 53, 53);')
-        self.setFixedWidth(150)
-        self.setVisible(False)
-
         self.menu_items = []
         self.widgets = []
 
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.setSpacing(0)
+        self.setVisible(False)
+        self.setFixedWidth(150)
+        self.setStyleSheet('border-left: 1px solid rgb(53, 53, 53);')
 
-        self.annotations_container = QWidget()
-        self.annotations_layout = QVBoxLayout(self.annotations_container)
-        self.annotations_layout.setContentsMargins(0, 0, 0, 0)
-        self.annotations_layout.setSpacing(10)
+        self.anno_container = QWidget()
+        self.anno_layout = QVBoxLayout(self.anno_container)
+        self.anno_layout.setContentsMargins(0, 0, 0, 0)
+        self.anno_layout.setSpacing(10)
 
         for _ in range(2):
-            self.annotations_layout.addItem(
-                QSpacerItem(0, 0,
-                            QSizePolicy.Policy.Minimum,
-                            QSizePolicy.Policy.Expanding))
+            self.anno_layout.addItem(QSpacerItem(0, 0, *__size_policy__))
 
-        self.main_layout.addWidget(self.annotations_container, 1)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.addWidget(self.anno_container)
 
-        self.button_layout = QHBoxLayout()
-        self.button_layout.setContentsMargins(0, 0, 0, 0)
-        self.button_layout.setSpacing(0)
-        self.button_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
-
-        def _unpin_menu() -> None:
+        def _unpin() -> None:
             self.setVisible(False)
             self.parent.canvas.pin_annotation_list = False
 
-        self.bottom_button = ContextButton(
+        self.unpin_button = ContextButton(
             parent=self.parent.canvas,
-            binding=_unpin_menu,
+            binding=_unpin,
             text='\u276E',
             risky=False
         )
-        self.bottom_button.setSizePolicy(QSizePolicy.Policy.Fixed,
-                                         QSizePolicy.Policy.Fixed)
 
-        bottom_wrapper = QWidget()
-        bottom_wrapper.installEventFilter(self)
-        bottom_wrapper.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
-        bottom_wrapper.setStyleSheet(
-            str(WidgetStyleSheet(self.background_color)))
+        unpin_wrapper = QWidget()
+        unpin_wrapper.installEventFilter(self)
+        unpin_wrapper.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
 
-        bottom_layout = QHBoxLayout(bottom_wrapper)
-        bottom_layout.setContentsMargins(10, 10, 10, 10)
-        bottom_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
-        bottom_layout.addWidget(self.bottom_button)
+        unpin_layout = QHBoxLayout(unpin_wrapper)
+        unpin_layout.addWidget(self.unpin_button)
 
-        self.button_layout.addWidget(bottom_wrapper)
-        self.main_layout.addLayout(self.button_layout)
+        self.bottom_layout = QHBoxLayout()
+        self.bottom_layout.addWidget(unpin_wrapper)
+        self.main_layout.addLayout(self.bottom_layout)
 
     def _add_item(self,
                   item: ContextMenuItem,
@@ -94,35 +77,27 @@ class AnnotationList(QWidget):
         layout.setContentsMargins(*self.checkbox_margins)
         layout.addWidget(item)
 
-        widget.setSizePolicy(*__size_policy__)
-        item.setSizePolicy(*__size_policy__)
-
         if binding:
             item.clicked.connect(binding)
 
         # Insert the unpin button before the bottom spacer (last item)
-        insert_position = self.annotations_layout.count() - 1
-        self.annotations_layout.insertWidget(insert_position, widget)
+        insert_position = self.anno_layout.count() - 1
+        self.anno_layout.insertWidget(insert_position, widget)
 
         self.menu_items.append(item)
         self.widgets.append(widget)
 
     def redraw_widgets(self) -> None:
         # Remove old items excluding spacers (first and last items)
-        while self.annotations_layout.count() > 2:
-            child = self.annotations_layout.itemAt(1)
-
-            if child and child.widget():
-                w = child.widget()
-
-                self.annotations_layout.removeWidget(w)
-                w.deleteLater()
+        while self.anno_layout.count() > 2:
+            widget = self.anno_layout.itemAt(1).widget()
+            self.anno_layout.removeWidget(widget)
 
         self.menu_items = []
         self.widgets = []
 
         annotations = self.parent.canvas.annotations[::-1]
-        annotations = sorted(annotations, key=lambda a: a.category_id)
+        annotations = sorted(annotations, key=lambda anno: anno.category_id)
 
         for annotation in annotations:
             check_box = ContextCheckBox(self.parent.canvas, annotation)

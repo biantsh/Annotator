@@ -34,16 +34,18 @@ class ContextButton(QLabel, ContextMenuItem):
                  binding: Callable,
                  text: str,
                  risky: bool,
+                 name: str = None
                  ) -> None:
         QLabel.__init__(self, text)
         ContextMenuItem.__init__(self)
         self.setAttribute(__background__)
 
-        self.on_left_click = binding
-        self.on_right_click = binding
-
         self.parent = parent
         self.risky = risky
+        self.name = name
+
+        self.on_left_click = binding
+        self.on_right_click = binding
 
         self.setStyleSheet(str(LabelStyleSheet(risky)))
 

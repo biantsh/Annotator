@@ -74,16 +74,14 @@ class ContextMenu(QMenu, QWidget):
         self.widgets.append(widget)
 
     def on_mouse_click(self, source: QObject, event: QEvent) -> None:
-        # TODO: ContextButton doesn't recognize click if clicking on
-        #  padding area (ContextCheckBox is fine)
-        if isinstance(source.layout().itemAt(0).widget(), ContextButton):
-            source_widget = source.childAt(event.position().toPoint())
+        source_widget = source.layout().itemAt(0).widget()
 
-            if source_widget is None:
-                return
+        if isinstance(source_widget, ContextButton):
+            clicked_widget = source.childAt(event.position().toPoint())
 
-        else:
-            source_widget = source.layout().itemAt(0).widget()
+            if (hasattr(clicked_widget, 'name')
+                    and clicked_widget.name == 'pin_button'):
+                source_widget = source.layout().itemAt(1).widget()
 
         if Qt.MouseButton.LeftButton & event.button():
             source_widget.on_left_click()
@@ -176,7 +174,8 @@ class CanvasContextMenu(ContextMenu):
         self.clear()
 
         hidden_annos = self.parent.get_hidden_annotations()
-        text, should_hide = ('Show All', False) if hidden_annos else ('Hide All', True)
+        text, should_hide = ('Show All', False) \
+            if hidden_annos else ('Hide All', True)
 
         def set_hidden_all() -> None:
             for anno in self.parent.annotations:
@@ -187,28 +186,27 @@ class CanvasContextMenu(ContextMenu):
             self.parent.parent.annotation_list.setVisible(True)
             self.parent.pin_annotation_list = True
 
-        main_button = ContextButton(self.parent, set_hidden_all, text, False)
-        secondary_button = ContextButton(self.parent, pin_menu, ' \u276F ', False)
+        hide_button = ContextButton(self.parent, set_hidden_all, text, False)
+        pin_button = ContextButton(self.parent, pin_menu, ' \u276F ', False)
+        pin_button.name = 'pin_button'
+        pin_button.setFixedWidth(25)
 
-        composite_widget = QWidget()
-        composite_widget.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
-        composite_widget.installEventFilter(self)
-        composite_widget.setStyleSheet(str(WidgetStyleSheet(self.background_color)))
+        buttons_widget = QWidget()
+        buttons_widget.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        buttons_widget.installEventFilter(self)
+        buttons_widget.setStyleSheet(
+            str(WidgetStyleSheet(self.background_color)))
 
-        layout = QHBoxLayout(composite_widget)
+        layout = QHBoxLayout(buttons_widget)
         layout.setContentsMargins(*self.button_margins)
-        layout.setSpacing(0)
 
-        layout.addWidget(main_button, 85)
-        layout.addWidget(secondary_button, 15)
+        layout.addWidget(hide_button)
+        layout.addWidget(pin_button)
 
         widget_action = QWidgetAction(self)
-        widget_action.setDefaultWidget(composite_widget)
+        widget_action.setDefaultWidget(buttons_widget)
+
         self.addAction(widget_action)
-
-        self.menu_items.append(main_button)
-        self.widgets.append(composite_widget)
-
         self.addSeparator()
 
         for annotation in self.parent.annotations[::-1]:
