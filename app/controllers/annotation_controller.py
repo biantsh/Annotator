@@ -155,3 +155,18 @@ class AnnotationController:
 
         shutil.rmtree(annotator_dir)
         self.parent.reload()
+
+    def has_annotations(self) -> bool:
+        image_paths = self.parent.image_controller.image_paths
+
+        if not image_paths:
+            return False
+
+        for image_path in image_paths:
+            image_name = os.path.basename(image_path)
+            annotations = self.load_annotations(image_name)
+
+            if annotations['annotations']:
+                return True
+
+        return False

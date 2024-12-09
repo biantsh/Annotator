@@ -43,27 +43,11 @@ def open_labels(parent: 'MainWindow') -> None:
 
 
 def import_annos(parent: 'MainWindow') -> None:
-    import_path_setting = 'default_import_path'
-
-    path = parent.settings.get(import_path_setting)
-    title = 'Select Annotations File'
-    ext = 'JSON Files (*.json)'
-
-    if file_path := QFileDialog.getOpenFileName(parent, title, path, ext)[0]:
-        parent.settings.set(import_path_setting, file_path)
-        parent.import_annotations(file_path)
+    parent.prompt_import()
 
 
 def export_annos(parent: 'MainWindow') -> None:
-    export_path_setting = 'default_export_path'
-
-    path = parent.settings.get(export_path_setting)
-    title = 'Select Output File'
-    ext = 'JSON Files (*.json)'
-
-    if file_path := QFileDialog.getSaveFileName(parent, title, path, ext)[0]:
-        parent.settings.set(export_path_setting, file_path)
-        parent.export_annotations(file_path)
+    parent.prompt_export()
 
 
 def create_bbox(parent: 'MainWindow') -> None:

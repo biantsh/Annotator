@@ -42,3 +42,6 @@ ComboBox QLabel {
     font-weight: bold;
     padding-bottom: 3px;
 }
+QMessageBox {
+    font-size: 14px;
+}

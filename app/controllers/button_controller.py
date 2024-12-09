@@ -22,6 +22,9 @@ class ButtonController:
         for action_name in self.requires_images | self.requires_label_map:
             self.parent.toolbar_actions[action_name].setEnabled(False)
 
+    def is_enabled(self, action_name: str) -> bool:
+        return self.parent.toolbar_actions[action_name].isEnabled()
+
     def set_enabled_buttons(self) -> None:
         self._reset()
 

@@ -204,10 +204,13 @@ class Canvas(QWidget):
         # To prevent spam, register ResizeAction only when done resizing
         if (self.annotating_state == AnnotatingState.RESIZING
                 and state != AnnotatingState.RESIZING):
+            if not self.selected_annos:
+                return
+
             action = ActionResize(self,
                                   self.anno_pos_before_resize,
-                                  self.hovered_anno.position,
-                                  self.hovered_anno.label_name)
+                                  self.selected_annos[-1].position,
+                                  self.selected_annos[-1].label_name)
 
             self.action_handler.register_action(action)
             self.anno_pos_before_resize = None
@@ -229,7 +232,7 @@ class Canvas(QWidget):
             self.annotating_state = AnnotatingState.RESIZING
 
             if self.anno_pos_before_resize is None:
-                self.anno_pos_before_resize = self.hovered_anno.position
+                self.anno_pos_before_resize = self.selected_annos[-1].position
 
         self.update()
 

@@ -7,7 +7,8 @@ from PyQt6.QtGui import QIcon, QPalette, QColor, QCloseEvent
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QStackedWidget
+    QStackedWidget,
+    QFileDialog
 )
 
 from app import __appname__
@@ -19,6 +20,7 @@ from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
 from app.widgets.annotation_list import AnnotationList
+from app.widgets.message_box import ExitMessageBox
 from app.screens.home_screen import HomeScreen
 from app.screens.main_screen import MainScreen
 from app.widgets.toolbar import ToolBar
@@ -116,6 +118,30 @@ class MainWindow(QMainWindow):
         self.image_controller.go_to_image(index)
         self.reload()
 
+    def prompt_import(self) -> None:
+        import_path_setting = 'default_import_path'
+
+        path = self.settings.get(import_path_setting)
+        title = 'Select Annotations File'
+        ext = 'JSON Files (*.json)'
+
+        if file_path := QFileDialog.getOpenFileName(self, title, path, ext)[0]:
+            self.settings.set(import_path_setting, file_path)
+            self.import_annotations(file_path)
+
+    def prompt_export(self) -> str | None:
+        export_path_setting = 'default_export_path'
+
+        path = self.settings.get(export_path_setting)
+        title = 'Select Output File'
+        ext = 'JSON Files (*.json)'
+
+        if file_path := QFileDialog.getSaveFileName(self, title, path, ext)[0]:
+            self.settings.set(export_path_setting, file_path)
+            self.export_annotations(file_path)
+
+        return file_path
+
     def import_annotations(self, annotations_path: str) -> None:
         self.annotation_controller.import_annotations(annotations_path)
         self.reload()
@@ -125,6 +151,16 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.canvas.save_progress()
+
+        if not self.button_controller.is_enabled('export'):
+            return
+
+        if not self.annotation_controller.has_annotations():
+            return
+
+        if ExitMessageBox().exec():
+            if not self.prompt_export():
+                event.ignore()
 
 
 def setup_dark_theme(application: QApplication) -> None:
