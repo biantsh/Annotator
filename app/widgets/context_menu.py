@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app.enums.annotation import AnnotatingState
+from app.handlers.actions import ActionCreate, ActionDelete
 from app.styles.style_sheets import WidgetStyleSheet
 from app.widgets.menu_item import (
     ContextMenuItem,
@@ -196,6 +197,22 @@ class CanvasContextMenu(ContextMenu):
             self.parent.paste_annotations(replace_existing=True)
             self.redraw_widgets()
 
+        elif ctrl_pressed and event.key() == Qt.Key.Key_Z:
+            action = self.parent.action_handler.undo()
+
+            if isinstance(action, (ActionCreate, ActionDelete)):
+                self.redraw_widgets()
+            else:
+                self.update()
+
+        elif ctrl_pressed and event.key() == Qt.Key.Key_Y:
+            action = self.parent.action_handler.redo()
+
+            if isinstance(action, (ActionCreate, ActionDelete)):
+                self.redraw_widgets()
+            else:
+                self.update()
+
         elif ctrl_pressed and event.key() == Qt.Key.Key_H:
             self.parent.hide_annotations()
             self.update()
@@ -213,7 +230,7 @@ class CanvasContextMenu(ContextMenu):
             self.update()
 
         elif event.key() == Qt.Key.Key_Delete:
-            self.parent.delete_annotations()
+            self.parent.delete_selected()
             self.redraw_widgets()
 
         else:
@@ -237,7 +254,7 @@ class AnnotationContextMenu(ContextMenu):
             parent.unselect_all()
 
         def _delete() -> None:
-            parent.delete_annotations()
+            parent.delete_selected()
             parent.unselect_all()
 
         buttons = (

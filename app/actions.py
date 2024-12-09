@@ -103,7 +103,7 @@ def rename_annotations(parent: 'Canvas') -> None:
 
 
 def delete_annotations(parent: 'Canvas') -> None:
-    parent.delete_annotations()
+    parent.delete_selected()
 
 
 def copy_annotations(parent: 'Canvas') -> None:
@@ -116,6 +116,14 @@ def paste_annotations(parent: 'Canvas') -> None:
 
 def paste_annotations_replace(parent: 'Canvas') -> None:
     parent.paste_annotations(replace_existing=True)
+
+
+def undo_action(parent: 'Canvas') -> None:
+    parent.action_handler.undo()
+
+
+def redo_action(parent: 'Canvas') -> None:
+    parent.action_handler.redo()
 
 
 def escape(parent: 'Canvas') -> None:
@@ -143,6 +151,8 @@ __canvas_actions__ = (
     ('copy_annos', copy_annotations, 'Ctrl+C'),
     ('paste_annos', paste_annotations, 'Ctrl+Shift+V'),
     ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V'),
+    ('undo', undo_action, 'Ctrl+Z'),
+    ('redo', redo_action, 'Ctrl+Y'),
     ('escape', escape, 'Esc')
 )
 

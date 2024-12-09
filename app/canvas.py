@@ -17,6 +17,13 @@ from PyQt6.QtWidgets import QWidget
 from app.actions import CanvasActions
 from app.drawing import Drawer
 from app.enums.annotation import AnnotatingState, HoverType
+from app.handlers.actions import (
+    ActionHandler,
+    ActionCreate,
+    ActionDelete,
+    ActionResize,
+    ActionRename
+)
 from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
 from app.handlers.zoom import ZoomHandler
@@ -66,6 +73,9 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.zoom_handler = ZoomHandler(self)
+
+        self.action_handler = ActionHandler(self, self.image_name)
+        self.anno_pos_before_resize = None
 
         for action in CanvasActions(self).actions.values():
             self.addAction(action)
@@ -173,6 +183,7 @@ class Canvas(QWidget):
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
 
+        self.action_handler.image_name = self.image_name
         self.update()
 
     def load_annotations(self, annotations: list[Annotation]) -> None:
@@ -186,6 +197,17 @@ class Canvas(QWidget):
         return [anno for anno in self.annotations if anno.hidden]
 
     def set_annotating_state(self, state: AnnotatingState) -> None:
+        # To prevent spam, register ResizeAction only when done resizing
+        if (self.annotating_state == AnnotatingState.RESIZING
+                and state != AnnotatingState.RESIZING):
+            action = ActionResize(self,
+                                  self.anno_pos_before_resize,
+                                  self.hovered_anno.position,
+                                  self.hovered_anno.label_name)
+
+            self.action_handler.register_action(action)
+            self.anno_pos_before_resize = None
+
         if state == AnnotatingState.IDLE:
             self.annotating_state = AnnotatingState.IDLE
             self.anno_first_corner = None
@@ -201,6 +223,9 @@ class Canvas(QWidget):
 
         elif state == AnnotatingState.RESIZING:
             self.annotating_state = AnnotatingState.RESIZING
+
+            if self.anno_pos_before_resize is None:
+                self.anno_pos_before_resize = self.hovered_anno.position
 
         self.update()
 
@@ -316,9 +341,12 @@ class Canvas(QWidget):
 
         self.previous_label = label_name
 
-        position = (x_min, y_min, x_max, y_max)
+        position = [x_min, y_min, x_max, y_max]
         category_id = self.labels.index(label_name) + 1
         annotation = Annotation(position, category_id, label_name)
+
+        action = ActionCreate(self, [(position, label_name)])
+        self.action_handler.register_action(action)
 
         self.annotations.append(annotation)
         self.set_selected_annotation(annotation)
@@ -375,7 +403,7 @@ class Canvas(QWidget):
         x_min, x_max = sorted([x_min, x_max])
         y_min, y_max = sorted([y_min, y_max])
 
-        annotation.position = x_min, y_min, x_max, y_max
+        annotation.position = [x_min, y_min, x_max, y_max]
         self.unsaved_changes = True
 
     def move_annotation_arrow(self, pressed_keys: set[int]) -> None:
@@ -396,10 +424,10 @@ class Canvas(QWidget):
         selected_anno = self.selected_annos[-1]
         self.set_selected_annotation(selected_anno)
 
-        self.move_annotation(selected_anno, (delta_x, delta_y))
-        self.unsaved_changes = True
-
         self.set_annotating_state(AnnotatingState.RESIZING)
+        self.move_annotation(selected_anno, (delta_x, delta_y))
+
+        self.unsaved_changes = True
         self.update()
 
     def rename_annotations(self) -> None:
@@ -416,9 +444,17 @@ class Canvas(QWidget):
         if not label_name:
             return
 
+        renamed_annotations = []
+
         for annotation in self.selected_annos:
+            renamed_annotations.append(
+                (annotation.position, annotation.label_name, label_name))
+
             annotation.label_name = label_name
             annotation.category_id = self.labels.index(label_name) + 1
+
+        action = ActionRename(self, renamed_annotations)
+        self.action_handler.register_action(action)
 
         self.unsaved_changes = True
         self.update()
@@ -440,15 +476,23 @@ class Canvas(QWidget):
             for annotation in self.annotations:
                 self.add_selected_annotation(annotation)
 
-            self.delete_annotations()
+            self.delete_selected()
+
+        pasted_anno_info = []
 
         for annotation in pasted_annotations:
             annotation.hovered = HoverType.NONE
             annotation.selected = True
             annotation.hidden = False
 
+            anno_info = annotation.position, annotation.label_name
+            pasted_anno_info.append(anno_info)
+
         for annotation in self.annotations:
             annotation.selected = False
+
+        action = ActionCreate(self, pasted_anno_info)
+        self.action_handler.register_action(action)
 
         # Add pasted annotations in the same order they were selected
         self.annotations.extend(pasted_annotations[::-1])
@@ -457,18 +501,23 @@ class Canvas(QWidget):
         self.set_annotating_state(AnnotatingState.IDLE)
         self.unsaved_changes = True
 
-    def delete_annotations(self) -> None:
+    def delete_selected(self) -> None:
         filtered_annos = []
+        deleted_annos = []
 
         for anno in self.annotations:
             if anno.selected:
-                self.unsaved_changes = True
+                deleted_anno = anno.position, anno.label_name
+                deleted_annos.append(deleted_anno)
+
             else:
                 filtered_annos.append(anno)
 
-            self.unselect_annotation(anno)
+        action = ActionDelete(self, deleted_annos)
+        self.action_handler.register_action(action)
 
         self.annotations = filtered_annos
+        self.unsaved_changes = True
         self.update()
 
     def on_annotation_left_press(self, event: QMouseEvent) -> None:
@@ -516,9 +565,9 @@ class Canvas(QWidget):
         if not self.hovered_anno:
             return
 
+        self.set_annotating_state(AnnotatingState.RESIZING)
         self.move_annotation(self.hovered_anno, cursor_shift)
 
-        self.set_annotating_state(AnnotatingState.RESIZING)
         self.update()
 
     def on_mouse_hover(self) -> None:
