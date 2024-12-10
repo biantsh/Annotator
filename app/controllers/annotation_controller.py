@@ -40,7 +40,8 @@ class AnnotationController:
     def save_annotations(self,
                          image_name: str,
                          image_size: tuple[int, int],
-                         annotations: list[Annotation]
+                         annotations: list[Annotation],
+                         append: bool = False
                          ) -> None:
         image_dir = self.parent.image_controller.image_dir
         annotator_dir = os.path.join(image_dir, '.annotator')
@@ -51,20 +52,31 @@ class AnnotationController:
         json_path = os.path.join(annotator_dir, json_name)
 
         image_width, image_height = image_size
-        annotation_info = [{
-            'position': anno.position,
-            'label_name': anno.label_name,
-            'category_id': anno.category_id
-        } for anno in annotations]
+        annotation_content = {
+            'image': {
+                'width': image_width,
+                'height': image_height
+            },
+            'annotations': []
+        }
+
+        if append and os.path.exists(json_path):
+            with open(json_path, 'r') as json_file:
+                annotation_content['annotations'] = \
+                    json.load(json_file)['annotations']
+
+        for anno in annotations:
+            anno_info = {
+                'position': anno.position,
+                'label_name': anno.label_name,
+                'category_id': anno.category_id
+            }
+
+            if anno_info not in annotation_content['annotations']:
+                annotation_content['annotations'].append(anno_info)
 
         with open(json_path, 'w') as json_file:
-            json.dump({
-                'image': {
-                    'width': image_width,
-                    'height': image_height
-                },
-                'annotations': annotation_info
-            }, json_file, indent=2)
+            json.dump(annotation_content, json_file, indent=2)
 
     def import_annotations(self, annotations_path: str) -> None:
         with open(annotations_path, 'r') as json_file:
@@ -104,7 +116,10 @@ class AnnotationController:
             height = image['height']
 
             annotations = annotation_map[image_id]
-            self.save_annotations(image_name, (width, height), annotations)
+            self.save_annotations(image_name,
+                                  (width, height),
+                                  annotations,
+                                  append=True)
 
     def export_annotations(self, output_path: str) -> None:
         image_paths = self.parent.image_controller.image_paths
