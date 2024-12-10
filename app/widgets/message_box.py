@@ -6,6 +6,9 @@ __confirm_import__ = ('You already have existing annotations in this session. '
                       '\n\nThe imported annotations will be '
                       'added to your existing ones.')
 
+__import_fail__ = ('The contents of this file have already '
+                   'been imported into this session.')
+
 __confirm_export__ = ('Your annotations will be automatically saved, but '
                       'have not been exported yet.\n\nExport before leaving?')
 
@@ -49,3 +52,12 @@ class ConfirmExitBox(MessageBox):
                          'icon:export.png',
                          __confirm_export__,
                          True)
+
+
+class ImportFailedBox(QMessageBox):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setIcon(QMessageBox.Icon.Information)
+
+        self.setWindowTitle('Can\'t Import File')
+        self.setText(__import_fail__)

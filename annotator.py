@@ -20,7 +20,11 @@ from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.settings import Settings
 from app.widgets.annotation_list import AnnotationList
-from app.widgets.message_box import ConfirmImportBox, ConfirmExitBox
+from app.widgets.message_box import (
+    ConfirmImportBox,
+    ImportFailedBox,
+    ConfirmExitBox
+)
 from app.screens.home_screen import HomeScreen
 from app.screens.main_screen import MainScreen
 from app.widgets.toolbar import ToolBar
@@ -147,11 +151,14 @@ class MainWindow(QMainWindow):
         return file_path
 
     def import_annotations(self, annotations_path: str) -> None:
-        self.annotation_controller.import_annotations(annotations_path)
-        self.reload()
+        if self.annotation_controller.import_annotations(annotations_path):
+            self.reload()
+        else:
+            ImportFailedBox().exec()
 
     def export_annotations(self, output_path: str) -> None:
         self.annotation_controller.export_annotations(output_path)
+        self.reload()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.canvas.save_progress()

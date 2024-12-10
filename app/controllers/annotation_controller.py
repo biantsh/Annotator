@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import shutil
@@ -78,10 +79,7 @@ class AnnotationController:
         with open(json_path, 'w') as json_file:
             json.dump(annotation_content, json_file, indent=2)
 
-    def import_annotations(self, annotations_path: str) -> None:
-        with open(annotations_path, 'r') as json_file:
-            coco_dataset = json.load(json_file)
-
+    def _import_annotations(self, coco_dataset: dict) -> None:
         category_id_map = {}  # Mapping between imported and native IDs
 
         for category in coco_dataset['categories']:
@@ -121,13 +119,45 @@ class AnnotationController:
                                   annotations,
                                   append=True)
 
-    def export_annotations(self, output_path: str) -> None:
+    def import_annotations(self, annotations_path: str) -> bool:
+        with open(annotations_path, 'r') as json_file:
+            coco_dataset = json.load(json_file)
+
+        image_dir = self.parent.image_controller.image_dir
+        annotator_dir = os.path.join(image_dir, '.annotator')
+        imports_path = os.path.join(annotator_dir, '.imports.json')
+
+        anno_data = json.dumps(coco_dataset['annotations'], sort_keys=True)
+        hashed_data = hashlib.sha256(anno_data.encode('utf-8')).hexdigest()
+
+        # Check if the same file path or contents have already been imported
+        existing_imports = {'file_paths': [], 'hashes': []}
+        if os.path.exists(imports_path):
+            with open(imports_path, 'r') as json_file:
+                existing_imports = json.load(json_file)
+
+        if (annotations_path in existing_imports['file_paths']
+                or hashed_data in existing_imports['hashes']):
+            return False
+
+        # Update and save the existing imports
+        existing_imports['file_paths'].append(annotations_path)
+        existing_imports['hashes'].append(hashed_data)
+
+        os.makedirs(annotator_dir, exist_ok=True)
+        with open(imports_path, 'w') as json_file:
+            json.dump(existing_imports, json_file, indent=2)
+
+        self._import_annotations(coco_dataset)
+        return True
+
+    def export_annotations(self, output_path: str) -> bool:
         image_paths = self.parent.image_controller.image_paths
         image_dir = self.parent.image_controller.image_dir
 
         annotator_dir = os.path.join(image_dir, '.annotator')
         if not os.path.exists(annotator_dir):
-            return
+            return False
 
         export_content = {
             'images': [],
@@ -169,7 +199,7 @@ class AnnotationController:
             json.dump(export_content, json_file, indent=2)
 
         shutil.rmtree(annotator_dir)
-        self.parent.reload()
+        return True
 
     def has_annotations(self) -> bool:
         image_paths = self.parent.image_controller.image_paths
