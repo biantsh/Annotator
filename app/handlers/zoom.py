@@ -42,6 +42,8 @@ class ZoomHandler:
         self.pan_x += x_pos - x_pos_new
         self.pan_y += y_pos - y_pos_new
 
+        self.clip_pan_values()
+
     def zoom_in(self, cursor_position: tuple[float, float]) -> None:
         self._set_zoom(self.zoom_level + 0.2, cursor_position)
 
@@ -59,3 +61,17 @@ class ZoomHandler:
         self.zoom_level = self._min_zoom
         self.pan_x = 0
         self.pan_y = 0
+
+    def clip_pan_values(self) -> None:
+        """Clip the pan values to prevent the image from panning off-screen."""
+        image = self.parent.pixmap.size()
+        scale = self.parent.get_scale()
+
+        scaled_width = image.width() * scale
+        scaled_height = image.height() * scale
+
+        pan_bound_x = (scaled_width - (scaled_width // self.zoom_level)) / 2
+        pan_bound_y = (scaled_height - (scaled_height // self.zoom_level)) / 2
+
+        self.pan_x = clip_value(self.pan_x, -pan_bound_x, pan_bound_x)
+        self.pan_y = clip_value(self.pan_y, -pan_bound_y, pan_bound_y)

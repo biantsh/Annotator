@@ -10,6 +10,7 @@ from PyQt6.QtGui import (
     QMouseEvent,
     QWheelEvent,
     QKeyEvent,
+    QResizeEvent,
     QPaintEvent
 )
 from PyQt6.QtWidgets import QWidget
@@ -638,6 +639,10 @@ class Canvas(QWidget):
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         self.keyboard_handler.keyReleaseEvent(event)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self.zoom_handler.clip_pan_values()
+        super().resizeEvent(event)
 
     def paintEvent(self, _: QPaintEvent) -> None:
         painter = QPainter()
