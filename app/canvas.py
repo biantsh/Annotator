@@ -589,6 +589,16 @@ class Canvas(QWidget):
 
         self.update()
 
+    def on_mouse_right_drag(self, cursor_shift: tuple[int, int]) -> None:
+        drag_start_x, drag_start_y = self.mouse_handler.drag_start_pan
+        shift_x, shift_y = cursor_shift
+
+        self.zoom_handler.pan_x = drag_start_x + shift_x
+        self.zoom_handler.pan_y = drag_start_y + shift_y
+
+        self.zoom_handler.clip_pan_values()
+        self.update()
+
     def on_mouse_hover(self) -> None:
         self.update()
 

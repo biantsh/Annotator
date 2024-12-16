@@ -16,9 +16,10 @@ class MouseHandler:
         self.cursor_position = 0, 0
         self.global_position = None
 
+        self.drag_start_pos = None
+        self.drag_start_pan = None
+
         self.left_clicked = False
-        self.right_clicked = False
-        self.middle_clicked = False
 
     def _get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
         offset_x, offset_y = self.parent.get_center_offset()
@@ -36,11 +37,11 @@ class MouseHandler:
             self.parent.on_mouse_left_press(event)
 
         if Qt.MouseButton.RightButton & event.buttons():
-            self.right_clicked = True
-            self.parent.on_mouse_right_press(event)
+            self.drag_start_pos = event.position()
+            self.drag_start_pan = (self.parent.zoom_handler.pan_x,
+                                   self.parent.zoom_handler.pan_y)
 
         if Qt.MouseButton.MiddleButton & event.buttons():
-            self.middle_clicked = True
             self.parent.on_mouse_middle_press((pos_x, pos_y))
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -56,6 +57,16 @@ class MouseHandler:
             delta_x, delta_y = new_x - old_x, new_y - old_y
             self.parent.on_mouse_left_drag((delta_x, delta_y))
 
+        elif Qt.MouseButton.RightButton & event.buttons():
+            # Shift is calculated differently here as panning the image uses
+            # a different coordinate system compared to dragging an annotation
+            current_pos = event.position()
+
+            shift_x = current_pos.x() - self.drag_start_pos.x()
+            shift_y = current_pos.y() - self.drag_start_pos.y()
+
+            self.parent.on_mouse_right_drag((shift_x, shift_y))
+
         else:
             if self.parent.annotating_state == AnnotatingState.RESIZING:
                 self.parent.set_annotating_state(AnnotatingState.IDLE)
@@ -63,11 +74,12 @@ class MouseHandler:
             self.parent.on_mouse_hover()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        buttons = event.buttons()
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.left_clicked = False
 
-        self.left_clicked = bool(Qt.MouseButton.LeftButton & buttons)
-        self.right_clicked = bool(Qt.MouseButton.RightButton & buttons)
-        self.middle_clicked = bool(Qt.MouseButton.MiddleButton & buttons)
+        elif event.button() == Qt.MouseButton.RightButton:
+            if event.position() == self.drag_start_pos:
+                self.parent.on_mouse_right_press(event)
 
         self.mouseMoveEvent(event)
 
