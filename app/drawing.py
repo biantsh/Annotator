@@ -1,6 +1,7 @@
+import math
 from typing import TYPE_CHECKING
 
-from PyQt6.QtGui import QPainter, QPainterPath, QPen, QColor
+from PyQt6.QtGui import QPainter, QPainterPath, QPen, QColor, QFont
 
 from app.enums.annotation import HoverType, HOVER_AREAS
 from app.objects import Annotation
@@ -53,6 +54,30 @@ class Drawer:
         )
 
         Drawer._draw_path(canvas, painter, (points, ), color)
+
+    @staticmethod
+    def _fill_rectangle(painter: QPainter,
+                        position: tuple[float, ...],
+                        color: tuple[float, ...]
+                        ) -> None:
+        left, top, right, bot = position
+
+        fill_path = QPainterPath()
+        fill_path.moveTo(left, top)
+
+        for point in (right, top), (right, bot), (left, bot), (left, top):
+            fill_path.lineTo(*point)
+
+        painter.fillPath(fill_path, QColor(*color))
+
+    @staticmethod
+    def _draw_text(painter: QPainter,
+                   text: str,
+                   font_size: int,
+                   position: tuple[float, float],
+                   ) -> None:
+        painter.setFont(QFont('Arial', font_size))
+        painter.drawText(*position, text)
 
     @staticmethod
     def draw_crosshair(canvas: 'Canvas',
@@ -150,10 +175,68 @@ class Drawer:
             top = clip_value(top, annotation.top, annotation.bottom)
             bot = clip_value(bot, annotation.top, annotation.bottom)
 
-            fill_path = QPainterPath()
-            fill_path.moveTo(left, top)
+            position = left, top, right, bot
+            Drawer._fill_rectangle(painter, position, (*color, 100))
 
-            for point in (right, top), (right, bot), (left, bot), (left, top):
-                fill_path.lineTo(*point)
+    @staticmethod
+    def draw_zoom_indicator(canvas: 'Canvas',
+                            painter: QPainter,
+                            zoom_level: float
+                            ) -> None:
+        painter.save()
+        painter.resetTransform()
 
-            painter.fillPath(fill_path, QColor(*color, 100))
+        outline_color = 255, 255, 255, 128
+        fill_color = 33, 33, 33, 130
+        padding = 10
+
+        canvas_width = canvas.width()
+        canvas_height = canvas.height()
+        image_width = canvas.pixmap.width()
+        image_height = canvas.pixmap.height()
+
+        canvas_area = canvas_width * canvas_height
+        aspect_ratio = image_width / image_height
+
+        overview_height = math.sqrt(0.05 * canvas_area / aspect_ratio)
+        overview_width = overview_height * aspect_ratio
+
+        x_min, y_min = canvas_width - padding - overview_width, padding
+        x_max, y_max = x_min + overview_width, y_min + overview_height
+
+        offset_x, offset_y = canvas.get_center_offset()
+        scale = canvas.get_scale()
+
+        x_min_visible = -offset_x / scale
+        y_min_visible = -offset_y / scale
+        x_max_visible = (canvas_width - offset_x) / scale
+        y_max_visible = (canvas_height - offset_y) / scale
+
+        x_min_visible = clip_value(x_min_visible, 0, image_width)
+        y_min_visible = clip_value(y_min_visible, 0, image_height)
+        x_max_visible = clip_value(x_max_visible, 0, image_width)
+        y_max_visible = clip_value(y_max_visible, 0, image_height)
+
+        outer_rect = x_min, y_min, x_max, y_max
+        Drawer._draw_rectangle(canvas, painter, outer_rect, outline_color)
+        Drawer._fill_rectangle(painter, outer_rect, fill_color)
+
+        x_min_inner = x_min + (x_min_visible / image_width) * overview_width
+        y_min_inner = y_min + (y_min_visible / image_height) * overview_height
+        x_max_inner = x_min + (x_max_visible / image_width) * overview_width
+        y_max_inner = y_min + (y_max_visible / image_height) * overview_height
+
+        inner_rect = x_min_inner, y_min_inner, x_max_inner, y_max_inner
+        Drawer._draw_rectangle(canvas, painter, inner_rect, outline_color)
+
+        text_x = int(x_min + padding / 2)
+        text_y = int(y_max - padding / 2)
+
+        zoom_level = round(zoom_level, 1)
+        if zoom_level == int(zoom_level):
+            zoom_level = int(zoom_level)
+
+        zoom_text = f'{zoom_level}X'
+        Drawer._draw_text(painter, zoom_text, 14, (text_x, text_y))
+
+        painter.restore()

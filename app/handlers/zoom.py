@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import QTimer
+
 from app.utils import clip_value
 
 if TYPE_CHECKING:
@@ -8,7 +10,7 @@ if TYPE_CHECKING:
 
 class ZoomHandler:
     _min_zoom = 1
-    _max_zoom = 7
+    _max_zoom = 5
 
     def __init__(self, parent: 'Canvas') -> None:
         self.zoom_level = self._min_zoom
@@ -16,6 +18,10 @@ class ZoomHandler:
 
         self.pan_x = 0
         self.pan_y = 0
+
+        self.draw_indicator = False
+        self.indicator_timer = QTimer()
+        self.indicator_timer.timeout.connect(self.unset_indicator)
 
     def _set_zoom(self,
                   zoom_level: float,
@@ -43,6 +49,15 @@ class ZoomHandler:
         self.pan_y += y_pos - y_pos_new
 
         self.clip_pan_values()
+        self.set_indicator()
+
+    def unset_indicator(self) -> None:
+        self.draw_indicator = False
+        self.parent.update()
+
+    def set_indicator(self) -> None:
+        self.draw_indicator = True
+        self.indicator_timer.start(2000)
 
     def zoom_in(self, cursor_position: tuple[float, float]) -> None:
         self._set_zoom(self.zoom_level + 0.2, cursor_position)
@@ -59,6 +74,8 @@ class ZoomHandler:
 
     def reset(self) -> None:
         self.zoom_level = self._min_zoom
+        self.unset_indicator()
+
         self.pan_x = 0
         self.pan_y = 0
 
@@ -70,8 +87,8 @@ class ZoomHandler:
         scaled_width = image.width() * scale
         scaled_height = image.height() * scale
 
-        pan_bound_x = (scaled_width - (scaled_width // self.zoom_level)) / 2
-        pan_bound_y = (scaled_height - (scaled_height // self.zoom_level)) / 2
+        pan_bound_x = (scaled_width - (scaled_width // self.zoom_level)) // 2
+        pan_bound_y = (scaled_height - (scaled_height // self.zoom_level)) // 2
 
         self.pan_x = clip_value(self.pan_x, -pan_bound_x, pan_bound_x)
         self.pan_y = clip_value(self.pan_y, -pan_bound_y, pan_bound_y)

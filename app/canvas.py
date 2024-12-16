@@ -597,6 +597,9 @@ class Canvas(QWidget):
         self.zoom_handler.pan_y = drag_start_y + shift_y
 
         self.zoom_handler.clip_pan_values()
+        if self.zoom_handler.zoom_level > 1:
+            self.zoom_handler.set_indicator()
+
         self.update()
 
     def on_mouse_hover(self) -> None:
@@ -677,3 +680,7 @@ class Canvas(QWidget):
         elif self.annotating_state == AnnotatingState.DRAWING:
             self.drawer.draw_candidate_annotation(
                 self, painter, self.anno_first_corner, cursor_position)
+
+        if self.zoom_handler.draw_indicator:
+            zoom_level = self.zoom_handler.zoom_level
+            self.drawer.draw_zoom_indicator(self, painter, zoom_level)
