@@ -277,6 +277,9 @@ class Canvas(QWidget):
         annotation.hidden = False
 
     def select_next_annotation(self) -> None:
+        if not self.annotations:
+            return
+
         selected_idx = -1  # Newest annotation
 
         if len(self.selected_annos) > 1:
@@ -527,10 +530,12 @@ class Canvas(QWidget):
             else:
                 filtered_annos.append(anno)
 
+        self.annotations = filtered_annos
+        self.selected_annos = [anno for anno in self.selected_annos
+                               if anno in filtered_annos]
+
         action = ActionDelete(self, deleted_annos)
         self.action_handler.register_action(action)
-
-        self.annotations = filtered_annos
         self.unsaved_changes = True
 
         self.parent.annotation_list.redraw_widgets()
