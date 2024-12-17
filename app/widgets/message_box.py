@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMessageBox
+
+if TYPE_CHECKING:
+    from annotator import MainWindow
 
 __confirm_import__ = ('You already have existing annotations in this session. '
                       'Are you sure you want to import a file?'
@@ -15,12 +20,13 @@ __confirm_export__ = ('Your annotations will be automatically saved, but '
 
 class MessageBox(QMessageBox):
     def __init__(self,
+                 parent: 'MainWindow',
                  title: str,
                  icon_path: str,
                  message: str,
                  default: bool
                  ) -> None:
-        super().__init__()
+        super().__init__(parent)
 
         self.setIconPixmap(QIcon(icon_path).pixmap(96, 96))
         self.setWindowTitle(title)
@@ -39,24 +45,26 @@ class MessageBox(QMessageBox):
 
 
 class ConfirmImportBox(MessageBox):
-    def __init__(self) -> None:
-        super().__init__('Confirm Import',
+    def __init__(self, parent: 'MainWindow') -> None:
+        super().__init__(parent,
+                         'Confirm Import',
                          'icon:import.png',
                          __confirm_import__,
                          False)
 
 
 class ConfirmExitBox(MessageBox):
-    def __init__(self) -> None:
-        super().__init__('Confirm Exit',
+    def __init__(self, parent: 'MainWindow') -> None:
+        super().__init__(parent,
+                         'Confirm Exit',
                          'icon:export.png',
                          __confirm_export__,
                          True)
 
 
 class ImportFailedBox(QMessageBox):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: 'MainWindow') -> None:
+        super().__init__(parent)
         self.setIcon(QMessageBox.Icon.Information)
 
         self.setWindowTitle('Can\'t Import File')

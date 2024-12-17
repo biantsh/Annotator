@@ -25,6 +25,7 @@ from app.widgets.message_box import (
     ImportFailedBox,
     ConfirmExitBox
 )
+from app.widgets.settings_dialog import SettingsWindow
 from app.screens.home_screen import HomeScreen
 from app.screens.main_screen import MainScreen
 from app.widgets.toolbar import ToolBar
@@ -124,7 +125,7 @@ class MainWindow(QMainWindow):
 
     def prompt_import(self) -> None:
         if self.annotation_controller.has_annotations():
-            if not ConfirmImportBox().exec():
+            if not ConfirmImportBox(self).exec():
                 return
 
         import_path_setting = 'default_import_path'
@@ -154,11 +155,14 @@ class MainWindow(QMainWindow):
         if self.annotation_controller.import_annotations(annotations_path):
             self.reload()
         else:
-            ImportFailedBox().exec()
+            ImportFailedBox(self).exec()
 
     def export_annotations(self, output_path: str) -> None:
         self.annotation_controller.export_annotations(output_path)
         self.reload()
+
+    def open_settings(self) -> None:
+        SettingsWindow(self).exec()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.canvas.save_progress()
@@ -169,7 +173,7 @@ class MainWindow(QMainWindow):
         if not self.annotation_controller.has_annotations():
             return
 
-        if ConfirmExitBox().exec():
+        if ConfirmExitBox(self).exec():
             if not self.prompt_export():
                 event.ignore()
 

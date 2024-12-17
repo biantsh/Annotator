@@ -42,6 +42,32 @@ ComboBox QLabel {
     font-weight: bold;
     padding-bottom: 3px;
 }
-QMessageBox {
+SettingsWindow QFrame {
+    background-color: rgb(33, 33, 33);
+    border-radius: 10px;
+}
+SettingsWindow QPushButton {
+    background-color: rgb(33, 33, 33);
+    font-weight: bold;
     font-size: 14px;
+    border: none;
+}
+SettingsWindow QPushButton:hover {
+    background-color: rgb(53, 53, 53);
+    border-radius: 5px;
+}
+QMessageBox {
+    background-color: rgb(33, 33, 33);
+    font-size: 14px;
+    color: rgb(200, 200, 200);
+}
+QMessageBox QPushButton {
+    background-color: rgb(33, 33, 33);
+    border: 2px solid rgb(60, 120, 216);
+    font-size: 14px;
+    min-width: 70px;
+    min-height: 20px;
+}
+QMessageBox QPushButton:hover {
+    background-color: rgb(53, 53, 53)
 }

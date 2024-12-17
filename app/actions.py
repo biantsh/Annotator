@@ -70,6 +70,10 @@ def create_keypoints(parent: 'MainWindow') -> None:
     print('Creating keypoints...')
 
 
+def open_settings(parent: 'MainWindow') -> None:
+    parent.open_settings()
+
+
 def select_next(parent: 'Canvas') -> None:
     parent.select_next_annotation()
 
@@ -122,7 +126,8 @@ __toolbar_actions__ = (
     ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
-    ('keypoints', create_keypoints, 'E', 'Points', 'keypoints.png', False)
+    ('keypoints', create_keypoints, 'E', 'Points', 'keypoints.png', False),
+    ('settings', open_settings, 'Shift+Tab', 'Settings', 'settings.png', True)
 )
 
 __canvas_actions__ = (

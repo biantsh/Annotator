@@ -1,8 +1,9 @@
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QToolBar, QToolButton
+from PyQt6.QtWidgets import QToolBar, QToolButton, QSizePolicy
 
 __tool_button_style__ = Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+__size_policy__ = QSizePolicy.Policy.Expanding
 
 
 class ToolBar(QToolBar):
@@ -16,7 +17,9 @@ class ToolBar(QToolBar):
         'export',
         '__separator__',
         'bbox',
-        'keypoints'
+        'keypoints',
+        '__separator__',
+        'settings'
     )
 
     def __init__(self, actions: dict[str, QAction]) -> None:
