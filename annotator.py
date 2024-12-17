@@ -25,7 +25,7 @@ from app.widgets.message_box import (
     ImportFailedBox,
     ConfirmExitBox
 )
-from app.widgets.settings_dialog import SettingsWindow
+from app.widgets.settings_window import SettingsWindow
 from app.screens.home_screen import HomeScreen
 from app.screens.main_screen import MainScreen
 from app.widgets.toolbar import ToolBar
@@ -56,6 +56,8 @@ class MainWindow(QMainWindow):
         self.toolbar_actions = ToolBarActions(self).actions
         self.addToolBar(Qt.ToolBarArea.LeftToolBarArea,
                         ToolBar(self.toolbar_actions))
+
+        self.settings_window = SettingsWindow(self)
 
         self.canvas = Canvas(self)
         self.annotation_list = AnnotationList(self)
@@ -162,7 +164,10 @@ class MainWindow(QMainWindow):
         self.reload()
 
     def open_settings(self) -> None:
-        SettingsWindow(self).exec()
+        if self.settings_window.isVisible():
+            self.settings_window.close()
+        else:
+            self.settings_window.show()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.canvas.save_progress()
