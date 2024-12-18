@@ -1,7 +1,7 @@
 from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent
-from PyQt6.QtGui import QKeyEvent
+from PyQt6.QtGui import QKeyEvent, QCloseEvent
 from PyQt6.QtWidgets import (
     QMenu,
     QHBoxLayout,
@@ -138,6 +138,12 @@ class ContextMenu(QMenu, QWidget):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         self.on_key_press(event)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        for menu_item in self.menu_items:
+            menu_item.on_mouse_leave()
+
+        super().closeEvent(event)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         event_type = event.type()
