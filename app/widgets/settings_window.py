@@ -5,7 +5,9 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QDialog,
     QFrame,
+    QLabel,
     QPushButton,
+    QSizePolicy
 )
 
 from app.utils import clip_value
@@ -13,6 +15,8 @@ from app.utils import clip_value
 __modality__ = Qt.WindowModality.NonModal
 __windowtype__ = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
 __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
+
+__size_policy__ = QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum
 
 
 class SettingsWindow(QDialog):
@@ -35,16 +39,19 @@ class SettingsWindow(QDialog):
     def build_layout(self) -> None:
         layout = QVBoxLayout(self.popup)
 
-        close_button = QPushButton('\u2A09', self.popup)
-        close_button.setFixedSize(24, 24)
-        close_button.clicked.connect(self.close)
+        layout.addLayout(TitleLayout(self))
+        layout.addSpacing(20)
 
-        title_layout = QHBoxLayout()
-        title_layout.addStretch()
-        title_layout.addWidget(close_button)
+        layout.addLayout(SectionLayout('Appearance'))
+        layout.addSpacing(60)
 
-        layout.addLayout(title_layout)
+        layout.addLayout(SectionLayout('Miscellaneous'))
         layout.addStretch()
+
+        label = QLabel('Note: there are currently no settings available.')
+        label.setStyleSheet('color: rgb(153, 153, 153);')
+        label.setContentsMargins(3, 0, 0, 3)
+        layout.addWidget(label)
 
     def show(self) -> None:
         self.setGeometry(self.parent.frameGeometry())
@@ -95,3 +102,46 @@ class SettingsWindow(QDialog):
 
         overlay_color = QColor(0, 0, 0, 150)
         painter.fillRect(self.rect(), overlay_color)
+
+
+class TitleLayout(QHBoxLayout):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__()
+
+        title = QLabel('Settings')
+        title.setStyleSheet('''
+            color: rgb(200, 200, 200);
+            font-size: 18px;
+            margin-top: 5px;
+            margin-left: 3px;
+        ''')
+
+        close_button = QPushButton('\u2A09', parent.popup)
+        close_button.clicked.connect(parent.close)
+        close_button.setFixedSize(24, 24)
+
+        self.addWidget(title)
+        self.addStretch()
+        self.addWidget(close_button)
+
+
+class SectionLayout(QHBoxLayout):
+    def __init__(self, title: str) -> None:
+        super().__init__()
+        self.setContentsMargins(10, 0, 5, 10)
+
+        title = QLabel(title)
+        title.setStyleSheet('''
+            color: rgb(153, 153, 153);
+            font-size: 14px;
+        ''')
+        title.setSizePolicy(*__size_policy__)
+
+        separator = QFrame()
+        separator.setStyleSheet('''
+            background-color: rgb(53, 53, 53);
+            max-height: 1px;
+        ''')
+
+        self.addWidget(title)
+        self.addWidget(separator)

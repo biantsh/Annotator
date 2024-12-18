@@ -3,7 +3,6 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QToolBar, QToolButton, QSizePolicy
 
 __tool_button_style__ = Qt.ToolButtonStyle.ToolButtonTextUnderIcon
-__size_policy__ = QSizePolicy.Policy.Expanding
 
 
 class ToolBar(QToolBar):
