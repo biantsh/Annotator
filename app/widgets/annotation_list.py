@@ -132,7 +132,9 @@ class AnnotationList(QWidget):
             if source.layout() else source
 
         source.setStyleSheet(f'background-color: {self.background_color};')
-        source_widget.on_mouse_leave()
+
+        if hasattr(source_widget, 'on_mouse_leave'):
+            source_widget.on_mouse_leave()
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         event_type = event.type()
