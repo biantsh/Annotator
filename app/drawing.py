@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtGui import QPainter, QPainterPath, QPen, QColor, QFont
 
-from app.enums.annotation import HoverType, HOVER_AREAS
+from app.enums.annotation import AnnotatingState, HoverType, HOVER_AREAS
 from app.objects import Annotation
 from app.utils import clip_value, text_to_color
 
@@ -166,6 +166,9 @@ class Drawer:
 
         if highlighted and not areas_to_fill:
             areas_to_fill.add('full')
+
+        if canvas.annotating_state == AnnotatingState.RESIZING:
+            areas_to_fill = areas_to_fill.intersection({'full'})
 
         for area_name in areas_to_fill:
             left, top, right, bot = area_fill_coords[area_name]
