@@ -203,8 +203,8 @@ def setup_dark_theme(application: QApplication) -> None:
 
 if __name__ == '__main__':
     app = QApplication([__appname__])
-    app.setApplicationName(f'{__appname__} {__version__}')
     app.setWindowIcon(QIcon('icon:annotator.png'))
+    app.setApplicationName(f'{__appname__} {__version__}')
 
     setup_dark_theme(app)
 
