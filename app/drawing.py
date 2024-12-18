@@ -13,19 +13,15 @@ if TYPE_CHECKING:
 
 class Drawer:
     @staticmethod
-    def _draw_path(canvas: 'Canvas',
-                   painter: QPainter,
+    def _draw_path(painter: QPainter,
                    point_groups: tuple[tuple[tuple[float, float], ...], ...],
                    color: tuple[float, ...]
                    ) -> None:
         pen = QPen(QColor(*color))
+        pen.setCosmetic(True)
+        pen.setWidth(3)
 
-        line_width = round(2 / canvas.get_scale())
-        line_width = max(line_width, 2)
-
-        pen.setWidth(line_width)
         painter.setPen(pen)
-
         line_path = QPainterPath()
 
         for point_group in point_groups:
@@ -39,8 +35,7 @@ class Drawer:
         painter.drawPath(line_path)
 
     @staticmethod
-    def _draw_rectangle(canvas: 'Canvas',
-                        painter: QPainter,
+    def _draw_rectangle(painter: QPainter,
                         position: tuple[float, ...],
                         color: tuple[float, ...]
                         ) -> None:
@@ -53,7 +48,7 @@ class Drawer:
             (x_min, y_min)
         )
 
-        Drawer._draw_path(canvas, painter, (points, ), color)
+        Drawer._draw_path(painter, (points, ), color)
 
     @staticmethod
     def _fill_rectangle(painter: QPainter,
@@ -90,7 +85,7 @@ class Drawer:
             ((0, pos_y), (canvas.pixmap.width(), pos_y), )
         )
 
-        Drawer._draw_path(canvas, painter, point_groups, (0, 0, 0, 100))
+        Drawer._draw_path(painter, point_groups, (0, 0, 0, 100))
 
     @staticmethod
     def draw_candidate_annotation(canvas: 'Canvas',
@@ -107,7 +102,7 @@ class Drawer:
         y_max = clip_value(y_max, 0, canvas.pixmap.height())
 
         position = x_min, y_min, x_max, y_max
-        Drawer._draw_rectangle(canvas, painter, position, (0, 0, 0, 100))
+        Drawer._draw_rectangle(painter, position, (0, 0, 0, 100))
 
     @staticmethod
     def draw_annotation(canvas: 'Canvas',
@@ -124,8 +119,8 @@ class Drawer:
         outline_color = (255, 255, 255, 255) if highlighted or selected else \
             [*text_to_color(annotation.label_name), 155]
 
-        position = annotation.position
-        Drawer._draw_rectangle(canvas, painter, position, outline_color)
+        position = tuple(annotation.position)
+        Drawer._draw_rectangle(painter, position, outline_color)
 
         if hidden:
             return
@@ -138,14 +133,25 @@ class Drawer:
                         painter: QPainter,
                         annotation: Annotation
                         ) -> None:
+        # Temporarily unset transforms so that the fill width is unscaled.
+        # This does make it so that we have to manually scale the coordinates.
+        painter.save()
+        painter.resetTransform()
+
         highlighted = annotation.highlighted or annotation.selected
 
         color = text_to_color(annotation.label_name)
         left, top, right, bottom = annotation.position
 
-        width = round(12 / canvas.get_scale())
-        width = max(width, 8)
+        scale = canvas.get_scale()
+        offset_x, offset_y = canvas.get_center_offset()
 
+        left = left * scale + offset_x
+        top = top * scale + offset_y
+        right = right * scale + offset_x
+        bottom = bottom * scale + offset_y
+
+        width = 10
         area_fill_coords = {
             'full': [left, top, right, bottom],
             'top': [left + width, top, right - width, top + width],
@@ -171,15 +177,18 @@ class Drawer:
             areas_to_fill = areas_to_fill.intersection({'full'})
 
         for area_name in areas_to_fill:
-            left, top, right, bot = area_fill_coords[area_name]
+            fill_coords = area_fill_coords[area_name]
+            fill_left, fill_top, fill_right, fill_bottom = fill_coords
 
-            left = clip_value(left, annotation.left, annotation.right)
-            right = clip_value(right, annotation.left, annotation.right)
-            top = clip_value(top, annotation.top, annotation.bottom)
-            bot = clip_value(bot, annotation.top, annotation.bottom)
+            fill_left = clip_value(fill_left, left, right)
+            fill_right = clip_value(fill_right, left, right)
+            fill_top = clip_value(fill_top, top, bottom)
+            fill_bottom = clip_value(fill_bottom, top, bottom)
 
-            position = left, top, right, bot
+            position = fill_left, fill_top, fill_right, fill_bottom
             Drawer._fill_rectangle(painter, position, (*color, 100))
+
+        painter.restore()
 
     @staticmethod
     def draw_zoom_indicator(canvas: 'Canvas',
@@ -221,7 +230,7 @@ class Drawer:
         y_max_visible = clip_value(y_max_visible, 0, image_height)
 
         outer_rect = x_min, y_min, x_max, y_max
-        Drawer._draw_rectangle(canvas, painter, outer_rect, outline_color)
+        Drawer._draw_rectangle(painter, outer_rect, outline_color)
         Drawer._fill_rectangle(painter, outer_rect, fill_color)
 
         x_min_inner = x_min + (x_min_visible / image_width) * overview_width
@@ -230,7 +239,7 @@ class Drawer:
         y_max_inner = y_min + (y_max_visible / image_height) * overview_height
 
         inner_rect = x_min_inner, y_min_inner, x_max_inner, y_max_inner
-        Drawer._draw_rectangle(canvas, painter, inner_rect, outline_color)
+        Drawer._draw_rectangle(painter, inner_rect, outline_color)
 
         text_x = int(x_min + padding / 2)
         text_y = int(y_max - padding / 2)
