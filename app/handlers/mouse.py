@@ -68,9 +68,6 @@ class MouseHandler:
             self.parent.on_mouse_right_drag((shift_x, shift_y))
 
         else:
-            if self.parent.annotating_state == AnnotatingState.RESIZING:
-                self.parent.set_annotating_state(AnnotatingState.IDLE)
-
             self.parent.on_mouse_hover()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:

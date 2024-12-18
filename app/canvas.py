@@ -203,19 +203,7 @@ class Canvas(QWidget):
         return [anno for anno in self.annotations if anno.hidden]
 
     def set_annotating_state(self, state: AnnotatingState) -> None:
-        # To prevent spam, register ResizeAction only when done resizing
-        if (self.annotating_state == AnnotatingState.RESIZING
-                and state != AnnotatingState.RESIZING):
-            if not self.selected_annos:
-                return
-
-            action = ActionResize(self,
-                                  self.anno_pos_before_resize,
-                                  self.selected_annos[-1].position,
-                                  self.selected_annos[-1].label_name)
-
-            self.action_handler.register_action(action)
-            self.anno_pos_before_resize = None
+        previous_state = self.annotating_state
 
         if state == AnnotatingState.IDLE:
             self.annotating_state = AnnotatingState.IDLE
@@ -235,6 +223,18 @@ class Canvas(QWidget):
 
             if self.anno_pos_before_resize is None:
                 self.anno_pos_before_resize = self.selected_annos[-1].position
+
+        # To prevent spam, register ResizeAction only when done resizing
+        if (previous_state == AnnotatingState.RESIZING
+                and state != AnnotatingState.RESIZING
+                and self.selected_annos):
+            action = ActionResize(self,
+                                  self.anno_pos_before_resize,
+                                  self.selected_annos[-1].position,
+                                  self.selected_annos[-1].label_name)
+
+            self.action_handler.register_action(action)
+            self.anno_pos_before_resize = None
 
         self.update()
 
@@ -565,6 +565,7 @@ class Canvas(QWidget):
             self.set_annotating_state(AnnotatingState.IDLE)
 
         else:
+            self.set_annotating_state(AnnotatingState.IDLE)
             self.on_annotation_left_press(event)
 
         self.update()
@@ -608,6 +609,9 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_hover(self) -> None:
+        if self.annotating_state == AnnotatingState.RESIZING:
+            self.set_annotating_state(AnnotatingState.IDLE)
+
         self.update()
 
     def on_mouse_middle_press(self, cursor_position: tuple[int, int]) -> None:
