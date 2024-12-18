@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QFileDialog
 )
 
-from app import __appname__
+from app import __appname__, __version__
 from app.actions import ToolBarActions
 from app.canvas import Canvas
 from app.controllers.annotation_controller import AnnotationController
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
 
         else:
             self.screens.setCurrentWidget(self.home_screen)
-            self.setWindowTitle(__appname__)
+            self.setWindowTitle(f'{__appname__} {__version__}')
 
         self.button_controller.set_enabled_buttons()
 
@@ -203,7 +203,7 @@ def setup_dark_theme(application: QApplication) -> None:
 
 if __name__ == '__main__':
     app = QApplication([__appname__])
-    app.setApplicationName(__appname__)
+    app.setApplicationName(f'{__appname__} {__version__}')
     app.setWindowIcon(QIcon('icon:annotator.png'))
 
     setup_dark_theme(app)
