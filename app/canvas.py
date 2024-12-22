@@ -189,6 +189,9 @@ class Canvas(QWidget):
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
 
+        if self.labels:
+            self.unsaved_changes = True
+
         self.action_handler.image_name = self.image_name
         self.update()
 
