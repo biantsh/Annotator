@@ -44,7 +44,7 @@ ComboBox QLabel {
 }
 SettingsWindow QFrame {
     background-color: rgb(33, 33, 33);
-    border-radius: 10px;
+    border-radius: 4px;
 }
 SettingsWindow QPushButton {
     background-color: rgb(33, 33, 33);
