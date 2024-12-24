@@ -18,6 +18,7 @@ from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
+from app.exceptions.coco import InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
 from app.widgets.annotation_list import AnnotationList
@@ -133,7 +134,12 @@ class MainWindow(QMainWindow):
 
         if file_path := QFileDialog.getOpenFileName(self, title, path, ext)[0]:
             self.settings.set(import_path_setting, file_path)
-            self.import_annotations(file_path)
+
+            try:
+                self.import_annotations(file_path)
+            except InvalidCOCOException as error:
+                InformationBox(self, 'Invalid File', error.message).exec()
+                return
 
     def prompt_export(self) -> str | None:
         export_path_setting = 'default_export_path'

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from natsort import os_sorted
 
+from app.exceptions.coco import InvalidCOCOException
 from app.objects import Annotation
 
 if TYPE_CHECKING:
@@ -104,14 +105,18 @@ class AnnotationController:
                                   append=True)
 
     def import_annotations(self, annotations_path: str) -> bool:
-        with open(annotations_path, 'r') as json_file:
-            coco_dataset = json.load(json_file)
-
         image_dir = self.parent.image_controller.image_dir
         annotator_dir = os.path.join(image_dir, '.annotator')
         imports_path = os.path.join(annotator_dir, '.imports.json')
 
-        anno_data = json.dumps(coco_dataset['annotations'], sort_keys=True)
+        with open(annotations_path, 'r') as json_file:
+            try:
+                coco_dataset = json.load(json_file)
+                annotations = coco_dataset['annotations']
+            except (json.JSONDecodeError, TypeError):
+                raise InvalidCOCOException()
+
+        anno_data = json.dumps(annotations, sort_keys=True)
         hashed_data = hashlib.sha256(anno_data.encode('utf-8')).hexdigest()
 
         # Check if the same file path or contents have already been imported
@@ -124,6 +129,11 @@ class AnnotationController:
                 or hashed_data in existing_imports['hashes']):
             return False
 
+        try:
+            self._import_annotations(coco_dataset)
+        except KeyError:
+            raise InvalidCOCOException()
+
         # Update and save the existing imports
         existing_imports['file_paths'].append(annotations_path)
         existing_imports['hashes'].append(hashed_data)
@@ -132,7 +142,6 @@ class AnnotationController:
         with open(imports_path, 'w') as json_file:
             json.dump(existing_imports, json_file, indent=2)
 
-        self._import_annotations(coco_dataset)
         return True
 
     def export_annotations(self, output_path: str) -> bool:
