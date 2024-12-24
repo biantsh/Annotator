@@ -5,11 +5,9 @@ if TYPE_CHECKING:
 
 
 class ButtonController:
-    requires_images = {
+    image_dependent_actions = {
         'next_image',
-        'prev_image'
-    }
-    requires_label_map = {
+        'prev_image',
         'import',
         'export',
         'bbox'
@@ -18,20 +16,11 @@ class ButtonController:
     def __init__(self, parent: 'MainWindow') -> None:
         self.parent = parent
 
-    def _reset(self) -> None:
-        for action_name in self.requires_images | self.requires_label_map:
-            self.parent.toolbar_actions[action_name].setEnabled(False)
-
     def is_enabled(self, action_name: str) -> bool:
         return self.parent.toolbar_actions[action_name].isEnabled()
 
     def set_enabled_buttons(self) -> None:
-        self._reset()
+        enabled = self.parent.image_controller.num_images > 0
 
-        if self.parent.image_controller.num_images > 0:
-            for action_name in self.requires_images:
-                self.parent.toolbar_actions[action_name].setEnabled(True)
-
-            if self.parent.label_map_controller.labels:
-                for action_name in self.requires_label_map:
-                    self.parent.toolbar_actions[action_name].setEnabled(True)
+        for action_name in self.image_dependent_actions:
+            self.parent.toolbar_actions[action_name].setEnabled(enabled)

@@ -45,9 +45,7 @@ class Canvas(QWidget):
         super().__init__()
         self.parent = parent
 
-        self.labels = []
         self.clipboard = []
-
         self.quick_create = False
         self.previous_label = None
 
@@ -82,6 +80,14 @@ class Canvas(QWidget):
             self.addAction(action)
 
         self.pin_annotation_list = False
+
+    @property
+    def labels(self) -> list[dict]:
+        return self.parent.label_map_controller.labels
+
+    @property
+    def label_names(self) -> list[str]:
+        return [label['name'] for label in self.labels]
 
     def _is_cursor_in_bounds(self) -> bool:
         x_pos, y_pos = self.mouse_handler.cursor_position
@@ -185,14 +191,13 @@ class Canvas(QWidget):
     def load_image(self, image_path: str) -> None:
         self.reset()
 
-        self.image_name = os.path.basename(image_path)
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
 
-        if self.labels:
-            self.unsaved_changes = True
-
+        self.image_name = os.path.basename(image_path)
         self.action_handler.image_name = self.image_name
+
+        self.unsaved_changes = True
         self.update()
 
     def load_annotations(self, annotations: list[Annotation]) -> None:
@@ -347,7 +352,7 @@ class Canvas(QWidget):
             cursor_position = self.mouse_handler.global_position
             x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
-            combo_box = ComboBox(self, self.labels)
+            combo_box = ComboBox(self, self.label_names)
             combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
 
             label_name = combo_box.selected_value
@@ -357,8 +362,7 @@ class Canvas(QWidget):
         self.previous_label = label_name
 
         position = [x_min, y_min, x_max, y_max]
-        category_id = self.labels.index(label_name) + 1
-        annotation = Annotation(position, category_id, label_name)
+        annotation = Annotation(position, label_name)
 
         action = ActionCreate(self, [(position, label_name)])
         self.action_handler.register_action(action)
@@ -454,7 +458,7 @@ class Canvas(QWidget):
         cursor_position = self.mouse_handler.global_position
         x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
-        combo_box = ComboBox(self, self.labels)
+        combo_box = ComboBox(self, self.label_names)
         combo_box.exec(QPoint(x_pos, y_pos + 20))
 
         label_name = combo_box.selected_value
@@ -468,7 +472,6 @@ class Canvas(QWidget):
                 (annotation.position, annotation.label_name, label_name))
 
             annotation.label_name = label_name
-            annotation.category_id = self.labels.index(label_name) + 1
 
         action = ActionRename(self, renamed_annotations)
         self.action_handler.register_action(action)

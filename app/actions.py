@@ -35,7 +35,7 @@ def open_labels(parent: 'MainWindow') -> None:
 
     path = parent.settings.get(label_path_setting)
     title = 'Select Label Map'
-    ext = 'Text Files (*.txt)'
+    ext = 'JSON Files (*.json)'
 
     if file_path := QFileDialog.getOpenFileName(parent, title, path, ext)[0]:
         parent.settings.set(label_path_setting, file_path)
@@ -59,7 +59,7 @@ def create_bbox(parent: 'MainWindow') -> None:
 
 
 def quick_create_bbox(parent: 'Canvas') -> None:
-    if not parent.labels:
+    if not parent.previous_label:
         return
 
     create_bbox(parent.parent)

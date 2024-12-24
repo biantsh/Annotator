@@ -97,7 +97,7 @@ class AnnotationList(QWidget):
         self.widgets = []
 
         annotations = self.parent.canvas.annotations[::-1]
-        annotations = sorted(annotations, key=lambda anno: anno.category_id)
+        annotations = sorted(annotations, key=lambda anno: anno.label_name)
 
         for annotation in annotations:
             check_box = ContextCheckBox(self.parent.canvas, annotation)

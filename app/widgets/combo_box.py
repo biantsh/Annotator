@@ -36,7 +36,7 @@ class ComboBox(QMenu, QWidget):
         self.selected_value = None
 
         self.labels = labels
-        self.num_labels = min(len(labels), 5)
+        self.num_labels = int(clip_value(len(labels), 1, 5))
 
         self.labels_filtered = labels[:self.num_labels]
         self.label_widgets = [QLabel() for _ in range(self.num_labels)]
@@ -73,10 +73,9 @@ class ComboBox(QMenu, QWidget):
 
     def _sort_labels(self, target: str) -> list[str]:
         target = target.lower().replace(' ', '_')
-        labels = self.labels
 
         matches = rapidfuzz.process.extract(target,
-                                            labels,
+                                            self.labels,
                                             scorer=partial_ratio,
                                             limit=self.num_labels)
 
@@ -109,6 +108,9 @@ class ComboBox(QMenu, QWidget):
         self.update()
 
     def _select(self) -> None:
+        if not self.labels_filtered:
+            return
+
         self.selected_value = self.labels_filtered[self.selected_index]
         self.close()
 
@@ -136,15 +138,16 @@ class ComboBox(QMenu, QWidget):
         self.text_widget.setFocus()
 
     def update(self) -> None:
+        if not self.labels_filtered:
+            self.label_widgets[0].setText('<i>No labels available</i>')
+            return
+
         selected_text = self.labels_filtered[self.selected_index]
         underline_color = text_to_color(selected_text)
 
         for widget, label in zip(self.label_widgets, self.labels_filtered):
-            widget.setText(pretty_text(label))
-
             widget.setStyleSheet('border: none; border-bottom: none;')
+            widget.setText(pretty_text(label))
 
         self.label_widgets[self.selected_index].setStyleSheet(
             f'border: none; border-bottom: 2px solid rgb{underline_color};')
-
-        super().update()

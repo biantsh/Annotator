@@ -18,12 +18,15 @@ from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
+from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
 from app.widgets.annotation_list import AnnotationList
 from app.widgets.message_box import (
     ConfirmImportBox,
+    ConfirmExitBox,
     ImportFailedBox,
-    ConfirmExitBox
+    ExportFailedBox,
+    InformationBox
 )
 from app.widgets.settings_window import SettingsWindow
 from app.screens.home_screen import HomeScreen
@@ -49,7 +52,7 @@ class MainWindow(QMainWindow):
         self.settings = Settings()
 
         self.image_controller = ImageController()
-        self.label_map_controller = LabelMapController()
+        self.label_map_controller = LabelMapController(self)
         self.annotation_controller = AnnotationController(self)
         self.button_controller = ButtonController(self)
 
@@ -77,12 +80,9 @@ class MainWindow(QMainWindow):
         image_name = self.image_controller.get_image_name()
 
         self.canvas.save_progress()
-        self.canvas.load_image(image_path)
         self.setWindowTitle(self.image_controller.get_image_status())
 
-        if not self.label_map_controller.labels:
-            return
-
+        self.canvas.load_image(image_path)
         anno_info = self.annotation_controller.load_annotations(image_name)
 
         self.canvas.load_annotations(anno_info['annotations'])
@@ -103,15 +103,10 @@ class MainWindow(QMainWindow):
         self.button_controller.set_enabled_buttons()
 
     def open_label_map(self, label_map_path: str) -> None:
-        self.label_map_controller.load_labels(label_map_path)
-
-        self.annotation_controller.labels = self.label_map_controller.labels
-        self.canvas.labels = self.label_map_controller.labels
-
-        if self.image_controller.image_paths:
-            self.reload()
-
-        self.button_controller.set_enabled_buttons()
+        try:
+            self.label_map_controller.load_labels(label_map_path)
+        except LabelMapException as error:
+            InformationBox(self, 'Invalid Label Map', error.message).exec()
 
     def next_image(self) -> None:
         self.image_controller.next_image()
@@ -149,17 +144,27 @@ class MainWindow(QMainWindow):
 
         if file_path := QFileDialog.getSaveFileName(self, title, path, ext)[0]:
             self.settings.set(export_path_setting, file_path)
-            self.export_annotations(file_path)
+
+            try:
+                self.export_annotations(file_path)
+            except LabelMapException:
+                ExportFailedBox(self).exec()
 
         return file_path
 
     def import_annotations(self, annotations_path: str) -> None:
         if self.annotation_controller.import_annotations(annotations_path):
-            self.reload()
+            image_name = self.image_controller.get_image_name()
+            anno_info = self.annotation_controller.load_annotations(image_name)
+
+            self.canvas.load_annotations(anno_info['annotations'])
+            self.annotation_list.redraw_widgets()
         else:
             ImportFailedBox(self).exec()
 
     def export_annotations(self, output_path: str) -> None:
+        self.canvas.save_progress()
+
         self.annotation_controller.export_annotations(output_path)
         self.reload()
 
@@ -171,9 +176,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.canvas.save_progress()
-
-        if not self.button_controller.is_enabled('export'):
-            return
 
         if not self.annotation_controller.has_annotations():
             return

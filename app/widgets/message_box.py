@@ -11,11 +11,14 @@ __confirm_import__ = ('You already have existing annotations in this session. '
                       '\n\nThe imported annotations will be '
                       'added to your existing ones.')
 
+__confirm_export__ = ('Your annotations will be automatically saved, but '
+                      'have not been exported yet.\n\nExport before leaving?')
+
 __import_fail__ = ('The contents of this file have already '
                    'been imported into this session.')
 
-__confirm_export__ = ('Your annotations will be automatically saved, but '
-                      'have not been exported yet.\n\nExport before leaving?')
+__export_fail__ = ('Some of the annotations to export '
+                   'are missing from the label map.')
 
 
 class MessageBox(QMessageBox):
@@ -44,6 +47,15 @@ class MessageBox(QMessageBox):
         return super().exec() == QMessageBox.StandardButton.Yes
 
 
+class InformationBox(QMessageBox):
+    def __init__(self, parent: 'MainWindow', title: str, text: str) -> None:
+        super().__init__(parent)
+
+        self.setIcon(QMessageBox.Icon.Information)
+        self.setWindowTitle(title)
+        self.setText(text)
+
+
 class ConfirmImportBox(MessageBox):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent,
@@ -62,10 +74,11 @@ class ConfirmExitBox(MessageBox):
                          True)
 
 
-class ImportFailedBox(QMessageBox):
+class ImportFailedBox(InformationBox):
     def __init__(self, parent: 'MainWindow') -> None:
-        super().__init__(parent)
-        self.setIcon(QMessageBox.Icon.Information)
+        super().__init__(parent, 'Can\'t Import File', __import_fail__)
 
-        self.setWindowTitle('Can\'t Import File')
-        self.setText(__import_fail__)
+
+class ExportFailedBox(InformationBox):
+    def __init__(self, parent: 'MainWindow') -> None:
+        super().__init__(parent, 'Can\'t Export File', __export_fail__)

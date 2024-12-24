@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any
 
 from platformdirs import user_config_dir
 
@@ -12,7 +13,13 @@ class Settings:
         os.makedirs(app_dir, exist_ok=True)
 
         self._settings_path = os.path.join(app_dir, 'settings.json')
-        self._settings = {}
+        self._settings = {
+            'default_image_dir': '',
+            'default_label_path': '',
+            'default_import_path': '',
+            'default_export_path': '',
+            'label_map': []
+        }
 
         if os.path.exists(self._settings_path):
             with open(self._settings_path, 'r') as json_file:
@@ -23,8 +30,8 @@ class Settings:
             json.dump(self._settings, json_file, indent=2)
 
     def get(self, setting: str) -> str:
-        return self._settings.get(setting, '')
+        return self._settings[setting]
 
-    def set(self, setting: str, value: str) -> None:
+    def set(self, setting: str, value: Any) -> None:
         self._settings[setting] = value
         self._save()

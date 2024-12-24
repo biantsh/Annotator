@@ -4,23 +4,20 @@ from app.enums.annotation import HoverType
 class Bbox:
     def __init__(self,
                  position: list[int, ...],
-                 category_id: int,
                  label_name: str
                  ) -> None:
         self.position = position
-        self.category_id = category_id
         self.label_name = label_name
 
     @classmethod
     def from_xywh(cls,
                   position: list[int, ...],
-                  category_id: int,
                   label_name
                   ) -> 'Bbox':
         x_min, y_min, width, height = position
         x_max, y_max = x_min + width, y_min + height
 
-        return cls([x_min, y_min, x_max, y_max], category_id, label_name)
+        return cls([x_min, y_min, x_max, y_max], label_name)
 
     @property
     def points(self) -> tuple[tuple[int, int], ...]:
@@ -67,28 +64,13 @@ class Bbox:
     def xywh(self) -> tuple[int, ...]:
         return self.left, self.top, self.width, self.height
 
-    def to_coco(self, object_id: int, image_id: int) -> dict:
-        return {
-            'id': object_id,
-            'image_id': image_id,
-            'category_id': self.category_id,
-            'area': self.area,
-            'bbox': self.xywh,
-            'iscrowd': 0,
-            'segmentation': [
-                [self.right, self.top, self.right, self.bottom,
-                 self.left, self.bottom, self.left, self.top]
-            ]
-        }
-
 
 class Annotation(Bbox):
     def __init__(self,
                  position: list[int, ...],
-                 category_id: int,
                  label_name: str
                  ) -> None:
-        super().__init__(position, category_id, label_name)
+        super().__init__(position, label_name)
         self.hovered = HoverType.NONE
         self.highlighted = False
         self.selected = False
@@ -100,7 +82,7 @@ class Annotation(Bbox):
 
     @classmethod
     def from_bbox(cls, bbox: Bbox) -> 'Annotation':
-        return cls(bbox.position, bbox.category_id, bbox.label_name)
+        return cls(bbox.position, bbox.label_name)
 
     def get_hovered(self,
                     mouse_position: tuple[int, int],

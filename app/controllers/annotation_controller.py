@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 class AnnotationController:
     def __init__(self, parent: 'MainWindow') -> None:
         self.parent = parent
-        self.labels = []
 
     def load_annotations(self, image_name: str) -> dict:
         image_dir = self.parent.image_controller.image_dir
@@ -33,9 +32,8 @@ class AnnotationController:
 
         return {
             'image': json_content['image'],
-            'annotations': [Annotation(
-                anno['position'], anno['category_id'], anno['label_name'])
-                for anno in json_content['annotations']]
+            'annotations': [Annotation(anno['position'], anno['label_name'])
+                            for anno in json_content['annotations']]
         }
 
     def save_annotations(self,
@@ -69,8 +67,7 @@ class AnnotationController:
         for anno in annotations:
             anno_info = {
                 'position': anno.position,
-                'label_name': anno.label_name,
-                'category_id': anno.category_id
+                'label_name': anno.label_name
             }
 
             if anno_info not in annotation_content['annotations']:
@@ -80,32 +77,20 @@ class AnnotationController:
             json.dump(annotation_content, json_file, indent=2)
 
     def _import_annotations(self, coco_dataset: dict) -> None:
-        category_id_map = {}  # Mapping between imported and native IDs
+        annotations = defaultdict(lambda: [])
 
-        for category in coco_dataset['categories']:
-            category_id = category['id']
-            category_name = category['name']
-
-            if category_name in self.labels:
-                native_id = self.labels.index(category_name) + 1
-                category_id_map[category_id] = native_id
-
-        annotation_map = defaultdict(lambda: [])
+        label_names = {category['id']: category['name']
+                       for category in coco_dataset['categories']}
 
         for annotation in coco_dataset['annotations']:
+            category_id = annotation['category_id']
             image_id = annotation['image_id']
 
             bbox = annotation['bbox']
-            category_id = annotation['category_id']
+            label_name = label_names[category_id]
 
-            if category_id not in category_id_map:
-                continue
-
-            category_id = category_id_map[category_id]
-            label_name = self.labels[category_id - 1]
-
-            annotation = Annotation.from_xywh(bbox, category_id, label_name)
-            annotation_map[image_id].append(annotation)
+            annotation = Annotation.from_xywh(bbox, label_name)
+            annotations[image_id].append(annotation)
 
         for image in coco_dataset['images']:
             image_name = image['file_name']
@@ -113,10 +98,9 @@ class AnnotationController:
             width = image['width']
             height = image['height']
 
-            annotations = annotation_map[image_id]
             self.save_annotations(image_name,
                                   (width, height),
-                                  annotations,
+                                  annotations[image_id],
                                   append=True)
 
     def import_annotations(self, annotations_path: str) -> bool:
@@ -159,10 +143,13 @@ class AnnotationController:
         if not os.path.exists(annotator_dir):
             return False
 
+        label_map = self.parent.label_map_controller
+        categories = sorted(label_map.labels, key=lambda item: item['id'])
+
         export_content = {
             'images': [],
             'annotations': [],
-            'categories': []
+            'categories': categories
         }
 
         annotation_id = 1
@@ -183,17 +170,22 @@ class AnnotationController:
                 'file_name': image_name
             })
 
-            for annotation in annotations:
-                annotation_coco = annotation.to_coco(annotation_id, image_id)
-                export_content['annotations'].append(annotation_coco)
+            for anno in annotations:
+                category_id = label_map.get_id(anno.label_name)
 
+                export_content['annotations'].append({
+                    'id': annotation_id,
+                    'image_id': image_id,
+                    'category_id': category_id,
+                    'area': anno.area,
+                    'bbox': anno.xywh,
+                    'iscrowd': 0,
+                    'segmentation': [
+                        [anno.right, anno.top, anno.right, anno.bottom,
+                         anno.left, anno.bottom, anno.left, anno.top]
+                    ]
+                })
                 annotation_id += 1
-
-        for category_id, category_name in enumerate(self.labels, 1):
-            export_content['categories'].append({
-                'id': category_id,
-                'name': category_name
-            })
 
         with open(output_path, 'w') as json_file:
             json.dump(export_content, json_file, indent=2)

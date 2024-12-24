@@ -49,8 +49,7 @@ class ActionCreate(Action):
         self.parent.set_selected_annotation(None)
 
         for position, label in self.created_annos:
-            category_id = self.parent.labels.index(label) + 1
-            annotation = Annotation(position, category_id, label)
+            annotation = Annotation(position, label)
 
             self.parent.annotations.append(annotation)
             self.parent.add_selected_annotation(annotation)
@@ -81,8 +80,7 @@ class ActionDelete(Action):
         self.parent.set_selected_annotation(None)
 
         for position, label in self.deleted_annos:
-            category_id = self.parent.labels.index(label) + 1
-            annotation = Annotation(position, category_id, label)
+            annotation = Annotation(position, label)
 
             self.parent.annotations.append(annotation)
             self.parent.add_selected_annotation(annotation)
@@ -137,7 +135,6 @@ class ActionRename(Action):
             label = info_after[index][1]
 
             annotation.label_name = label
-            annotation.category_id = self.parent.labels.index(label) + 1
 
             self.parent.add_selected_annotation(annotation)
 
