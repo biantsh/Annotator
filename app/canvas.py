@@ -600,6 +600,7 @@ class Canvas(QWidget):
         if not self.hovered_anno:
             return
 
+        self.set_selected_annotation(self.hovered_anno)
         self.set_annotating_state(AnnotatingState.RESIZING)
         self.move_annotation(self.hovered_anno, cursor_shift)
 
