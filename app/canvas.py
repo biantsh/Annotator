@@ -572,7 +572,11 @@ class Canvas(QWidget):
 
         else:
             self.set_annotating_state(AnnotatingState.IDLE)
-            self.on_annotation_left_press(event)
+
+            if self.hovered_anno:
+                self.on_annotation_left_press(event)
+            else:
+                self.set_selected_annotation(None)
 
         self.update()
 
