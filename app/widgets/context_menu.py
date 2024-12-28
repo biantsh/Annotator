@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget
 )
 
-from app.enums.annotation import AnnotatingState
+from app.enums.canvas import AnnotatingState
 from app.handlers.actions import ActionCreate, ActionDelete
 from app.styles.style_sheets import WidgetStyleSheet
 from app.widgets.menu_item import (

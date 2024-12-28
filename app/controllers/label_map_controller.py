@@ -48,3 +48,13 @@ class LabelMapController:
                 return item['id']
 
         raise LabelNotFoundException()
+
+    def get_keypoint_info(self, label_name: str) -> tuple | None:
+        for item in self.labels:
+            if item['name'] == label_name:
+                if 'skeleton' not in item:
+                    return None
+
+                return item.get('skeleton'), item.get('symmetry')
+
+        return None

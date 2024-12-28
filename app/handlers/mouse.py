@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMouseEvent, QWheelEvent
 
-from app.enums.annotation import AnnotatingState
-
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
@@ -20,6 +18,7 @@ class MouseHandler:
         self.drag_start_pan = None
 
         self.left_clicked = False
+        self.double_clicked = False
 
     def _get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
         offset_x, offset_y = self.parent.get_center_offset()
@@ -72,13 +71,22 @@ class MouseHandler:
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            if self.parent.hovered_anno and not self.double_clicked:
+                self.parent.on_annotation_left_release(event)
+
             self.left_clicked = False
+            self.double_clicked = False
 
         elif event.button() == Qt.MouseButton.RightButton:
             if event.position() == self.drag_start_pos:
                 self.parent.on_mouse_right_press(event)
 
         self.mouseMoveEvent(event)
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.double_clicked = True
+            self.parent.on_mouse_double_click(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         angle_delta = event.angleDelta().y()

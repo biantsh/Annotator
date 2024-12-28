@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from natsort import os_sorted
 
 from app.exceptions.coco import InvalidCOCOException
-from app.objects import Annotation
+from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
     from annotator import MainWindow
@@ -31,11 +31,21 @@ class AnnotationController:
         with open(json_path, 'r') as json_file:
             json_content = json.load(json_file)
 
-        return {
+        annotations = {
             'image': json_content['image'],
-            'annotations': [Annotation(anno['position'], anno['label_name'])
-                            for anno in json_content['annotations']]
+            'annotations': []
         }
+
+        for anno in json_content['annotations']:
+            annotation = Annotation(anno['position'], anno['label_name'])
+
+            if 'keypoints' in anno:
+                annotation.keypoints = [Keypoint(annotation, [pos_x, pos_y], bool(visible))
+                                        for pos_x, pos_y, visible in anno['keypoints']]
+
+            annotations['annotations'].append(annotation)
+
+        return annotations
 
     def save_annotations(self,
                          image_name: str,
@@ -71,6 +81,10 @@ class AnnotationController:
                 'label_name': anno.label_name
             }
 
+            if anno.has_keypoints:
+                anno_info['keypoints'] = [[keypoint.pos_x, keypoint.pos_y, int(keypoint.visible)]
+                                          for keypoint in anno.keypoints]
+
             if anno_info not in annotation_content['annotations']:
                 annotation_content['annotations'].append(anno_info)
 
@@ -83,15 +97,24 @@ class AnnotationController:
         label_names = {category['id']: category['name']
                        for category in coco_dataset['categories']}
 
-        for annotation in coco_dataset['annotations']:
-            category_id = annotation['category_id']
-            image_id = annotation['image_id']
+        for coco_annotation in coco_dataset['annotations']:
+            category_id = coco_annotation['category_id']
+            image_id = coco_annotation['image_id']
 
-            bbox = annotation['bbox']
+            bbox = coco_annotation['bbox']
             label_name = label_names[category_id]
 
             annotation = Annotation.from_xywh(bbox, label_name)
             annotations[image_id].append(annotation)
+
+            keypoints = coco_annotation.get('keypoints')
+            if keypoints is None:
+                continue
+
+            annotation.keypoints = [
+                Keypoint(annotation, [keypoints[idx], keypoints[idx + 1]],
+                         bool(keypoints[idx + 2]))
+                for idx in range(0, len(keypoints), 3)]
 
         for image in coco_dataset['images']:
             image_name = image['file_name']
@@ -182,7 +205,7 @@ class AnnotationController:
             for anno in annotations:
                 category_id = label_map.get_id(anno.label_name)
 
-                export_content['annotations'].append({
+                annotation = {
                     'id': annotation_id,
                     'image_id': image_id,
                     'category_id': category_id,
@@ -193,7 +216,17 @@ class AnnotationController:
                         [anno.right, anno.top, anno.right, anno.bottom,
                          anno.left, anno.bottom, anno.left, anno.top]
                     ]
-                })
+                }
+
+                if anno.has_keypoints:
+                    keypoints = sum([[kpt.pos_x * kpt.visible, kpt.pos_y * kpt.visible, 2 * kpt.visible]
+                                     for kpt in anno.keypoints], start=[])
+                    num_keypoints = sum(1 for kpt in anno.keypoints if kpt.visible)
+
+                    annotation['keypoints'] = keypoints
+                    annotation['num_keypoints'] = num_keypoints
+
+                export_content['annotations'].append(annotation)
                 annotation_id += 1
 
         with open(output_path, 'w') as json_file:

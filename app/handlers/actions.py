@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import TYPE_CHECKING
 
-from app.objects import Annotation
+from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
@@ -21,7 +21,7 @@ class Action(ABC):
 class ActionCreate(Action):
     def __init__(self,
                  parent: 'Canvas',
-                 created_annos: list[tuple[list[int, ...], str]]
+                 created_annos: list[tuple[list, str, list]]
                  ) -> None:
         self.parent = parent
         self.created_annos = created_annos
@@ -32,7 +32,7 @@ class ActionCreate(Action):
         annotations = []
 
         for candidate in candidates:
-            candidate_info = candidate.position, candidate.label_name
+            candidate_info = candidate.position, candidate.label_name, candidate.keypoints
 
             if candidate_info in self.created_annos:
                 annotations.append(candidate)
@@ -48,8 +48,8 @@ class ActionCreate(Action):
     def redo(self, _: list[Annotation]) -> None:
         self.parent.set_selected_annotation(None)
 
-        for position, label in self.created_annos:
-            annotation = Annotation(position, label)
+        for position, label, keypoints in self.created_annos:
+            annotation = Annotation(position, label, keypoints)
 
             self.parent.annotations.append(annotation)
             self.parent.add_selected_annotation(annotation)
@@ -58,7 +58,7 @@ class ActionCreate(Action):
 class ActionDelete(Action):
     def __init__(self,
                  parent: 'Canvas',
-                 deleted_annos: list[tuple[list[int, ...], str]]
+                 deleted_annos: list[tuple[list, str, list]]
                  ) -> None:
         self.parent = parent
         self.deleted_annos = deleted_annos
@@ -69,7 +69,7 @@ class ActionDelete(Action):
         annotations = []
 
         for candidate in candidates:
-            candidate_info = candidate.position, candidate.label_name
+            candidate_info = candidate.position, candidate.label_name, candidate.keypoints
 
             if candidate_info in self.deleted_annos:
                 annotations.append(candidate)
@@ -79,8 +79,8 @@ class ActionDelete(Action):
     def undo(self, _: list[Annotation]) -> None:
         self.parent.set_selected_annotation(None)
 
-        for position, label in self.deleted_annos:
-            annotation = Annotation(position, label)
+        for position, label, keypoints in self.deleted_annos:
+            annotation = Annotation(position, label, keypoints)
 
             self.parent.annotations.append(annotation)
             self.parent.add_selected_annotation(annotation)
@@ -145,11 +145,11 @@ class ActionRename(Action):
         self._execute(annotations, self.info_from, self.info_to)
 
 
-class ActionResize(Action):
+class ActionMove(Action):
     def __init__(self,
                  parent: 'Canvas',
-                 position_from: list[int, ...],
-                 position_to: list[int, ...],
+                 position_from: dict[str, list[int]],
+                 position_to: dict[str, list[int]],
                  label_name: str
                  ) -> None:
         self.parent = parent
@@ -170,15 +170,23 @@ class ActionResize(Action):
 
     def _execute(self,
                  annotations: list[Annotation],
-                 pos_before: list[int, ...],
-                 pos_after: list[int, ...]
+                 pos_before: dict[str, list[int]],
+                 pos_after: dict[str, list[int]]
                  ) -> None:
-        annotation = self._find_annotation(annotations, pos_before)
+        anno_pos_before = pos_before['annotation']
+        anno_pos_after = pos_after['annotation']
+
+        annotation = self._find_annotation(annotations, anno_pos_before)
 
         if annotation is None:
             return
 
-        annotation.position = pos_after
+        annotation.position = anno_pos_after
+
+        if annotation.has_keypoints:
+            for kpt_idx, keypoint in enumerate(annotation.keypoints):
+                keypoint.position = pos_after['keypoints'][kpt_idx]
+
         self.parent.set_selected_annotation(annotation)
 
     def undo(self, annotations: list[Annotation]) -> None:
@@ -186,6 +194,75 @@ class ActionResize(Action):
 
     def redo(self, annotations: list[Annotation]) -> None:
         self._execute(annotations, self.position_from, self.position_to)
+
+
+class ActionDeleteKeypoints(Action):
+    def __init__(self,
+                 parent: 'Canvas',
+                 keypoints: list[tuple[list, int, tuple[list, str]]]
+                 ) -> None:
+        self.parent = parent
+        self.keypoints = keypoints
+
+    def _find_keypoints(self, candidates: list[Annotation]) -> list[Keypoint]:
+        keypoints = []
+
+        for anno in candidates:
+            for kpt_pos, kpt_idx, (anno_pos, label_name) in self.keypoints:
+                if (anno_pos, label_name) == (anno.position, anno.label_name):
+                    keypoints.append(anno.keypoints[kpt_idx])
+
+        return keypoints
+
+    def undo(self, annotations: list[Annotation]) -> None:
+        self.parent.set_selected_keypoint(None)
+
+        for keypoint in self._find_keypoints(annotations):
+            self.parent.add_selected_keypoint(keypoint)
+            keypoint.visible = True
+
+    def redo(self, annotations: list[Annotation]) -> None:
+        for keypoint in self._find_keypoints(annotations):
+            keypoint.visible = False
+
+
+class ActionMoveKeypoint(Action):
+    def __init__(self,
+                 parent: 'Canvas',
+                 kpt_idx: int,
+                 position_from: list[int],
+                 position_to: list[int],
+                 position_anno: list[int],
+                 label_name: str
+                 ) -> None:
+        self.parent = parent
+
+        self.kpt_idx = kpt_idx
+        self.position_from = position_from
+        self.position_to = position_to
+        self.position_anno = position_anno
+        self.label_name = label_name
+
+    def _find_keypoint(self, candidates: list[Annotation]) -> Keypoint:
+        for anno in candidates:
+            if anno.position == self.position_anno \
+                    and anno.label_name == self.label_name:
+                return anno.keypoints[self.kpt_idx]
+
+    def _execute(self,
+                 annotations: list[Annotation],
+                 position: list[int]
+                 ) -> None:
+        keypoint = self._find_keypoint(annotations)
+
+        keypoint.position = position
+        self.parent.set_selected_keypoint(keypoint)
+
+    def undo(self, annotations: list[Annotation]) -> None:
+        self._execute(annotations, self.position_from)
+
+    def redo(self, annotations: list[Annotation]) -> None:
+        self._execute(annotations, self.position_to)
 
 
 class ActionHandler:

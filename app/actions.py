@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Callable, Any
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QWidget, QFileDialog
 
-from app.enums.annotation import AnnotatingState
+from app.enums.canvas import AnnotatingState
 
 if TYPE_CHECKING:
     from annotator import MainWindow
@@ -52,7 +52,7 @@ def export_annos(parent: 'MainWindow') -> None:
 
 def create_bbox(parent: 'MainWindow') -> None:
     if parent.canvas.annotating_state in (AnnotatingState.IDLE,
-                                          AnnotatingState.RESIZING):
+                                          AnnotatingState.MOVING_ANNO):
         parent.canvas.set_annotating_state(AnnotatingState.READY)
     else:
         parent.canvas.set_annotating_state(AnnotatingState.IDLE)

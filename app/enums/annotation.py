@@ -1,11 +1,11 @@
 from enum import IntEnum
 
 
-class AnnotatingState(IntEnum):
-    IDLE = 0
-    READY = 1
-    DRAWING = 2
-    RESIZING = 3
+class SelectionType(IntEnum):
+    UNSELECTED = 0
+    FRESHLY_SELECTED = 1
+    SELECTED = 2
+    BOX_ONLY = 3
 
 
 class HoverType(IntEnum):
