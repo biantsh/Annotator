@@ -16,7 +16,7 @@ from PyQt6.QtGui import (
 from PyQt6.QtWidgets import QWidget
 
 from app.actions import CanvasActions
-from app.drawing import Drawer
+from app.controllers.label_map_controller import LabelMapController
 from app.enums.annotation import HoverType, SelectionType
 from app.enums.canvas import AnnotatingState
 from app.handlers.actions import (
@@ -30,6 +30,7 @@ from app.handlers.actions import (
 )
 from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
+from app.handlers.painter import CanvasPainter
 from app.handlers.zoom import ZoomHandler
 from app.widgets.combo_box import ComboBox
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
@@ -59,7 +60,6 @@ class Canvas(QWidget):
 
         self.image_name = None
         self.pixmap = QPixmap()
-        self.drawer = Drawer()
 
         self.annotating_state = AnnotatingState.IDLE
         self.anno_first_corner = None
@@ -89,14 +89,14 @@ class Canvas(QWidget):
         self.pin_annotation_list = False
 
     @property
-    def labels(self) -> list[dict]:
-        return self.parent.label_map_controller.labels
+    def label_map(self) -> LabelMapController:
+        return self.parent.label_map_controller
 
     @property
     def label_names(self) -> list[str]:
-        return [label['name'] for label in self.labels]
+        return [label['name'] for label in self.label_map.labels]
 
-    def _is_cursor_in_bounds(self) -> bool:
+    def is_cursor_in_bounds(self) -> bool:
         x_pos, y_pos = self.mouse_handler.cursor_position
 
         pixmap_size = self.pixmap.size()
@@ -165,7 +165,7 @@ class Canvas(QWidget):
         super().update()
 
     def update_cursor_icon(self) -> None:
-        if not self._is_cursor_in_bounds():
+        if not self.is_cursor_in_bounds():
             self.setCursor(Qt.CursorShape.ArrowCursor)
             return
 
@@ -174,7 +174,7 @@ class Canvas(QWidget):
             self.setCursor(Qt.CursorShape.CrossCursor)
             return
 
-        if self.hovered_keypoint is not None:
+        if self.hovered_keypoint:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             return
 
@@ -592,7 +592,13 @@ class Canvas(QWidget):
             delta_x += 1
 
         selected_anno = self.selected_annos[-1]
+        selection_type = selected_anno.selected
+
+        if selection_type == SelectionType.NEWLY_SELECTED:
+            selection_type = SelectionType.SELECTED
+
         self.set_selected_annotation(selected_anno)
+        selected_anno.selected = selection_type
 
         self.set_annotating_state(AnnotatingState.MOVING_ANNO)
         self.move_annotation(selected_anno, (delta_x, delta_y))
@@ -638,21 +644,18 @@ class Canvas(QWidget):
         if not self.selected_annos:
             return
 
-        cursor_position = self.mouse_handler.global_position
-        x_pos, y_pos = cursor_position.x(), cursor_position.y()
-
         label_options = self.label_names
 
-        # Narrow down the options to not allow renaming to a category
-        # with a different keypoint structure
-        label_map = self.parent.label_map_controller
-        for annotation in self.selected_annos:
-            if not annotation.has_keypoints:
-                continue
+        # Exclude categories with a different keypoint structure
+        for anno in self.selected_annos:
+            if anno.has_keypoints:
+                label_options = [
+                    option for option in label_options if
+                    self.label_map.get_keypoint_info(option) ==
+                    self.label_map.get_keypoint_info(anno.label_name)]
 
-            label_options = [option for option in label_options
-                             if label_map.get_keypoint_info(option) ==
-                             label_map.get_keypoint_info(annotation.label_name)]
+        cursor_position = self.mouse_handler.global_position
+        x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
         combo_box = ComboBox(self, label_options)
         combo_box.exec(QPoint(x_pos, y_pos + 20))
@@ -778,9 +781,9 @@ class Canvas(QWidget):
 
         match ctrl_pressed, selection_type:
             case False, SelectionType.UNSELECTED:
-                self.hovered_anno.selected = SelectionType.FRESHLY_SELECTED
+                self.hovered_anno.selected = SelectionType.NEWLY_SELECTED
 
-            case False, SelectionType.FRESHLY_SELECTED:
+            case False, SelectionType.NEWLY_SELECTED:
                 if self.hovered_anno.has_keypoints:
                     self.hovered_anno.selected = SelectionType.BOX_ONLY
 
@@ -793,9 +796,9 @@ class Canvas(QWidget):
 
             case True, SelectionType.UNSELECTED:
                 self.add_selected_annotation(self.hovered_anno)
-                self.hovered_anno.selected = SelectionType.FRESHLY_SELECTED
+                self.hovered_anno.selected = SelectionType.NEWLY_SELECTED
 
-            case True, SelectionType.FRESHLY_SELECTED:
+            case True, SelectionType.NEWLY_SELECTED:
                 if self.hovered_anno.has_keypoints:
                     self.hovered_anno.selected = SelectionType.BOX_ONLY
                 else:
@@ -906,7 +909,7 @@ class Canvas(QWidget):
             else:
                 self.set_selected_annotation(self.hovered_anno)
 
-        elif self.hovered_anno.selected == SelectionType.FRESHLY_SELECTED:
+        elif self.hovered_anno.selected == SelectionType.NEWLY_SELECTED:
             if self.hovered_anno.has_keypoints:
                 self.hovered_anno.selected = SelectionType.BOX_ONLY
             elif Qt.KeyboardModifier.ControlModifier & event.modifiers():
@@ -922,21 +925,21 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_middle_press(self, cursor_position: tuple[int, int]) -> None:
-        if not self._is_cursor_in_bounds():
+        if not self.is_cursor_in_bounds():
             return
 
         self.zoom_handler.toggle_zoom(cursor_position)
         self.update()
 
     def on_scroll_up(self, cursor_position: tuple[int, int]) -> None:
-        if not self._is_cursor_in_bounds():
+        if not self.is_cursor_in_bounds():
             return
 
         self.zoom_handler.zoom_in(cursor_position)
         self.update()
 
     def on_scroll_down(self, cursor_position: tuple[int, int]) -> None:
-        if not self._is_cursor_in_bounds():
+        if not self.is_cursor_in_bounds():
             return
 
         self.zoom_handler.zoom_out(cursor_position)
@@ -977,32 +980,6 @@ class Canvas(QWidget):
         super().resizeEvent(event)
 
     def paintEvent(self, _: QPaintEvent) -> None:
-        painter = QPainter()
-        painter.begin(self)
-
-        painter.setRenderHints(__antialiasing__ | __pixmap_transform__)
-
-        painter.translate(QPoint(*self.get_center_offset()))
-        painter.scale(*[self.get_scale()] * 2)
-
-        painter.drawPixmap(0, 0, self.pixmap)
-
-        for annotation in self.annotations:
-            keypoint_info = self.parent.label_map_controller.get_keypoint_info(annotation.label_name)
-            skeleton, symmetry = keypoint_info or (None, None)
-
-            self.drawer.draw_annotation(self, painter, annotation, skeleton, symmetry)
-
-        cursor_position = self.mouse_handler.cursor_position
-
-        if self.annotating_state == AnnotatingState.READY:
-            if self._is_cursor_in_bounds():
-                self.drawer.draw_crosshair(self, painter, cursor_position)
-
-        elif self.annotating_state == AnnotatingState.DRAWING:
-            self.drawer.draw_candidate_annotation(
-                self, painter, self.anno_first_corner, cursor_position)
-
-        if self.zoom_handler.draw_indicator:
-            zoom_level = self.zoom_handler.zoom_level
-            self.drawer.draw_zoom_indicator(self, painter, zoom_level)
+        painter = CanvasPainter(self)
+        painter.paint_scene()
+        painter.end()

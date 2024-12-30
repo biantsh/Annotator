@@ -37,7 +37,9 @@ class AnnotationController:
         }
 
         for anno in json_content['annotations']:
-            annotation = Annotation(anno['position'], anno['label_name'])
+            annotation = Annotation(anno['position'],
+                                    anno['label_name'],
+                                    anno['id'])
 
             if 'keypoints' in anno:
                 annotation.keypoints = [Keypoint(annotation, [pos_x, pos_y], bool(visible))
@@ -77,6 +79,7 @@ class AnnotationController:
 
         for anno in annotations:
             anno_info = {
+                'id': anno.ref_id,
                 'position': anno.position,
                 'label_name': anno.label_name
             }

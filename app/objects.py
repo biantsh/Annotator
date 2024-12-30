@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from app.enums.annotation import HoverType, SelectionType
 
 
@@ -10,10 +12,7 @@ class Bbox:
         self.label_name = label_name
 
     @classmethod
-    def from_xywh(cls,
-                  position: list[int, ...],
-                  label_name: str
-                  ) -> 'Bbox':
+    def from_xywh(cls, position: list[int, ...], label_name: str) -> 'Bbox':
         x_min, y_min, width, height = position
         x_max, y_max = x_min + width, y_min + height
 
@@ -91,9 +90,12 @@ class Annotation(Bbox):
     def __init__(self,
                  position: list[int, ...],
                  label_name: str,
+                 ref_id: str = None,
                  keypoints: list[Keypoint] = None
                  ) -> None:
         super().__init__(position, label_name)
+
+        self.ref_id = ref_id or uuid4().hex
         self.keypoints = keypoints
 
         self.hovered = HoverType.NONE
@@ -151,13 +153,29 @@ class Annotation(Bbox):
         right = abs(x_pos - self.right) <= edge_width
         bottom = abs(y_pos - self.bottom) <= edge_width
 
-        hover_type = HoverType.NONE
-        hover_type |= top and HoverType.TOP
-        hover_type |= left and HoverType.LEFT
-        hover_type |= right and HoverType.RIGHT
-        hover_type |= bottom and HoverType.BOTTOM
+        if top and left:
+            return HoverType.TOP_LEFT
+        if top and right:
+            return HoverType.TOP_RIGHT
+        if bottom and left:
+            return HoverType.BOTTOM_LEFT
+        if bottom and right:
+            return HoverType.BOTTOM_RIGHT
 
-        return hover_type or HoverType.FULL
+        if top:
+            return HoverType.TOP
+        if left:
+            return HoverType.LEFT
+        if right:
+            return HoverType.RIGHT
+        if bottom:
+            return HoverType.BOTTOM
+
+        if self.left <= x_pos <= self.right \
+                and self.top <= y_pos <= self.bottom:
+            return HoverType.FULL
+
+        return HoverType.NONE
 
     def get_hovered_keypoint(self,
                              mouse_position: tuple[int, int],

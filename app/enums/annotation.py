@@ -1,13 +1,6 @@
 from enum import IntEnum
 
 
-class SelectionType(IntEnum):
-    UNSELECTED = 0
-    FRESHLY_SELECTED = 1
-    SELECTED = 2
-    BOX_ONLY = 3
-
-
 class HoverType(IntEnum):
     """Enum specifying which part of an annotation is hovered.
 
@@ -26,11 +19,8 @@ class HoverType(IntEnum):
     FULL = 16
 
 
-# Define which areas to highlight depending on the hover type
-HOVER_AREAS = {
-    HoverType.FULL: {'full'},
-    HoverType.TOP: {'top', 'top_left', 'top_right'},
-    HoverType.LEFT: {'left', 'top_left', 'bottom_left'},
-    HoverType.RIGHT: {'right', 'top_right', 'bottom_right'},
-    HoverType.BOTTOM: {'bottom', 'bottom_left', 'bottom_right'}
-}
+class SelectionType(IntEnum):
+    UNSELECTED = 0
+    NEWLY_SELECTED = 1
+    SELECTED = 2
+    BOX_ONLY = 3

@@ -12,13 +12,13 @@ class MouseHandler:
         self.parent = parent
 
         self.cursor_position = 0, 0
-        self.global_position = None
-
-        self.drag_start_pos = None
-        self.drag_start_pan = None
+        self.global_position = 0, 0
 
         self.left_clicked = False
         self.double_clicked = False
+
+        self.drag_start_pos = None
+        self.drag_start_pan = None
 
     def _get_cursor_position(self, event: QMouseEvent) -> tuple[int, int]:
         offset_x, offset_y = self.parent.get_center_offset()
@@ -26,22 +26,6 @@ class MouseHandler:
 
         return (int((event.pos().x() - offset_x) / scale),
                 int((event.pos().y() - offset_y) / scale))
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        position = event.position()
-        pos_x, pos_y = position.x(), position.y()
-
-        if Qt.MouseButton.LeftButton & event.buttons():
-            self.left_clicked = True
-            self.parent.on_mouse_left_press(event)
-
-        if Qt.MouseButton.RightButton & event.buttons():
-            self.drag_start_pos = event.position()
-            self.drag_start_pan = (self.parent.zoom_handler.pan_x,
-                                   self.parent.zoom_handler.pan_y)
-
-        if Qt.MouseButton.MiddleButton & event.buttons():
-            self.parent.on_mouse_middle_press((pos_x, pos_y))
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         prev_cursor_position = self.cursor_position
@@ -69,6 +53,22 @@ class MouseHandler:
         else:
             self.parent.on_mouse_hover()
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        position = event.position()
+        pos_x, pos_y = position.x(), position.y()
+
+        if Qt.MouseButton.LeftButton & event.buttons():
+            self.left_clicked = True
+            self.parent.on_mouse_left_press(event)
+
+        if Qt.MouseButton.RightButton & event.buttons():
+            self.drag_start_pos = event.position()
+            self.drag_start_pan = (self.parent.zoom_handler.pan_x,
+                                   self.parent.zoom_handler.pan_y)
+
+        if Qt.MouseButton.MiddleButton & event.buttons():
+            self.parent.on_mouse_middle_press((pos_x, pos_y))
+
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             if self.parent.hovered_anno and not self.double_clicked:
@@ -85,8 +85,11 @@ class MouseHandler:
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            self.double_clicked = True
             self.parent.on_mouse_double_click(event)
+            self.double_clicked = True
+
+        else:
+            self.parent.mousePressEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         angle_delta = event.angleDelta().y()
