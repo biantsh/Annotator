@@ -1,3 +1,4 @@
+import copy
 from uuid import uuid4
 
 from app.enums.annotation import HoverType, SelectionType
@@ -78,6 +79,10 @@ class Keypoint:
         self.selected = False
 
     @property
+    def index(self) -> int:
+        return self.parent.keypoints.index(self)
+
+    @property
     def pos_x(self) -> int:
         return self.position[0]
 
@@ -112,8 +117,16 @@ class Annotation(Bbox):
                 keypoint.parent = self
 
     def __eq__(self, other: 'Annotation') -> bool:
-        return (self.position == other.position
-                and self.label_name == other.label_name)
+        if isinstance(other, Annotation):
+            return self.ref_id == other.ref_id
+
+        return False
+
+    def __copy__(self) -> 'Annotation':
+        return Annotation(self.position.copy(),
+                          self.label_name,
+                          uuid4().hex,
+                          copy.deepcopy(self.keypoints))
 
     @classmethod
     def from_xywh(cls,
