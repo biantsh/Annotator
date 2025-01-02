@@ -18,7 +18,7 @@ from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
-from app.exceptions.coco import InvalidCOCOException
+from app.exceptions.io import IOException, InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
 from app.widgets.annotation_list import AnnotationList
@@ -26,7 +26,6 @@ from app.widgets.message_box import (
     ConfirmImportBox,
     ConfirmExitBox,
     ImportFailedBox,
-    ExportFailedBox,
     InformationBox
 )
 from app.widgets.settings_window import SettingsWindow
@@ -108,6 +107,10 @@ class MainWindow(QMainWindow):
             self.label_map_controller.load_labels(label_map_path)
         except LabelMapException as error:
             InformationBox(self, 'Invalid Label Map', error.message).exec()
+            return
+
+        if self.image_controller.image_paths:
+            self.reload()
 
     def next_image(self) -> None:
         self.image_controller.next_image()
@@ -153,8 +156,9 @@ class MainWindow(QMainWindow):
 
             try:
                 self.export_annotations(file_path)
-            except LabelMapException:
-                ExportFailedBox(self).exec()
+            except IOException as error:
+                InformationBox(self, 'Unable to Export', error.message).exec()
+                return
 
         return file_path
 

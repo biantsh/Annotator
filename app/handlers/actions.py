@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections import deque, defaultdict, OrderedDict
 from typing import TYPE_CHECKING
 
+from app.controllers.label_map_controller import LabelSchema
 from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
@@ -56,27 +57,27 @@ class ActionRename(Action):
     def __init__(self,
                  parent: 'Canvas',
                  annos: list[Annotation],
-                 name_to: str
+                 label_schema: LabelSchema
                  ) -> None:
         self.parent = parent
 
-        self.names_from = {anno.ref_id: anno.label_name for anno in annos}
-        self.name_to = name_to
+        self.schemas_from = {anno.ref_id: anno.label_schema for anno in annos}
+        self.schema_to = label_schema
 
     def do(self) -> None:
         self.parent.unselect_all()
 
         for anno in self.parent.annotations:
-            if anno.ref_id in self.names_from:
-                anno.label_name = self.name_to
+            if anno.ref_id in self.schemas_from:
+                anno.set_schema(self.schema_to)
                 self.parent.add_selected_annotation(anno)
 
     def undo(self) -> None:
         self.parent.unselect_all()
 
         for anno in self.parent.annotations:
-            if anno.ref_id in self.names_from:
-                anno.label_name = self.names_from[anno.ref_id]
+            if anno.ref_id in self.schemas_from:
+                anno.set_schema(self.schemas_from[anno.ref_id])
                 self.parent.add_selected_annotation(anno)
 
 
@@ -104,7 +105,7 @@ class ActionMove(Action):
             if anno.ref_id == self.ref_id:
                 anno.position = pos_anno
 
-                if self.pos_to_kpts:
+                if pos_kpts:
                     for keypoint, pos in zip(anno.keypoints, pos_kpts):
                         keypoint.position = pos.copy()
 
@@ -123,21 +124,26 @@ class ActionMove(Action):
 
 class ActionDeleteKeypoints(Action):
     def __init__(self, parent: 'Canvas', keypoints: list[Keypoint]) -> None:
-        self.indices = defaultdict(lambda: [])
+        self.keypoints = defaultdict(lambda: [])
         self.parent = parent
 
         for keypoint in keypoints:
-            self.indices[keypoint.parent.ref_id].append(keypoint.index)
+            keypoint_info = keypoint.index, keypoint.position
+            self.keypoints[keypoint.parent.ref_id].append(keypoint_info)
 
     def _execute(self, visible: bool) -> None:
         self.parent.unselect_all()
 
         for anno in self.parent.annotations:
-            for index in self.indices[anno.ref_id]:
-                anno.keypoints[index].visible = visible
+            if anno.ref_id not in self.keypoints:
+                continue
+
+            for index, position in self.keypoints[anno.ref_id]:
+                keypoint = Keypoint(anno, position.copy(), visible)
+                anno.keypoints[index] = keypoint
 
                 if visible:
-                    self.parent.add_selected_keypoint(anno.keypoints[index])
+                    self.parent.add_selected_keypoint(keypoint)
 
     def do(self) -> None:
         self._execute(False)
@@ -214,10 +220,11 @@ class ActionHandler:
 
     def register_action(self, action: Action) -> None:
         self.action_cache.add_image(self.image_name)
-        action.do()
 
-        self.action_cache[self.image_name]['undo'].append(action)
         self.action_cache[self.image_name]['redo'].clear()
+        self.action_cache[self.image_name]['redo'].append(action)
+
+        self._execute(undo=False)
 
 
 class LRUActionCache(OrderedDict):

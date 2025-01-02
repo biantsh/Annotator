@@ -17,9 +17,6 @@ __confirm_export__ = ('Your annotations will be automatically saved, but '
 __import_fail__ = ('The contents of this file have already '
                    'been imported into this session.')
 
-__export_fail__ = ('Some of the annotations to export '
-                   'are missing from the label map.')
-
 
 class MessageBox(QMessageBox):
     def __init__(self,
@@ -77,8 +74,3 @@ class ConfirmExitBox(MessageBox):
 class ImportFailedBox(InformationBox):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent, 'Can\'t Import File', __import_fail__)
-
-
-class ExportFailedBox(InformationBox):
-    def __init__(self, parent: 'MainWindow') -> None:
-        super().__init__(parent, 'Can\'t Export File', __export_fail__)

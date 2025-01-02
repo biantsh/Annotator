@@ -251,8 +251,8 @@ class AnnotationPainer:
         anno_selected = anno.selected in (SelectionType.SELECTED,
                                           SelectionType.NEWLY_SELECTED)
 
-        symmetry = self.label_map.get_symmetry_info(anno.label_name)
-        left_keypoints, right_keypoints = zip(*symmetry)
+        symmetry = list(zip(*anno.label_schema.kpt_symmetry))
+        left_keypoints, right_keypoints = symmetry or ([], [])
 
         for index, keypoint in enumerate(anno.keypoints, 1):
             if not keypoint.visible:
@@ -282,8 +282,7 @@ class AnnotationPainer:
         anno_selected = anno.selected in (SelectionType.SELECTED,
                                           SelectionType.NEWLY_SELECTED)
 
-        skeleton = self.label_map.get_keypoint_info(anno.label_name)
-        keypoints = anno.keypoints
+        keypoints, skeleton = anno.keypoints, anno.label_schema.kpt_edges
 
         for start, end in skeleton:
             kpt_start, kpt_end = keypoints[start - 1], keypoints[end - 1]

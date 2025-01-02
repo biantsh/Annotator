@@ -2,31 +2,16 @@ import copy
 from uuid import uuid4
 
 from app.enums.annotation import HoverType, SelectionType
+from app.controllers.label_map_controller import LabelSchema
 
 
 class Bbox:
-    def __init__(self,
-                 position: list[int, ...],
-                 label_name: str
-                 ) -> None:
+    def __init__(self, position: list[int, ...]) -> None:
         self.position = position
-        self.label_name = label_name
-
-    @classmethod
-    def from_xywh(cls, position: list[int, ...], label_name: str) -> 'Bbox':
-        x_min, y_min, width, height = position
-        x_max, y_max = x_min + width, y_min + height
-
-        return cls([x_min, y_min, x_max, y_max], label_name)
 
     @property
-    def points(self) -> tuple[tuple[int, int], ...]:
-        return (
-            (self.left, self.top),
-            (self.right, self.top),
-            (self.right, self.bottom),
-            (self.left, self.bottom)
-        )
+    def xywh(self) -> tuple[int, ...]:
+        return self.left, self.top, self.width, self.height
 
     @property
     def left(self) -> int:
@@ -56,14 +41,6 @@ class Bbox:
     def area(self) -> int:
         return self.width * self.height
 
-    @property
-    def xyxy(self) -> list[int, ...]:
-        return self.position
-
-    @property
-    def xywh(self) -> tuple[int, ...]:
-        return self.left, self.top, self.width, self.height
-
 
 class Keypoint:
     def __init__(self,
@@ -90,18 +67,29 @@ class Keypoint:
     def pos_y(self) -> int:
         return self.position[1]
 
+    def get_hovered(self, mouse_position: tuple[int, int]) -> bool:
+        pos_x, pos_y = mouse_position
+        margin = 5
+
+        return abs(self.pos_x - pos_x) <= margin \
+            and abs(self.pos_y - pos_y) <= margin
+
 
 class Annotation(Bbox):
     def __init__(self,
                  position: list[int, ...],
-                 label_name: str,
-                 ref_id: str = None,
-                 keypoints: list[Keypoint] = None
+                 label_schema: LabelSchema,
+                 keypoints: list[Keypoint] = None,
+                 ref_id: str = None
                  ) -> None:
-        super().__init__(position, label_name)
+        super().__init__(position)
 
+        self.label_schema = label_schema
         self.ref_id = ref_id or uuid4().hex
-        self.keypoints = keypoints
+
+        self.keypoints = keypoints or [
+            Keypoint(self, [0, 0], False)
+            for _ in label_schema.kpt_names]
 
         self.hovered = HoverType.NONE
         self.hovered_keypoint = None
@@ -112,10 +100,6 @@ class Annotation(Bbox):
         self.highlighted = False
         self.hidden = False
 
-        if keypoints:
-            for keypoint in keypoints:
-                keypoint.parent = self
-
     def __eq__(self, other: 'Annotation') -> bool:
         if isinstance(other, Annotation):
             return self.ref_id == other.ref_id
@@ -123,85 +107,66 @@ class Annotation(Bbox):
         return False
 
     def __copy__(self) -> 'Annotation':
-        return Annotation(self.position.copy(),
-                          self.label_name,
-                          uuid4().hex,
+        return Annotation(copy.copy(self.position),
+                          copy.copy(self.label_schema),
                           copy.deepcopy(self.keypoints))
 
     @classmethod
     def from_xywh(cls,
                   position: list[int, ...],
-                  label_name: str,
-                  keypoints: list[Keypoint] = None
+                  label_schema: LabelSchema
                   ) -> 'Annotation':
         x_min, y_min, width, height = position
         x_max, y_max = x_min + width, y_min + height
 
-        return cls([x_min, y_min, x_max, y_max], label_name, keypoints)
+        return cls([x_min, y_min, x_max, y_max], label_schema)
 
-    @classmethod
-    def from_bbox(cls, bbox: Bbox) -> 'Annotation':
-        return cls(bbox.position, bbox.label_name)
+    @property
+    def label_name(self) -> str:
+        return self.label_schema.label_name
+
+    @property
+    def kpt_names(self) -> list[str]:
+        return self.label_schema.kpt_names
 
     @property
     def has_keypoints(self) -> bool:
-        if not self.keypoints:
-            return False
-
         return any(keypoint.visible for keypoint in self.keypoints)
 
-    def get_hovered(self,
-                    mouse_position: tuple[int, int],
-                    edge_width: int
-                    ) -> HoverType:
-        x_pos, y_pos = mouse_position
+    def get_hovered_type(self, mouse_pos: tuple[int, int]) -> HoverType:
+        pos_x, pos_y = mouse_pos
+        margin = 5
 
-        if not (self.left - edge_width <= x_pos <= self.right + edge_width and
-                self.top - edge_width <= y_pos <= self.bottom + edge_width):
+        if not (self.left - margin <= pos_x <= self.right + margin and
+                self.top - margin <= pos_y <= self.bottom + margin):
             return HoverType.NONE
 
-        # Check if hovering near an edge
-        top = abs(y_pos - self.top) <= edge_width
-        left = abs(x_pos - self.left) <= edge_width
-        right = abs(x_pos - self.right) <= edge_width
-        bottom = abs(y_pos - self.bottom) <= edge_width
+        top = abs(pos_y - self.top) <= margin
+        left = abs(pos_x - self.left) <= margin
+        right = abs(pos_x - self.right) <= margin
+        bottom = abs(pos_y - self.bottom) <= margin
 
-        if top and left:
-            return HoverType.TOP_LEFT
-        if top and right:
-            return HoverType.TOP_RIGHT
-        if bottom and left:
-            return HoverType.BOTTOM_LEFT
-        if bottom and right:
-            return HoverType.BOTTOM_RIGHT
+        hover_type = HoverType.NONE
+        hover_type |= top and HoverType.TOP
+        hover_type |= left and HoverType.LEFT
+        hover_type |= right and HoverType.RIGHT
+        hover_type |= bottom and HoverType.BOTTOM
 
-        if top:
-            return HoverType.TOP
-        if left:
-            return HoverType.LEFT
-        if right:
-            return HoverType.RIGHT
-        if bottom:
-            return HoverType.BOTTOM
-
-        if self.left <= x_pos <= self.right \
-                and self.top <= y_pos <= self.bottom:
+        if not (hover_type and hover_type in set(HoverType)):
             return HoverType.FULL
 
-        return HoverType.NONE
+        return hover_type
 
     def get_hovered_keypoint(self,
-                             mouse_position: tuple[int, int],
-                             edge_width: int
+                             mouse_pos: tuple[int, int]
                              ) -> Keypoint | None:
-        if not self.has_keypoints:
-            return None
-
-        x_pos, y_pos = mouse_position
-
         for keypoint in self.keypoints[::-1]:
-            if (abs(keypoint.pos_x - x_pos) <= edge_width
-                    and abs(keypoint.pos_y - y_pos) <= edge_width):
+            if keypoint.visible and keypoint.get_hovered(mouse_pos):
                 return keypoint
 
-        return None
+    def set_schema(self, label_schema: LabelSchema) -> None:
+        if self.kpt_names != label_schema.kpt_names:
+            self.keypoints = [Keypoint(self, [0, 0], False)
+                              for _ in label_schema.kpt_names]
+
+        self.label_schema = label_schema

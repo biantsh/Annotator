@@ -135,14 +135,8 @@ class Canvas(QWidget):
         return scale * self.zoom_handler.zoom_level
 
     def reset(self) -> None:
-        self.set_annotating_state(AnnotatingState.IDLE)
-        self.set_selected_annotation(None)
-
         self.annotations = []
-        self.pixmap = QPixmap()
         self.zoom_handler.reset()
-
-        self.update()
 
     def save_progress(self) -> None:
         if not self.unsaved_changes:
@@ -303,11 +297,9 @@ class Canvas(QWidget):
             return
 
         mouse_position = self.mouse_handler.cursor_position
-        edge_width = round(8 / self.get_scale())
-        edge_width = max(edge_width, 4)
 
         for annotation in annotations[::-1]:  # Prioritize newer annos
-            hovered_keypoint = annotation.get_hovered_keypoint(mouse_position, edge_width)
+            hovered_keypoint = annotation.get_hovered_keypoint(mouse_position)
 
             if hovered_keypoint:
                 annotation.hovered_keypoint = hovered_keypoint
@@ -317,12 +309,12 @@ class Canvas(QWidget):
 
             annotation.hovered_keypoint = None
 
-        for annotation in annotations[::-1]:
-            hovered_type = annotation.get_hovered(mouse_position, edge_width)
+        for anno in annotations[::-1]:
+            hovered_type = anno.get_hovered_type(mouse_position)
 
             if hovered_type != HoverType.NONE:
-                annotation.hovered = hovered_type
-                self.hovered_anno = annotation
+                anno.hovered = hovered_type
+                self.hovered_anno = anno
                 return
 
     def set_selected_annotation(self, annotation: Annotation | None) -> None:
@@ -376,7 +368,8 @@ class Canvas(QWidget):
             if should_select:
                 for annotation in visited_annotations:
                     for kpt in annotation.keypoints:
-                        self.add_selected_keypoint(kpt)
+                        if kpt.visible:
+                            self.add_selected_keypoint(kpt)
 
             else:
                 self.set_selected_keypoint(None)
@@ -472,13 +465,12 @@ class Canvas(QWidget):
         self.previous_label = label_name
 
         position = [x_min, y_min, x_max, y_max]
-        annotation = Annotation(position, label_name)
+        label_schema = self.label_map.get_label_schema(label_name)
+
+        annotation = Annotation(position, label_schema)
 
         action = ActionCreate(self, [annotation])
         self.action_handler.register_action(action)
-
-        self.parent.annotation_list.redraw_widgets()
-        self.unsaved_changes = True
 
     def move_annotation(self,
                         annotation: Annotation,
@@ -551,7 +543,6 @@ class Canvas(QWidget):
         y_min, y_max = sorted([y_min, y_max])
 
         annotation.position = [x_min, y_min, x_max, y_max]
-        self.unsaved_changes = True
 
     def move_arrow(self, pressed_keys: set[int]) -> None:
         if self.selected_annos:
@@ -584,9 +575,6 @@ class Canvas(QWidget):
         self.set_annotating_state(AnnotatingState.MOVING_ANNO)
         self.move_annotation(selected_anno, (delta_x, delta_y))
 
-        self.unsaved_changes = True
-        self.update()
-
     def move_keypoint(self,
                       keypoint: Keypoint,
                       delta: tuple[int, int]
@@ -598,7 +586,6 @@ class Canvas(QWidget):
         pos_y = clip_value(pos_y + delta_y, 0, self.pixmap.height())
 
         keypoint.position = [pos_x, pos_y]
-        self.unsaved_changes = True
 
     def move_keypoint_arrow(self, pressed_keys: set[int]) -> None:
         delta_x, delta_y = 0, 0
@@ -618,9 +605,6 @@ class Canvas(QWidget):
         self.set_annotating_state(AnnotatingState.MOVING_KEYPOINT)
         self.move_keypoint(selected_keypoint, (delta_x, delta_y))
 
-        self.unsaved_changes = True
-        self.update()
-
     def rename_annotations(self) -> None:
         if not self.selected_annos:
             return
@@ -631,9 +615,8 @@ class Canvas(QWidget):
         for anno in self.selected_annos:
             if anno.has_keypoints:
                 label_options = [
-                    option for option in label_options if
-                    self.label_map.get_keypoint_info(option) ==
-                    self.label_map.get_keypoint_info(anno.label_name)]
+                    option for option in label_options if anno.kpt_names
+                    == self.label_map.get_label_schema(option).kpt_names]
 
         cursor_position = self.mouse_handler.global_position
         x_pos, y_pos = cursor_position.x(), cursor_position.y()
@@ -645,11 +628,9 @@ class Canvas(QWidget):
         if not label_name:
             return
 
-        action = ActionRename(self, self.selected_annos, label_name)
+        label_schema = self.label_map.get_label_schema(label_name)
+        action = ActionRename(self, self.selected_annos, label_schema)
         self.action_handler.register_action(action)
-
-        self.unsaved_changes = True
-        self.update()
 
     def copy_annotations(self) -> None:
         all_annotations = self.annotations[::-1]
@@ -659,9 +640,10 @@ class Canvas(QWidget):
 
         self.clipboard = [copy.copy(anno) for anno in to_copy]
 
-        for anno in self.clipboard:
-            if anno.selected == SelectionType.BOX_ONLY:
-                anno.keypoints = None
+        for index, anno in enumerate(self.clipboard):
+            if to_copy[index].selected == SelectionType.BOX_ONLY:
+                for keypoint in anno.keypoints:
+                    keypoint.visible = False
 
     def paste_annotations(self, replace_existing: bool) -> None:
         copied_annotations = [copy.copy(anno) for anno in self.clipboard]
@@ -684,9 +666,6 @@ class Canvas(QWidget):
             action = ActionCreate(self, pasted_annotations)
             self.action_handler.register_action(action)
 
-            self.parent.annotation_list.redraw_widgets()
-            self.unsaved_changes = True
-
         self.set_annotating_state(AnnotatingState.IDLE)
 
     def delete_selected(self) -> None:
@@ -697,10 +676,6 @@ class Canvas(QWidget):
         if self.selected_annos:
             action = ActionDelete(self, self.selected_annos)
             self.action_handler.register_action(action)
-
-        self.parent.annotation_list.redraw_widgets()
-        self.unsaved_changes = True
-        self.update()
 
     def on_annotation_left_release(self, event: QMouseEvent) -> None:
         if self.annotating_state == AnnotatingState.MOVING_ANNO:

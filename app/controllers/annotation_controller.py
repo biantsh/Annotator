@@ -7,7 +7,15 @@ from typing import TYPE_CHECKING
 
 from natsort import os_sorted
 
-from app.exceptions.coco import InvalidCOCOException
+from app.controllers.label_map_controller import (
+    LabelMapController,
+    LabelSchema
+)
+from app.exceptions.io import (
+    InvalidCOCOException,
+    InvalidLabelException,
+    InvalidSchemaException
+)
 from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
@@ -17,6 +25,10 @@ if TYPE_CHECKING:
 class AnnotationController:
     def __init__(self, parent: 'MainWindow') -> None:
         self.parent = parent
+
+    @property
+    def label_map(self) -> LabelMapController:
+        return self.parent.label_map_controller
 
     def load_annotations(self, image_name: str) -> dict:
         image_dir = self.parent.image_controller.image_dir
@@ -37,13 +49,21 @@ class AnnotationController:
         }
 
         for anno in json_content['annotations']:
-            annotation = Annotation(anno['position'],
-                                    anno['label_name'],
-                                    anno['id'])
+            label_schema = LabelSchema(**anno['label_schema'])
+            label_name = label_schema.label_name
 
-            if 'keypoints' in anno:
-                annotation.keypoints = [Keypoint(annotation, [pos_x, pos_y], bool(visible))
-                                        for pos_x, pos_y, visible in anno['keypoints']]
+            if self.label_map.contains(label_name):
+                loaded_schema = self.label_map.get_label_schema(label_name)
+
+                if loaded_schema.kpt_names == label_schema.kpt_names:
+                    label_schema.kpt_symmetry = loaded_schema.kpt_symmetry
+
+            position = anno['position']
+            annotation = Annotation(position, label_schema, ref_id=anno['id'])
+
+            annotation.keypoints = [
+                Keypoint(annotation, [pos_x, pos_y], visible)
+                for pos_x, pos_y, visible in anno['keypoints']]
 
             annotations['annotations'].append(annotation)
 
@@ -58,66 +78,82 @@ class AnnotationController:
         image_dir = self.parent.image_controller.image_dir
         annotator_dir = os.path.join(image_dir, '.annotator')
 
-        os.makedirs(annotator_dir, exist_ok=True)
-
         json_name = f'{os.path.splitext(image_name)[0]}.json'
         json_path = os.path.join(annotator_dir, json_name)
 
-        image_width, image_height = image_size
-        annotation_content = {
-            'image': {
-                'width': image_width,
-                'height': image_height
-            },
-            'annotations': []
-        }
-
+        anno_data = []
         if append and os.path.exists(json_path):
             with open(json_path, 'r') as json_file:
-                annotation_content['annotations'] = \
-                    json.load(json_file)['annotations']
+                anno_data = json.load(json_file)['annotations']
+
+        pos_data = [anno['position'] for anno in anno_data]
+        image_data = {
+            'image': {
+                'width': image_size[0],
+                'height': image_size[1]
+            },
+            'annotations': anno_data
+        }
 
         for anno in annotations:
-            anno_info = {
-                'id': anno.ref_id,
+            if anno.position in pos_data:
+                continue
+
+            label_schema = anno.label_schema.to_dict()
+            keypoints = [[keypoint.pos_x,
+                          keypoint.pos_y,
+                          keypoint.visible]
+                         for keypoint in anno.keypoints]
+
+            image_data['annotations'].append({
                 'position': anno.position,
-                'label_name': anno.label_name
-            }
+                'label_schema': label_schema,
+                'keypoints': keypoints,
+                'id': anno.ref_id
+            })
 
-            if anno.has_keypoints:
-                anno_info['keypoints'] = [[keypoint.pos_x, keypoint.pos_y, int(keypoint.visible)]
-                                          for keypoint in anno.keypoints]
-
-            if anno_info not in annotation_content['annotations']:
-                annotation_content['annotations'].append(anno_info)
-
+        os.makedirs(annotator_dir, exist_ok=True)
         with open(json_path, 'w') as json_file:
-            json.dump(annotation_content, json_file, indent=2)
+            json.dump(image_data, json_file, indent=2)
 
     def _import_annotations(self, coco_dataset: dict) -> None:
         annotations = defaultdict(lambda: [])
 
-        label_names = {category['id']: category['name']
-                       for category in coco_dataset['categories']}
+        category_index = {category['id']: category
+                          for category in coco_dataset['categories']}
 
         for coco_annotation in coco_dataset['annotations']:
             category_id = coco_annotation['category_id']
             image_id = coco_annotation['image_id']
-
             bbox = coco_annotation['bbox']
-            label_name = label_names[category_id]
 
-            annotation = Annotation.from_xywh(bbox, label_name)
+            category = category_index[category_id]
+            category_name = category['name']
+
+            has_keypoints = 'keypoints' in coco_annotation \
+                and coco_annotation['keypoints']
+
+            if self.label_map.contains(category_name) and not has_keypoints:
+                label_schema = self.label_map.get_label_schema(category_name)
+
+            else:
+                label_schema = LabelSchema(
+                    category_name,
+                    category.get('keypoints', []),
+                    category.get('skeleton', []),
+                    category.get('symmetry', [])
+                )
+
+            annotation = Annotation.from_xywh(bbox, label_schema)
             annotations[image_id].append(annotation)
 
-            keypoints = coco_annotation.get('keypoints')
-            if keypoints is None:
+            keypoints = coco_annotation.get('keypoints', [])
+            if len(keypoints) != 3 * len(label_schema.kpt_names):
                 continue
 
             annotation.keypoints = [
-                Keypoint(annotation, [keypoints[idx], keypoints[idx + 1]],
-                         bool(keypoints[idx + 2]))
-                for idx in range(0, len(keypoints), 3)]
+                Keypoint(annotation, [pos_x, pos_y], bool(visibility))
+                for pos_x, pos_y, visibility in zip(*[iter(keypoints)] * 3)]
 
         for image in coco_dataset['images']:
             image_name = image['file_name']
@@ -206,7 +242,11 @@ class AnnotationController:
             })
 
             for anno in annotations:
+                if not label_map.contains(anno.label_name):
+                    raise InvalidLabelException()
+
                 category_id = label_map.get_id(anno.label_name)
+                label_schema = label_map.get_label_schema(anno.label_name)
 
                 annotation = {
                     'id': annotation_id,
@@ -222,9 +262,17 @@ class AnnotationController:
                 }
 
                 if anno.has_keypoints:
-                    keypoints = sum([[kpt.pos_x * kpt.visible, kpt.pos_y * kpt.visible, 2 * kpt.visible]
-                                     for kpt in anno.keypoints], start=[])
-                    num_keypoints = sum(1 for kpt in anno.keypoints if kpt.visible)
+                    if anno.kpt_names != label_schema.kpt_names:
+                        raise InvalidSchemaException()
+
+                    keypoints, num_keypoints = [], 0
+
+                    for keypoint in anno.keypoints:
+                        if keypoint.visible:
+                            keypoints.extend([*keypoint.position, 2])
+                            num_keypoints += 1
+                        else:
+                            keypoints.extend([0, 0, 0])
 
                     annotation['keypoints'] = keypoints
                     annotation['num_keypoints'] = num_keypoints
