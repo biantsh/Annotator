@@ -91,12 +91,8 @@ class Annotation(Bbox):
             Keypoint(self, [0, 0], False)
             for _ in label_schema.kpt_names]
 
-        self.hovered = HoverType.NONE
-        self.hovered_keypoint = None
-
         self.selected = SelectionType.UNSELECTED
-        self.selected_keypoint = None
-
+        self.hovered = HoverType.NONE
         self.highlighted = False
         self.hidden = False
 
@@ -107,9 +103,17 @@ class Annotation(Bbox):
         return False
 
     def __copy__(self) -> 'Annotation':
-        return Annotation(copy.copy(self.position),
-                          copy.copy(self.label_schema),
-                          copy.deepcopy(self.keypoints))
+        box_only = self.selected == SelectionType.BOX_ONLY
+        keypoints = None if box_only else self.keypoints
+
+        copied_anno = Annotation(copy.copy(self.position),
+                                 copy.copy(self.label_schema),
+                                 copy.deepcopy(keypoints))
+
+        for keypoint in copied_anno.keypoints:
+            keypoint.parent = copied_anno
+
+        return copied_anno
 
     @classmethod
     def from_xywh(cls,

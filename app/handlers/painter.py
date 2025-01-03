@@ -209,7 +209,7 @@ class AnnotationPainer:
             return
 
         if (anno.highlighted or anno.selected or anno.hovered) \
-                and anno.hovered_keypoint is None:
+                and not any(kpt.hovered for kpt in anno.keypoints):
             self.fill_annotation(anno)
 
         if anno.has_keypoints:

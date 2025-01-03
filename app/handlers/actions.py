@@ -101,9 +101,12 @@ class ActionMove(Action):
                  pos_anno: list[int, ...],
                  pos_kpts: list[list[int, int]]
                  ) -> None:
+        x_min, y_min, x_max, y_max = pos_anno
+
         for anno in self.parent.annotations:
             if anno.ref_id == self.ref_id:
-                anno.position = pos_anno
+                anno.position = [min(x_min, x_max), min(y_min, y_max),
+                                 max(x_min, x_max), max(y_min, y_max)]
 
                 if pos_kpts:
                     for keypoint, pos in zip(anno.keypoints, pos_kpts):
