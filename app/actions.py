@@ -90,7 +90,7 @@ def rename_annotations(parent: 'Canvas') -> None:
 
 
 def delete_annotations(parent: 'Canvas') -> None:
-    parent.delete_selected()
+    parent.delete_annotations()
 
 
 def copy_annotations(parent: 'Canvas') -> None:

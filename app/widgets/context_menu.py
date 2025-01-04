@@ -179,7 +179,9 @@ class CanvasContextMenu(ContextMenu):
         self.widgets = []
         self.clear()
 
-        hidden_annos = self.parent.get_hidden_annotations()
+        annos = self.parent.annotations
+        hidden_annos = [anno for anno in annos if anno.hidden]
+
         text, should_hide = ('Show All', False) \
             if hidden_annos else ('Hide All', True)
 
@@ -267,7 +269,7 @@ class CanvasContextMenu(ContextMenu):
             self.update()
 
         elif event.key() == Qt.Key.Key_Delete:
-            self.parent.delete_selected()
+            self.parent.delete_annotations()
             self.redraw_widgets()
 
         else:
@@ -291,7 +293,7 @@ class AnnotationContextMenu(ContextMenu):
             parent.unselect_all()
 
         def _delete() -> None:
-            parent.delete_selected()
+            parent.delete_annotations()
             parent.unselect_all()
 
         buttons = (

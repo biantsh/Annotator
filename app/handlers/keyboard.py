@@ -33,7 +33,7 @@ class KeyboardHandler:
         self.typed_number = ''
 
     def _key_auto_repeat(self) -> None:
-        self.parent.move_arrow(self.pressed_keys)
+        self.parent.on_arrow_press(self.pressed_keys)
 
         if not self.pressed_keys:
             self.key_autorepeat_timer.stop()
@@ -48,7 +48,7 @@ class KeyboardHandler:
 
     def on_arrow_press(self, event: QKeyEvent) -> None:
         self.pressed_keys.add(event.key())
-        self.parent.move_arrow(self.pressed_keys)
+        self.parent.on_arrow_press(self.pressed_keys)
 
         if not self.key_autorepeat_timer.isActive():
             self.key_autorepeat_delay.start()

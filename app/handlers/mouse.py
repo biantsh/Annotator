@@ -72,7 +72,7 @@ class MouseHandler:
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             if self.parent.hovered_anno and not self.double_clicked:
-                self.parent.on_annotation_left_release(event)
+                self.parent.on_annotation_left_press(event)
 
             self.left_clicked = False
             self.double_clicked = False
