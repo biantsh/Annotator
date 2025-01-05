@@ -32,6 +32,8 @@ class ActionCreate(Action):
             self.parent.add_selected_annotation(anno)
 
     def undo(self) -> None:
+        self.parent.unselect_all()
+
         self.parent.annotations = list(filter(
             lambda anno: anno not in self.annos, self.parent.annotations))
 
@@ -42,6 +44,8 @@ class ActionDelete(Action):
         self.annos = annos.copy()
 
     def do(self) -> None:
+        self.parent.unselect_all()
+
         self.parent.annotations = list(filter(
             lambda anno: anno not in self.annos, self.parent.annotations))
 
@@ -125,6 +129,36 @@ class ActionMove(Action):
         self._execute(self.pos_from_anno, self.pos_from_kpts)
 
 
+class ActionCreateKeypoints(Action):
+    def __init__(self, parent: 'Canvas', keypoints: list[Keypoint]) -> None:
+        self.keypoints = defaultdict(lambda: [])
+        self.parent = parent
+
+        for keypoint in keypoints:
+            keypoint_info = keypoint.index, keypoint.position
+            self.keypoints[keypoint.parent.ref_id].append(keypoint_info)
+
+    def _execute(self, visible: bool) -> None:
+        self.parent.unselect_all()
+
+        for anno in self.parent.annotations:
+            if anno.ref_id not in self.keypoints:
+                continue
+
+            for index, position in self.keypoints[anno.ref_id]:
+                keypoint = Keypoint(anno, position.copy(), visible)
+                anno.keypoints[index] = keypoint
+
+                if visible:
+                    self.parent.add_selected_keypoint(keypoint)
+
+    def do(self) -> None:
+        self._execute(True)
+
+    def undo(self) -> None:
+        self._execute(False)
+
+
 class ActionDeleteKeypoints(Action):
     def __init__(self, parent: 'Canvas', keypoints: list[Keypoint]) -> None:
         self.keypoints = defaultdict(lambda: [])
@@ -181,6 +215,32 @@ class ActionMoveKeypoint(Action):
 
     def undo(self) -> None:
         self._execute(self.pos_from)
+
+
+class ActionFlipKeypoints(Action):
+    def __init__(self, parent: 'Canvas',  anno: Annotation) -> None:
+        self.parent = parent
+        self.ref_id = anno.ref_id
+
+    def _execute(self) -> None:
+        for anno in self.parent.annotations:
+            if anno.ref_id != self.ref_id:
+                continue
+
+            for index_left, index_right in anno.label_schema.kpt_symmetry:
+                keypoint_left = anno.keypoints[index_left - 1]
+                keypoint_right = anno.keypoints[index_right - 1]
+
+                anno.keypoints[index_left - 1] = keypoint_right
+                anno.keypoints[index_right - 1] = keypoint_left
+
+            self.parent.set_selected_annotation(anno)
+
+    def do(self) -> None:
+        self._execute()
+
+    def undo(self) -> None:
+        self._execute()
 
 
 class ActionHandler:

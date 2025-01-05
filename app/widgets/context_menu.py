@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 
 from app.enums.canvas import AnnotatingState
 from app.handlers.actions import ActionCreate, ActionDelete
+from app.objects import Annotation
 from app.styles.style_sheets import WidgetStyleSheet
 from app.widgets.menu_item import (
     ContextMenuItem,
@@ -277,7 +278,7 @@ class CanvasContextMenu(ContextMenu):
 
 
 class AnnotationContextMenu(ContextMenu):
-    def __init__(self, parent: 'Canvas') -> None:
+    def __init__(self, parent: 'Canvas', annotation: Annotation) -> None:
         super().__init__(parent)
 
         def _copy() -> None:
@@ -292,16 +293,23 @@ class AnnotationContextMenu(ContextMenu):
             parent.hide_annotations()
             parent.unselect_all()
 
+        def _flip() -> None:
+            parent.flip_keypoints()
+            parent.unselect_all()
+
         def _delete() -> None:
             parent.delete_annotations()
             parent.unselect_all()
 
-        buttons = (
+        buttons = [
             ContextButton(parent, _copy, 'Copy', False),
             ContextButton(parent, _rename, 'Rename', False),
             ContextButton(parent, _hide, 'Hide', False),
             ContextButton(parent, _delete, 'Delete', True)
-        )
+        ]
+
+        if annotation.has_keypoints and annotation.label_schema.kpt_symmetry:
+            buttons.insert(-1, ContextButton(parent, _flip, 'Flip', False))
 
         for button in buttons:
             if button.risky:

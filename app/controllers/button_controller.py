@@ -6,11 +6,12 @@ if TYPE_CHECKING:
 
 class ButtonController:
     image_dependent_actions = {
-        'next_image',
-        'prev_image',
+        'next',
+        'prev',
         'import',
         'export',
-        'bbox'
+        'bbox',
+        'keypoints'
     }
 
     def __init__(self, parent: 'MainWindow') -> None:

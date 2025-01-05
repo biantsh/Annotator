@@ -5,7 +5,7 @@ import enchant
 us_dict = enchant.Dict('en_US')
 
 
-def clip_value(value: float, mininum: float, maximum: float) -> float:
+def clip_value(value: int, mininum: int, maximum: int) -> int:
     return min(max(value, mininum), maximum)
 
 

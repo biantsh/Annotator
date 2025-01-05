@@ -70,3 +70,9 @@ QMessageBox QPushButton {
 QMessageBox QPushButton:hover {
     background-color: rgb(53, 53, 53)
 }
+KeypointLabel {
+    background-color: rgba(33, 33, 33, 0.75);
+    border-radius: 5px;
+    min-height: 35px;
+    margin: 5px;
+}

@@ -54,6 +54,15 @@ class KeyboardHandler:
             self.key_autorepeat_delay.start()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        if self.parent.keypoint_annotator.active:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Escape):
+                self.parent.keypoint_annotator.end()
+
+            elif event.key() == Qt.Key.Key_Space:
+                self.parent.keypoint_annotator.reset_label()
+
+            return
+
         if event.text().isdigit():
             self.on_number_press(event)
 
