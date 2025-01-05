@@ -1,4 +1,5 @@
 import copy
+import math
 from uuid import uuid4
 
 from app.enums.annotation import HoverType, SelectionType
@@ -66,13 +67,6 @@ class Keypoint:
     @property
     def pos_y(self) -> int:
         return self.position[1]
-
-    def get_hovered(self, mouse_position: tuple[int, int]) -> bool:
-        pos_x, pos_y = mouse_position
-        margin = 5
-
-        return abs(self.pos_x - pos_x) <= margin \
-            and abs(self.pos_y - pos_y) <= margin
 
 
 class Annotation(Bbox):
@@ -164,9 +158,24 @@ class Annotation(Bbox):
     def get_hovered_keypoint(self,
                              mouse_pos: tuple[int, int]
                              ) -> Keypoint | None:
+        pos_x, pos_y = mouse_pos
+        margin = 5
+
+        min_distance = None
+        closest_keypoint = None
+
         for keypoint in self.keypoints[::-1]:
-            if keypoint.visible and keypoint.get_hovered(mouse_pos):
-                return keypoint
+            if keypoint.visible \
+                    and abs(keypoint.pos_x - pos_x) <= margin \
+                    and abs(keypoint.pos_y - pos_y) <= margin:
+                distance = math.sqrt((keypoint.pos_x - pos_x) ** 2 +
+                                     (keypoint.pos_y - pos_y) ** 2)
+
+                if min_distance is None or distance < min_distance:
+                    closest_keypoint = keypoint
+                    min_distance = distance
+
+        return closest_keypoint
 
     def set_schema(self, label_schema: LabelSchema) -> None:
         if self.kpt_names != label_schema.kpt_names:
