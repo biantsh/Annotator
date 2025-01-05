@@ -91,10 +91,7 @@ class KeypointAnnotator:
         keypoint.position = list(mouse_pos)
         keypoint.visible = True
 
-        if any(not kpt.visible for kpt in self.annotation.keypoints):
-            self.next_label()
-        else:
-            self.end()
+        self.next_label()
 
     def end(self) -> None:
         self.active = False

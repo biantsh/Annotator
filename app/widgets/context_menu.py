@@ -295,7 +295,6 @@ class AnnotationContextMenu(ContextMenu):
 
         def _flip() -> None:
             parent.flip_keypoints()
-            parent.unselect_all()
 
         def _delete() -> None:
             parent.delete_annotations()
