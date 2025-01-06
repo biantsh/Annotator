@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMouseEvent, QWheelEvent
 
+from app.enums.canvas import AnnotatingState
+
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
@@ -75,7 +77,14 @@ class MouseHandler:
 
         elif event.button() == Qt.MouseButton.LeftButton:
             if self.parent.hovered_anno and not self.double_clicked:
-                self.parent.on_annotation_left_press(event)
+                annotator = self.parent.keypoint_annotator
+
+                if annotator.active:
+                    if all(kpt.visible for kpt in annotator.annotation.keypoints):
+                        self.parent.keypoint_annotator.end()
+
+                else:
+                    self.parent.on_annotation_left_press(event)
 
             self.left_clicked = False
             self.double_clicked = False

@@ -9,8 +9,8 @@ class ToolBar(QToolBar):
     toolbar_actions = (
         'open_dir',
         'open_labels',
-        'next_image',
-        'prev_image',
+        'next',
+        'prev',
         '__separator__',
         'import',
         'export',
