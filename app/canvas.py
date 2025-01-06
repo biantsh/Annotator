@@ -24,9 +24,12 @@ from app.handlers.actions import (
     ActionDelete,
     ActionMove,
     ActionRename,
+    ActionCreateKeypoints,
+    ActionDeleteKeypoints,
     ActionMoveKeypoint,
-    ActionDeleteKeypoints
+    ActionFlipKeypoints
 )
+from app.handlers.annotator import KeypointAnnotator
 from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
 from app.handlers.painter import CanvasPainter
@@ -57,6 +60,7 @@ class Canvas(QWidget):
         self.image_name = None
         self.pixmap = QPixmap()
 
+        self.keypoint_annotator = KeypointAnnotator(self)
         self.annotating_state = AnnotatingState.IDLE
         self.anno_first_corner = None
 
@@ -76,13 +80,13 @@ class Canvas(QWidget):
         self.zoom_handler = ZoomHandler(self)
 
         self.action_handler = ActionHandler(self, self.image_name)
+        self.pin_annotation_list = False
+
         self.pos_start_anno = None
         self.pos_start_kpt = None
 
         for action in CanvasActions(self).actions.values():
             self.addAction(action)
-
-        self.pin_annotation_list = False
 
     @property
     def label_map(self) -> LabelMapController:
@@ -91,6 +95,20 @@ class Canvas(QWidget):
     @property
     def label_names(self) -> list[str]:
         return [label['name'] for label in self.label_map.labels]
+
+    def on_next(self) -> None:
+        if self.keypoint_annotator.active:
+            self.keypoint_annotator.next_label()
+
+        else:
+            self.parent.next_image()
+
+    def on_prev(self) -> None:
+        if self.keypoint_annotator.active:
+            self.keypoint_annotator.prev_label()
+
+        else:
+            self.parent.prev_image()
 
     def update(self) -> None:
         self.update_cursor_icon()
@@ -175,11 +193,11 @@ class Canvas(QWidget):
             return
 
         if self.annotating_state in (AnnotatingState.READY,
-                                     AnnotatingState.DRAWING):
+                                     AnnotatingState.DRAWING_ANNO):
             self.setCursor(Qt.CursorShape.CrossCursor)
             return
 
-        if self.hovered_keypoint:
+        if self.keypoint_annotator.active or self.hovered_keypoint:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             return
 
@@ -212,12 +230,21 @@ class Canvas(QWidget):
         if state == AnnotatingState.IDLE:
             self.anno_first_corner = None
 
+            if previous_state == AnnotatingState.DRAWING_KEYPOINTS:
+                self.on_keypoints_created()
+
         elif state == AnnotatingState.READY:
             self.set_selected_annotation(None)
             self.set_hovered_object()
 
-        elif state == AnnotatingState.DRAWING:
+        elif state == AnnotatingState.DRAWING_ANNO:
             self.anno_first_corner = self.mouse_handler.cursor_position
+
+        elif state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.create_keypoints()
+
+            if not self.keypoint_annotator.active:
+                self.annotating_state = AnnotatingState.IDLE
 
         elif state == AnnotatingState.MOVING_ANNO:
             anno = self.selected_annos[-1]
@@ -396,6 +423,28 @@ class Canvas(QWidget):
         self.action_handler.register_action(ActionCreate(self, [annotation]))
         self.previous_label = label_name
 
+    def create_keypoints(self) -> None:
+        if not self.selected_annos:
+            return
+
+        annotation = self.selected_annos[-1]
+        label_name = annotation.label_name
+
+        if not annotation.label_schema.kpt_names:
+            if not self.label_map.contains(label_name):
+                return
+
+            loaded_schema = self.label_map.get_label_schema(label_name)
+            if not loaded_schema.kpt_names:
+                return
+
+            annotation.set_schema(loaded_schema)
+
+        for action in self.actions():
+            action.setEnabled(False)
+
+        self.keypoint_annotator.begin(annotation)
+
     def rename_annotations(self) -> None:
         if not self.selected_annos:
             return
@@ -475,7 +524,8 @@ class Canvas(QWidget):
         edge_right, edge_bot = self.pixmap.width(), self.pixmap.height()
 
         if anno.has_keypoints and anno.selected != SelectionType.BOX_ONLY:
-            kpts_x, kpts_y = zip(*[kpt.position for kpt in anno.keypoints])
+            kpts_x, kpts_y = zip(*[keypoint.position for keypoint in
+                                   anno.keypoints if keypoint.visible])
 
         if anno.hovered not in (HoverType.TOP, HoverType.BOTTOM):
             can_move_left = 0 <= x_min + delta_x <= edge_right
@@ -549,6 +599,21 @@ class Canvas(QWidget):
         self.set_annotating_state(AnnotatingState.MOVING_KEYPOINT)
         self.move_keypoint(selected_keypoint, delta)
 
+    def flip_keypoints(self) -> None:
+        action = ActionFlipKeypoints(self, self.selected_annos[-1])
+        self.action_handler.register_action(action)
+
+    def on_keypoints_created(self) -> None:
+        for action in self.actions():
+            action.setEnabled(True)
+
+        keypoints = self.keypoint_annotator.created_keypoints
+        if not keypoints:
+            return
+
+        action = ActionCreateKeypoints(self, keypoints)
+        self.action_handler.register_action(action)
+
     def on_arrow_press(self, pressed_keys: set[int]) -> None:
         delta_x, delta_y = 0, 0
 
@@ -616,9 +681,9 @@ class Canvas(QWidget):
 
     def on_mouse_left_press(self, event: QMouseEvent) -> None:
         if self.annotating_state == AnnotatingState.READY:
-            self.set_annotating_state(AnnotatingState.DRAWING)
+            self.set_annotating_state(AnnotatingState.DRAWING_ANNO)
 
-        elif self.annotating_state == AnnotatingState.DRAWING:
+        elif self.annotating_state == AnnotatingState.DRAWING_ANNO:
             if self.quick_create:
                 self.create_annotation(self.previous_label)
                 self.quick_create = False
@@ -626,6 +691,9 @@ class Canvas(QWidget):
                 self.create_annotation()
 
             self.set_annotating_state(AnnotatingState.IDLE)
+
+        elif self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.keypoint_annotator.add_keypoint()
 
         else:
             self.set_annotating_state(AnnotatingState.IDLE)
@@ -645,7 +713,7 @@ class Canvas(QWidget):
 
         if self.hovered_anno:
             self.set_selected_annotation(self.hovered_anno)
-            context_menu = AnnotationContextMenu(self)
+            context_menu = AnnotationContextMenu(self, self.hovered_anno)
 
         else:
             if self.pin_annotation_list:
@@ -657,7 +725,10 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_left_drag(self, cursor_shift: tuple[int, int]) -> None:
-        if self.hovered_anno:
+        if self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.keypoint_annotator.update()
+
+        elif self.hovered_anno:
             box_only = self.hovered_anno.selected == SelectionType.BOX_ONLY
 
             self.set_selected_annotation(self.hovered_anno)
@@ -675,6 +746,9 @@ class Canvas(QWidget):
         self.update()
 
     def on_mouse_right_drag(self, cursor_shift: tuple[int, int]) -> None:
+        if self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.keypoint_annotator.update()
+
         drag_start_x, drag_start_y = self.mouse_handler.drag_start_pan
         shift_x, shift_y = cursor_shift
 
@@ -689,6 +763,9 @@ class Canvas(QWidget):
 
     def on_mouse_double_click(self, event: QMouseEvent) -> None:
         if not self.hovered_anno:
+            return
+
+        if self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
             return
 
         if self.hovered_anno.selected == SelectionType.UNSELECTED:
@@ -709,6 +786,10 @@ class Canvas(QWidget):
         if self.annotating_state in (AnnotatingState.MOVING_ANNO,
                                      AnnotatingState.MOVING_KEYPOINT):
             self.set_annotating_state(AnnotatingState.IDLE)
+
+        elif self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.keypoint_annotator.update()
+
         else:
             self.set_hovered_object()
 

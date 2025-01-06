@@ -10,7 +10,8 @@ class ButtonController:
         'prev_image',
         'import',
         'export',
-        'bbox'
+        'bbox',
+        'keypoints'
     }
 
     def __init__(self, parent: 'MainWindow') -> None:

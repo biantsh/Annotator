@@ -18,7 +18,6 @@ from PyQt6.QtGui import (
     QPainterPath
 )
 
-
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
@@ -112,6 +111,24 @@ class CanvasPainter(QPainter):
 
         self.drawRect(QRectF(QPointF(left, top), QPointF(right, bot)))
 
+    def draw_candidate_keypoint(self, position: tuple[int, int]) -> None:
+        pos_x, pos_y = self.scale_point(position)
+
+        width, height = self.canvas.width(), self.canvas.height()
+        offset_x, offset_y = self._offsets
+
+        pos_x = clip_value(pos_x, offset_x, width - offset_x)
+        pos_y = clip_value(pos_y, offset_y, height - offset_y)
+
+        label_schema = self.canvas.keypoint_annotator.annotation.label_schema
+        anno_color = text_to_color(label_schema.label_name)
+
+        self.set_fill_color(anno_color)
+        self.set_outline_color((*anno_color, 155))
+
+        self.drawEllipse(pos_x - 5, pos_y - 5, 10, 10)
+        self.set_fill_color(None)
+
     def draw_zoom_indicator(self, zoom_level: float) -> None:
         image_width = self.canvas.pixmap.width()
         image_height = self.canvas.pixmap.height()
@@ -167,9 +184,12 @@ class CanvasPainter(QPainter):
             if self.canvas.is_cursor_in_bounds():
                 self.draw_crosshair(cursor_position)
 
-        elif self.canvas.annotating_state == AnnotatingState.DRAWING:
+        elif self.canvas.annotating_state == AnnotatingState.DRAWING_ANNO:
             self.draw_candidate_anno((*self.canvas.anno_first_corner,
                                       *cursor_position))
+
+        elif self.canvas.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.draw_candidate_keypoint(cursor_position)
 
         if self.canvas.zoom_handler.draw_indicator:
             self.draw_zoom_indicator(self.canvas.zoom_handler.zoom_level)
@@ -197,9 +217,12 @@ class AnnotationPainer:
         return self.parent.canvas.label_map
 
     def draw_annotation(self, anno: Annotation) -> None:
+        drawing_keypoints = self.parent.canvas.keypoint_annotator.active
+        highlighted = anno.highlighted or anno.selected
+
         self.parent.set_outline_color(
             (205, 205, 205, 255)
-            if anno.highlighted or anno.selected
+            if highlighted and not drawing_keypoints
             else (*text_to_color(anno.label_name), 155))
 
         left, top, right, bot = self.parent.scale_box(anno.position)
@@ -208,8 +231,7 @@ class AnnotationPainer:
         if anno.hidden:
             return
 
-        if (anno.highlighted or anno.selected or anno.hovered) \
-                and not any(kpt.hovered for kpt in anno.keypoints):
+        if (anno.hovered or highlighted) and not drawing_keypoints:
             self.fill_annotation(anno)
 
         if anno.has_keypoints:
@@ -247,6 +269,10 @@ class AnnotationPainer:
         self.parent.fillPath(fill_path, QColor(*anno_color))
 
     def draw_keypoints(self, anno: Annotation) -> None:
+        keypoint_annotator = self.parent.canvas.keypoint_annotator
+        annotating = keypoint_annotator.active and \
+            keypoint_annotator.annotation == anno
+
         anno_color = text_to_color(anno.label_name)
         anno_selected = anno.selected in (SelectionType.SELECTED,
                                           SelectionType.NEWLY_SELECTED)
@@ -267,13 +293,15 @@ class AnnotationPainer:
             else:
                 fill_color = 82, 82, 82
 
+            highlighted = anno_selected or keypoint.selected
+
             self.parent.set_fill_color(fill_color)
             self.parent.set_outline_color((205, 205, 205, 255)
-                                          if anno_selected or keypoint.selected
+                                          if highlighted or annotating
                                           else (*anno_color, 155))
 
-            x_pos, y_pos = self.parent.scale_point(keypoint.position)
-            self.parent.drawEllipse(x_pos - 5, y_pos - 5, 10, 10)
+            pos_x, pos_y = self.parent.scale_point(keypoint.position)
+            self.parent.drawEllipse(pos_x - 5, pos_y - 5, 10, 10)
 
         self.parent.set_fill_color(None)
 
@@ -291,9 +319,12 @@ class AnnotationPainer:
             if not (kpt_start.visible and kpt_end.visible):
                 continue
 
+            highlighted = anno.highlighted or anno_selected or kpt_selected
+            annotating = self.parent.canvas.keypoint_annotator.active
+
             self.parent.set_outline_color(
                 (205, 205, 205, 255)
-                if kpt_selected or anno_selected or anno.highlighted
+                if highlighted and not annotating
                 else (*anno_color, 155))
 
             start_x, start_y = self.parent.scale_point(kpt_start.position)

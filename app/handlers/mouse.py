@@ -70,7 +70,10 @@ class MouseHandler:
             self.parent.on_mouse_middle_press((pos_x, pos_y))
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
+        if self.parent.keypoint_annotator.active:
+            self.parent.keypoint_annotator.on_mouse_press(event)
+
+        elif event.button() == Qt.MouseButton.LeftButton:
             if self.parent.hovered_anno and not self.double_clicked:
                 self.parent.on_annotation_left_press(event)
 

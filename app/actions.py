@@ -23,11 +23,11 @@ def open_dir(parent: 'MainWindow') -> None:
 
 
 def next_image(parent: 'MainWindow') -> None:
-    parent.next_image()
+    parent.canvas.on_next()
 
 
 def prev_image(parent: 'MainWindow') -> None:
-    parent.prev_image()
+    parent.canvas.on_prev()
 
 
 def open_labels(parent: 'MainWindow') -> None:
@@ -66,7 +66,8 @@ def quick_create_bbox(parent: 'Canvas') -> None:
 
 
 def create_keypoints(parent: 'MainWindow') -> None:
-    print('Creating keypoints...')
+    if parent.canvas.annotating_state == AnnotatingState.IDLE:
+        parent.canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
 
 
 def open_settings(parent: 'MainWindow') -> None:
@@ -120,12 +121,12 @@ def escape(parent: 'Canvas') -> None:
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
-    ('prev_image',  prev_image, 'A', 'Back', 'prev.png', False),
+    ('prev_image', prev_image, 'A', 'Back', 'prev.png', False),
     ('open_labels', open_labels, 'Ctrl+L', 'Labels', 'label_map.png', True),
     ('import', import_annos, 'Ctrl+I', 'Import', 'import.png', False),
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
-    ('keypoints', create_keypoints, 'E', 'Points', 'keypoints.png', False),
+    ('keypoints', create_keypoints, 'R', 'Points', 'keypoints.png', False),
     ('settings', open_settings, 'Shift+Tab', 'Settings', 'settings.png', True)
 )
 

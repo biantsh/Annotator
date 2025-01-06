@@ -67,13 +67,6 @@ class Keypoint:
     def pos_y(self) -> int:
         return self.position[1]
 
-    def get_hovered(self, mouse_position: tuple[int, int]) -> bool:
-        pos_x, pos_y = mouse_position
-        margin = 5
-
-        return abs(self.pos_x - pos_x) <= margin \
-            and abs(self.pos_y - pos_y) <= margin
-
 
 class Annotation(Bbox):
     def __init__(self,
@@ -164,9 +157,24 @@ class Annotation(Bbox):
     def get_hovered_keypoint(self,
                              mouse_pos: tuple[int, int]
                              ) -> Keypoint | None:
+        pos_x, pos_y = mouse_pos
+        margin = 5
+
+        min_distance = 2 * margin
+        closest_keypoint = None
+
         for keypoint in self.keypoints[::-1]:
-            if keypoint.visible and keypoint.get_hovered(mouse_pos):
-                return keypoint
+            distance_x = abs(keypoint.pos_x - pos_x)
+            distance_y = abs(keypoint.pos_y - pos_y)
+
+            if distance_x <= margin and distance_y <= margin:
+                distance = distance_x + distance_y
+
+                if distance < min_distance and keypoint.visible:
+                    closest_keypoint = keypoint
+                    min_distance = distance
+
+        return closest_keypoint
 
     def set_schema(self, label_schema: LabelSchema) -> None:
         if self.kpt_names != label_schema.kpt_names:

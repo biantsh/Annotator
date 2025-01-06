@@ -54,7 +54,10 @@ class KeyboardHandler:
             self.key_autorepeat_delay.start()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.text().isdigit():
+        if self.parent.keypoint_annotator.active:
+            self.parent.keypoint_annotator.on_key_press(event)
+
+        elif event.text().isdigit():
             self.on_number_press(event)
 
         elif not event.isAutoRepeat() and event.key() in (
