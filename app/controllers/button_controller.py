@@ -6,8 +6,8 @@ if TYPE_CHECKING:
 
 class ButtonController:
     image_dependent_actions = {
-        'next',
-        'prev',
+        'next_image',
+        'prev_image',
         'import',
         'export',
         'bbox',
