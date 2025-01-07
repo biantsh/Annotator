@@ -59,11 +59,14 @@ class AnnotationController:
                     label_schema.kpt_symmetry = loaded_schema.kpt_symmetry
 
             position = anno['position']
-            annotation = Annotation(position, label_schema, ref_id=anno['id'])
+            annotation = Annotation(label_schema, position, ref_id=anno['id'])
 
             annotation.keypoints = [
                 Keypoint(annotation, [pos_x, pos_y], visible)
                 for pos_x, pos_y, visible in anno['keypoints']]
+
+            if not annotation.has_bbox:
+                annotation.fit_bbox_to_keypoints()
 
             annotations['annotations'].append(annotation)
 
@@ -247,6 +250,10 @@ class AnnotationController:
 
                 category_id = label_map.get_id(anno.label_name)
                 label_schema = label_map.get_label_schema(anno.label_name)
+
+                if not anno.has_bbox:
+                    anno.fit_bbox_to_keypoints()
+                    anno.position = anno.implicit_bbox
 
                 annotation = {
                     'id': annotation_id,

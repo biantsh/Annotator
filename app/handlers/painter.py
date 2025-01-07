@@ -178,6 +178,11 @@ class CanvasPainter(QPainter):
             if not annotation.hidden or annotation.highlighted:
                 self.anno_painter.draw_annotation(annotation)
 
+        anno = self.canvas.keypoint_annotator.annotation
+        if self.canvas.keypoint_annotator.active and \
+                anno not in self.canvas.annotations:
+            self.anno_painter.draw_annotation(anno)
+
         cursor_position = self.canvas.mouse_handler.cursor_position
 
         if self.canvas.annotating_state == AnnotatingState.READY:
@@ -225,13 +230,17 @@ class AnnotationPainer:
             if highlighted and not drawing_keypoints
             else (*text_to_color(anno.label_name), 155))
 
-        left, top, right, bot = self.parent.scale_box(anno.position)
-        self.parent.drawRect(QRectF(QPointF(left, top), QPointF(right, bot)))
+        if anno.has_bbox:
+            left, top, right, bot = self.parent.scale_box(anno.position)
+            self.parent.drawRect(QRectF(QPointF(left, top), QPointF(right, bot)))
 
         if anno.hidden:
             return
 
-        if (anno.hovered or highlighted) and not drawing_keypoints:
+        if anno.has_bbox:
+            if (anno.hovered or highlighted) and not drawing_keypoints:
+                self.fill_annotation(anno)
+        elif anno.hovered and not drawing_keypoints:
             self.fill_annotation(anno)
 
         if anno.has_keypoints:
@@ -239,8 +248,12 @@ class AnnotationPainer:
             self.draw_keypoints(anno)
 
     def fill_annotation(self, anno: Annotation) -> None:
-        left, top, right, bottom = self.parent.scale_box(anno.position)
         width = 10
+
+        if anno.has_bbox:
+            left, top, right, bottom = self.parent.scale_box(anno.position)
+        else:
+            left, top, right, bottom = self.parent.scale_box(anno.implicit_bbox)
 
         area_coords = {
             'full': (left, top, right, bottom),
