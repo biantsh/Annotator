@@ -3,6 +3,7 @@ from collections import deque, defaultdict, OrderedDict
 from typing import TYPE_CHECKING
 
 from app.controllers.label_map_controller import LabelSchema
+from app.enums.annotation import HoverType, SelectionType
 from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
@@ -38,12 +39,40 @@ class ActionCreate(Action):
             lambda anno: anno not in self.annos, self.parent.annotations))
 
 
-class ActionDelete(ActionCreate):
+class ActionDelete(Action):
+    def __init__(self, parent: 'Canvas', annos: list[Annotation]) -> None:
+        self.parent = parent
+        self.annos = {anno.ref_id: anno.copy() for anno in annos}
+
     def do(self) -> None:
-        super().undo()
+        to_delete = []
+
+        for anno in self.parent.annotations:
+            if anno.ref_id not in self.annos:
+                continue
+
+            if anno.selected == SelectionType.BOX_ONLY:
+                anno.position = []
+                anno.has_bbox = False
+                anno.hovered = HoverType.NONE
+                anno.fit_bbox_to_keypoints()
+
+            else:
+                to_delete.append(anno)
+
+        self.parent.unselect_all()
+        self.parent.annotations = [anno for anno in self.parent.annotations
+                                   if anno not in to_delete]
 
     def undo(self) -> None:
-        super().do()
+        self.parent.unselect_all()
+
+        for anno in self.annos.values():
+            if anno in self.parent.annotations:
+                self.parent.annotations.remove(anno)
+
+            self.parent.annotations.append(anno)
+            self.parent.add_selected_annotation(anno)
 
 
 class ActionRename(Action):
@@ -87,7 +116,7 @@ class ActionMove(Action):
         self.pos_from_anno = pos_from_anno
         self.pos_from_kpts = pos_from_kpts
 
-        self.pos_to_anno = anno.position
+        self.pos_to_anno = anno.position or anno.implicit_bbox
         self.pos_to_kpts = [kpt.position for kpt in anno.keypoints]
 
     def _execute(self,
@@ -98,8 +127,12 @@ class ActionMove(Action):
 
         for anno in self.parent.annotations:
             if anno.ref_id == self.ref_id:
-                anno.position = [min(x_min, x_max), min(y_min, y_max),
-                                 max(x_min, x_max), max(y_min, y_max)]
+                if anno.has_bbox:
+                    anno.position = [min(x_min, x_max), min(y_min, y_max),
+                                     max(x_min, x_max), max(y_min, y_max)]
+                else:
+                    anno.implicit_bbox = [min(x_min, x_max), min(y_min, y_max),
+                                          max(x_min, x_max), max(y_min, y_max)]
 
                 if pos_kpts:
                     for keypoint, pos in zip(anno.keypoints, pos_kpts):
@@ -116,6 +149,32 @@ class ActionMove(Action):
 
     def undo(self) -> None:
         self._execute(self.pos_from_anno, self.pos_from_kpts)
+
+
+class ActionAddBbox(Action):
+    def __init__(self, parent: 'Canvas', annos: list[Annotation]) -> None:
+        self.parent = parent
+        self.ref_ids = {anno.ref_id for anno in annos}
+
+    def do(self) -> None:
+        self.parent.unselect_all()
+
+        for anno in self.parent.annotations:
+            if anno.ref_id in self.ref_ids:
+                anno.position = anno.implicit_bbox.copy()
+                anno.has_bbox = True
+
+                self.parent.add_selected_annotation(anno)
+
+    def undo(self) -> None:
+        self.parent.unselect_all()
+
+        for anno in self.parent.annotations:
+            if anno.ref_id in self.ref_ids:
+                anno.position = []
+                anno.has_bbox = False
+
+                self.parent.add_selected_annotation(anno)
 
 
 class ActionCreateKeypoints(Action):
@@ -140,6 +199,15 @@ class ActionCreateKeypoints(Action):
 
                 if visible:
                     self.parent.add_selected_keypoint(keypoint)
+
+            if not anno.has_bbox:
+                if anno.has_keypoints:
+                    anno.fit_bbox_to_keypoints()
+
+                else:
+                    self.parent.annotations = [ann for ann in self.parent.annotations if ann != anno]
+                    self.parent.parent.annotation_list.redraw_widgets()
+                    self.parent.unselect_all()
 
     def do(self) -> None:
         self._execute(True)
@@ -176,6 +244,8 @@ class ActionMoveKeypoint(Action):
 
                 keypoint.position = pos
                 self.parent.set_selected_keypoint(keypoint)
+
+                anno.fit_bbox_to_keypoints()
 
     def do(self) -> None:
         self._execute(self.pos_to)

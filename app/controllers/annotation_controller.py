@@ -59,11 +59,14 @@ class AnnotationController:
                     label_schema.kpt_symmetry = loaded_schema.kpt_symmetry
 
             position = anno['position']
-            annotation = Annotation(position, label_schema, ref_id=anno['id'])
+            annotation = Annotation(label_schema, position, ref_id=anno['id'])
 
             annotation.keypoints = [
                 Keypoint(annotation, [pos_x, pos_y], visible)
                 for pos_x, pos_y, visible in anno['keypoints']]
+
+            if not annotation.has_bbox:
+                annotation.fit_bbox_to_keypoints()
 
             annotations['annotations'].append(annotation)
 
@@ -144,7 +147,11 @@ class AnnotationController:
                     category.get('symmetry', [])
                 )
 
-            annotation = Annotation.from_xywh(bbox, label_schema)
+            if bbox:
+                x_min, y_min, width, height = bbox
+                bbox = [x_min, y_min, x_min + width, y_min + height]
+
+            annotation = Annotation(label_schema, bbox)
             annotations[image_id].append(annotation)
 
             keypoints = coco_annotation.get('keypoints', [])
@@ -252,14 +259,19 @@ class AnnotationController:
                     'id': annotation_id,
                     'image_id': image_id,
                     'category_id': category_id,
-                    'area': anno.area,
-                    'bbox': anno.xywh,
+                    'area': 0,
+                    'bbox': [],
                     'iscrowd': 0,
-                    'segmentation': [
+                    'segmentation': []
+                }
+
+                if anno.has_bbox:
+                    annotation['area'] = anno.area
+                    annotation['bbox'] = anno.xywh
+                    annotation['segmentation'] = [
                         [anno.right, anno.top, anno.right, anno.bottom,
                          anno.left, anno.bottom, anno.left, anno.top]
                     ]
-                }
 
                 if anno.has_keypoints:
                     if anno.kpt_names != label_schema.kpt_names:

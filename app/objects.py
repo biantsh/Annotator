@@ -6,8 +6,9 @@ from app.controllers.label_map_controller import LabelSchema
 
 
 class Bbox:
-    def __init__(self, position: list[int, ...]) -> None:
-        self.position = position
+    def __init__(self, position: list[int, ...] = None) -> None:
+        self.position = position or []
+        self.has_bbox = bool(position)
 
     @property
     def xywh(self) -> tuple[int, ...]:
@@ -45,7 +46,7 @@ class Bbox:
 class Keypoint:
     def __init__(self,
                  parent: 'Annotation',
-                 position: list[int, ...],
+                 position: list[int],
                  visible: bool = True
                  ) -> None:
         self.parent = parent
@@ -70,8 +71,8 @@ class Keypoint:
 
 class Annotation(Bbox):
     def __init__(self,
-                 position: list[int, ...],
                  label_schema: LabelSchema,
+                 position: list[int] = None,
                  keypoints: list[Keypoint] = None,
                  ref_id: str = None
                  ) -> None:
@@ -89,6 +90,8 @@ class Annotation(Bbox):
         self.highlighted = False
         self.hidden = False
 
+        self.implicit_bbox = []
+
     def __eq__(self, other: 'Annotation') -> bool:
         if isinstance(other, Annotation):
             return self.ref_id == other.ref_id
@@ -99,24 +102,16 @@ class Annotation(Bbox):
         box_only = self.selected == SelectionType.BOX_ONLY
         keypoints = None if box_only else self.keypoints
 
-        copied_anno = Annotation(copy.copy(self.position),
-                                 copy.copy(self.label_schema),
+        copied_anno = Annotation(copy.copy(self.label_schema),
+                                 copy.copy(self.position),
                                  copy.deepcopy(keypoints))
+
+        copied_anno.implicit_bbox = self.implicit_bbox.copy()
 
         for keypoint in copied_anno.keypoints:
             keypoint.parent = copied_anno
 
         return copied_anno
-
-    @classmethod
-    def from_xywh(cls,
-                  position: list[int, ...],
-                  label_schema: LabelSchema
-                  ) -> 'Annotation':
-        x_min, y_min, width, height = position
-        x_max, y_max = x_min + width, y_min + height
-
-        return cls([x_min, y_min, x_max, y_max], label_schema)
 
     @property
     def label_name(self) -> str:
@@ -130,9 +125,24 @@ class Annotation(Bbox):
     def has_keypoints(self) -> bool:
         return any(keypoint.visible for keypoint in self.keypoints)
 
+    def fit_bbox_to_keypoints(self) -> None:
+        if not self.has_keypoints:
+            return
+
+        kpts_x, kpts_y = zip(*(kpt.position for kpt in self.keypoints if kpt.visible))
+        self.implicit_bbox = [min(kpts_x), min(kpts_y), max(kpts_x), max(kpts_y)]
+
     def get_hovered_type(self, mouse_pos: tuple[int, int]) -> HoverType:
         pos_x, pos_y = mouse_pos
         margin = 5
+
+        if not self.has_bbox:
+            x_min, y_min, x_max, y_max = self.implicit_bbox
+
+            if x_min <= pos_x <= x_max and y_min <= pos_y <= y_max:
+                return HoverType.FULL
+
+            return HoverType.NONE
 
         if not (self.left - margin <= pos_x <= self.right + margin and
                 self.top - margin <= pos_y <= self.bottom + margin):
@@ -182,3 +192,14 @@ class Annotation(Bbox):
                               for _ in label_schema.kpt_names]
 
         self.label_schema = label_schema
+
+    def copy(self) -> 'Annotation':
+        copied = Annotation(copy.copy(self.label_schema))
+        copied.has_bbox = self.has_bbox
+        copied.position = self.position.copy()
+        copied.implicit_bbox = self.implicit_bbox.copy()
+        copied.ref_id = self.ref_id
+        copied.selected = self.selected
+        copied.keypoints = copy.deepcopy(self.keypoints)
+
+        return copied

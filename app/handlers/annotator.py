@@ -117,6 +117,7 @@ class KeypointAnnotator:
         self.keypoint_label.hide()
 
         self.canvas.set_annotating_state(AnnotatingState.IDLE)
+        self.canvas.on_keypoints_created()
 
 
 class KeypointLabel(QWidget):

@@ -1,9 +1,7 @@
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMouseEvent, QWheelEvent
-
-from app.enums.canvas import AnnotatingState
+from PyQt6.QtGui import QCursor, QMouseEvent, QWheelEvent
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
@@ -14,7 +12,7 @@ class MouseHandler:
         self.parent = parent
 
         self.cursor_position = 0, 0
-        self.global_position = 0, 0
+        self.global_position = QCursor.pos()
 
         self.left_clicked = False
         self.double_clicked = False

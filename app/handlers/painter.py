@@ -174,7 +174,15 @@ class CanvasPainter(QPainter):
     def paint_scene(self) -> None:
         self.draw_pixmap(self.canvas.pixmap)
 
-        for annotation in self.canvas.annotations:
+        annos_to_draw = self.canvas.annotations.copy()
+
+        if self.canvas.keypoint_annotator.active:
+            current_anno = self.canvas.keypoint_annotator.annotation
+
+            if current_anno not in annos_to_draw:
+                annos_to_draw.append(current_anno)
+
+        for annotation in annos_to_draw:
             if not annotation.hidden or annotation.highlighted:
                 self.anno_painter.draw_annotation(annotation)
 
@@ -225,13 +233,17 @@ class AnnotationPainer:
             if highlighted and not drawing_keypoints
             else (*text_to_color(anno.label_name), 155))
 
-        left, top, right, bot = self.parent.scale_box(anno.position)
-        self.parent.drawRect(QRectF(QPointF(left, top), QPointF(right, bot)))
-
         if anno.hidden:
             return
 
-        if (anno.hovered or highlighted) and not drawing_keypoints:
+        if anno.has_bbox:
+            left, top, right, bot = self.parent.scale_box(anno.position)
+            self.parent.drawRect(left, top, right - left, bot - top)
+
+            if (anno.hovered or highlighted) and not drawing_keypoints:
+                self.fill_annotation(anno)
+
+        elif anno.hovered and not drawing_keypoints:
             self.fill_annotation(anno)
 
         if anno.has_keypoints:
@@ -239,7 +251,9 @@ class AnnotationPainer:
             self.draw_keypoints(anno)
 
     def fill_annotation(self, anno: Annotation) -> None:
-        left, top, right, bottom = self.parent.scale_box(anno.position)
+        bbox = anno.position if anno.has_bbox else anno.implicit_bbox
+        left, top, right, bottom = self.parent.scale_box(bbox)
+
         width = 10
 
         area_coords = {

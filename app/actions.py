@@ -51,8 +51,12 @@ def export_annos(parent: 'MainWindow') -> None:
 
 
 def create_bbox(parent: 'MainWindow') -> None:
-    if parent.canvas.annotating_state == AnnotatingState.IDLE:
+    if parent.canvas.selected_annos:
+        parent.canvas.add_bboxes()
+
+    elif parent.canvas.annotating_state == AnnotatingState.IDLE:
         parent.canvas.set_annotating_state(AnnotatingState.READY)
+
     elif parent.canvas.annotating_state == AnnotatingState.READY:
         parent.canvas.set_annotating_state(AnnotatingState.IDLE)
 

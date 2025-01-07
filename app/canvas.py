@@ -24,6 +24,7 @@ from app.handlers.actions import (
     ActionDelete,
     ActionMove,
     ActionRename,
+    ActionAddBbox,
     ActionCreateKeypoints,
     ActionDeleteKeypoints,
     ActionMoveKeypoint,
@@ -224,14 +225,19 @@ class Canvas(QWidget):
         self.setCursor(cursor)
 
     def set_annotating_state(self, state: AnnotatingState) -> None:
+        if state == AnnotatingState.DRAWING_KEYPOINTS:
+            self.create_keypoints()
+
+            if self.keypoint_annotator.active:
+                self.annotating_state = AnnotatingState.DRAWING_KEYPOINTS
+
+            return
+
         previous_state = self.annotating_state
         self.annotating_state = state
 
         if state == AnnotatingState.IDLE:
             self.anno_first_corner = None
-
-            if previous_state == AnnotatingState.DRAWING_KEYPOINTS:
-                self.on_keypoints_created()
 
         elif state == AnnotatingState.READY:
             self.set_selected_annotation(None)
@@ -240,17 +246,11 @@ class Canvas(QWidget):
         elif state == AnnotatingState.DRAWING_ANNO:
             self.anno_first_corner = self.mouse_handler.cursor_position
 
-        elif state == AnnotatingState.DRAWING_KEYPOINTS:
-            self.create_keypoints()
-
-            if not self.keypoint_annotator.active:
-                self.annotating_state = AnnotatingState.IDLE
-
         elif state == AnnotatingState.MOVING_ANNO:
             anno = self.selected_annos[-1]
 
             self.pos_start_anno = self.pos_start_anno or {
-                'annotation': anno.position,
+                'annotation': anno.position or anno.implicit_bbox,
                 'keypoints': [kpt.position.copy() for kpt in anno.keypoints]}
 
         elif state == AnnotatingState.MOVING_KEYPOINT:
@@ -418,27 +418,42 @@ class Canvas(QWidget):
                 return
 
         label_schema = self.label_map.get_label_schema(label_name)
-        annotation = Annotation([x_min, y_min, x_max, y_max], label_schema)
+        annotation = Annotation(label_schema, [x_min, y_min, x_max, y_max])
 
         self.action_handler.register_action(ActionCreate(self, [annotation]))
         self.previous_label = label_name
 
     def create_keypoints(self) -> None:
-        if not self.selected_annos:
-            return
+        if self.selected_annos:
+            annotation = self.selected_annos[-1]
+            label_name = annotation.label_name
 
-        annotation = self.selected_annos[-1]
-        label_name = annotation.label_name
+            if not annotation.label_schema.kpt_names:
+                if not self.label_map.contains(label_name):
+                    return
 
-        if not annotation.label_schema.kpt_names:
-            if not self.label_map.contains(label_name):
+                loaded_schema = self.label_map.get_label_schema(label_name)
+                if not loaded_schema.kpt_names:
+                    return
+
+                annotation.set_schema(loaded_schema)
+
+        else:
+            cursor_position = self.mouse_handler.global_position
+            x_pos, y_pos = cursor_position.x(), cursor_position.y()
+
+            options = [option for option in self.label_names
+                       if self.label_map.get_label_schema(option).kpt_names]
+
+            combo_box = ComboBox(self, options)
+            combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
+
+            label_name = combo_box.selected_value
+            if not label_name:
                 return
 
-            loaded_schema = self.label_map.get_label_schema(label_name)
-            if not loaded_schema.kpt_names:
-                return
-
-            annotation.set_schema(loaded_schema)
+            label_schema = self.label_map.get_label_schema(label_name)
+            annotation = Annotation(label_schema)
 
         for action in self.actions():
             action.setEnabled(False)
@@ -482,9 +497,12 @@ class Canvas(QWidget):
         self.clipboard = [copy.copy(anno) for anno in to_copy]
 
     def paste_annotations(self, replace_existing: bool) -> None:
-        existing_positions = [anno.position for anno in self.annotations]
+        existing_positions = [anno.position or anno.implicit_bbox
+                              for anno in self.annotations]
+
         pasted_annos = [copy.copy(anno) for anno in self.clipboard[::-1]
-                        if anno.position not in existing_positions]
+                        if (anno.position or anno.implicit_bbox)
+                        not in existing_positions]
 
         if not pasted_annos:
             return
@@ -513,11 +531,18 @@ class Canvas(QWidget):
             action = ActionDelete(self, self.selected_annos)
             self.action_handler.register_action(action)
 
+    def add_bboxes(self) -> None:
+        annos = [anno for anno in self.selected_annos if not anno.has_bbox]
+
+        if annos:
+            action = ActionAddBbox(self, annos)
+            self.action_handler.register_action(action)
+
     def move_annotation(self,
                         anno: Annotation,
                         delta: tuple[int, int]
                         ) -> None:
-        x_min, y_min, x_max, y_max = anno.position
+        x_min, y_min, x_max, y_max = anno.position or anno.implicit_bbox
         delta_x, delta_y = delta
 
         kpts_x, kpts_y = None, None
@@ -565,7 +590,10 @@ class Canvas(QWidget):
                     for keypoint in anno.keypoints:
                         keypoint.position[1] += delta_y
 
-        anno.position = [x_min, y_min, x_max, y_max]
+        if anno.has_bbox:
+            anno.position = [x_min, y_min, x_max, y_max]
+        else:
+            anno.fit_bbox_to_keypoints()
 
     def move_keypoint(self,
                       keypoint: Keypoint,
@@ -607,11 +635,18 @@ class Canvas(QWidget):
         for action in self.actions():
             action.setEnabled(True)
 
-        keypoints = self.keypoint_annotator.created_keypoints
-        if not keypoints:
+        created_keypoints = self.keypoint_annotator.created_keypoints
+        annotation = self.keypoint_annotator.annotation
+
+        if not created_keypoints:
             return
 
-        action = ActionCreateKeypoints(self, keypoints)
+        if annotation in self.annotations:
+            action = ActionCreateKeypoints(self, created_keypoints)
+        else:
+            annotation.fit_bbox_to_keypoints()
+            action = ActionCreate(self, [annotation])
+
         self.action_handler.register_action(action)
 
     def on_arrow_press(self, pressed_keys: set[int]) -> None:
@@ -636,35 +671,36 @@ class Canvas(QWidget):
         if self.annotating_state == AnnotatingState.MOVING_ANNO:
             return
 
+        annotation = self.hovered_anno
+        selection_type = annotation.selected
         ctrl_pressed = Qt.KeyboardModifier.ControlModifier & event.modifiers()
-        selection_type = self.hovered_anno.selected
 
         if not ctrl_pressed:
-            self.set_selected_annotation(self.hovered_anno)
+            self.set_selected_annotation(annotation)
 
         match bool(ctrl_pressed), selection_type:
             case False, SelectionType.UNSELECTED:
-                self.hovered_anno.selected = SelectionType.NEWLY_SELECTED
+                annotation.selected = SelectionType.NEWLY_SELECTED
 
             case False, SelectionType.SELECTED | SelectionType.NEWLY_SELECTED:
-                if self.hovered_anno.has_keypoints:
-                    self.hovered_anno.selected = SelectionType.BOX_ONLY
+                if annotation.has_bbox and annotation.has_keypoints:
+                    annotation.selected = SelectionType.BOX_ONLY
 
             case False, SelectionType.BOX_ONLY:
-                self.hovered_anno.selected = SelectionType.SELECTED
+                annotation.selected = SelectionType.SELECTED
 
             case True, SelectionType.UNSELECTED:
-                self.add_selected_annotation(self.hovered_anno)
-                self.hovered_anno.selected = SelectionType.NEWLY_SELECTED
+                self.add_selected_annotation(annotation)
+                annotation.selected = SelectionType.NEWLY_SELECTED
 
             case True, SelectionType.SELECTED | SelectionType.NEWLY_SELECTED:
-                if self.hovered_anno.has_keypoints:
-                    self.hovered_anno.selected = SelectionType.BOX_ONLY
+                if annotation.has_bbox and annotation.has_keypoints:
+                    annotation.selected = SelectionType.BOX_ONLY
                 else:
-                    self.unselect_annotation(self.hovered_anno)
+                    self.unselect_annotation(annotation)
 
             case True, SelectionType.BOX_ONLY:
-                self.unselect_annotation(self.hovered_anno)
+                self.unselect_annotation(annotation)
 
         self.update()
 
