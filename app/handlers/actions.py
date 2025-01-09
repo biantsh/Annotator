@@ -3,7 +3,7 @@ from collections import deque, defaultdict, OrderedDict
 from typing import TYPE_CHECKING
 
 from app.controllers.label_map_controller import LabelSchema
-from app.enums.annotation import HoverType, SelectionType
+from app.enums.annotation import SelectionType
 from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
@@ -29,8 +29,10 @@ class ActionCreate(Action):
         self.parent.unselect_all()
 
         for anno in self.annos:
-            self.parent.annotations.append(anno)
-            self.parent.add_selected_annotation(anno)
+            created_anno = anno.copy()
+
+            self.parent.annotations.append(created_anno)
+            self.parent.add_selected_annotation(created_anno)
 
     def undo(self) -> None:
         self.parent.unselect_all()
@@ -45,24 +47,10 @@ class ActionDelete(Action):
         self.annos = {anno.ref_id: anno.copy() for anno in annos}
 
     def do(self) -> None:
-        to_delete = []
-
-        for anno in self.parent.annotations:
-            if anno.ref_id not in self.annos:
-                continue
-
-            if anno.selected == SelectionType.BOX_ONLY:
-                anno.position = []
-                anno.has_bbox = False
-                anno.hovered = HoverType.NONE
-                anno.fit_bbox_to_keypoints()
-
-            else:
-                to_delete.append(anno)
-
         self.parent.unselect_all()
+
         self.parent.annotations = [anno for anno in self.parent.annotations
-                                   if anno not in to_delete]
+                                   if anno.ref_id not in self.annos]
 
     def undo(self) -> None:
         self.parent.unselect_all()
@@ -71,7 +59,7 @@ class ActionDelete(Action):
             if anno in self.parent.annotations:
                 self.parent.annotations.remove(anno)
 
-            self.parent.annotations.append(anno)
+            self.parent.annotations.append(anno.copy())
             self.parent.add_selected_annotation(anno)
 
 
@@ -175,6 +163,34 @@ class ActionAddBbox(Action):
                 anno.has_bbox = False
 
                 self.parent.add_selected_annotation(anno)
+
+
+class ActionDeleteBbox(Action):
+    def __init__(self, parent: 'Canvas', annos: list[Annotation]) -> None:
+        self.parent = parent
+        self.annos = {anno.ref_id: anno.copy() for anno in annos}
+
+    def do(self) -> None:
+        self.parent.unselect_all()
+
+        for anno in self.parent.annotations:
+            if anno.ref_id in self.annos:
+                anno.position = []
+                anno.has_bbox = False
+                anno.fit_bbox_to_keypoints()
+
+                self.parent.add_selected_annotation(anno)
+
+    def undo(self) -> None:
+        self.parent.unselect_all()
+
+        for anno in self.parent.annotations:
+            if anno.ref_id in self.annos:
+                anno.position = self.annos[anno.ref_id].position.copy()
+                anno.has_bbox = True
+
+                self.parent.add_selected_annotation(anno)
+                anno.selected = SelectionType.BOX_ONLY
 
 
 class ActionCreateKeypoints(Action):

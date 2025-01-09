@@ -25,6 +25,7 @@ from app.handlers.actions import (
     ActionMove,
     ActionRename,
     ActionAddBbox,
+    ActionDeleteBbox,
     ActionCreateKeypoints,
     ActionDeleteKeypoints,
     ActionMoveKeypoint,
@@ -528,8 +529,22 @@ class Canvas(QWidget):
             self.action_handler.register_action(action)
 
         if self.selected_annos:
-            action = ActionDelete(self, self.selected_annos)
-            self.action_handler.register_action(action)
+            to_delete_bbox = []
+            to_delete = []
+
+            for anno in self.selected_annos:
+                if anno.selected == SelectionType.BOX_ONLY:
+                    to_delete_bbox.append(anno)
+                else:
+                    to_delete.append(anno)
+
+            if to_delete_bbox:
+                action = ActionDeleteBbox(self, to_delete_bbox)
+                self.action_handler.register_action(action)
+
+            if to_delete:
+                action = ActionDelete(self, to_delete)
+                self.action_handler.register_action(action)
 
     def add_bboxes(self) -> None:
         annos = [anno for anno in self.selected_annos if not anno.has_bbox]
