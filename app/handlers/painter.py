@@ -279,6 +279,9 @@ class AnnotationPainer:
             left, top, right, bot = area_coords[area_name]
             fill_path.addRect(QRectF(QPointF(left, top), QPointF(right, bot)))
 
+        if 'full' in fill_areas and any(kpt.selected for kpt in anno.keypoints):
+            return
+
         anno_color = *text_to_color(anno.label_name), 100
         self.parent.fillPath(fill_path, QColor(*anno_color))
 

@@ -82,7 +82,7 @@ class Canvas(QWidget):
         self.zoom_handler = ZoomHandler(self)
 
         self.action_handler = ActionHandler(self, self.image_name)
-        self.pin_annotation_list = False
+        self.pin_annotation_list = True
 
         self.pos_start_anno = None
         self.pos_start_kpt = None
@@ -317,6 +317,8 @@ class Canvas(QWidget):
         if not annotation or annotation in self.selected_annos:
             return
 
+        self.set_selected_keypoint(None)
+
         self.selected_annos.append(annotation)
         annotation.selected = SelectionType.SELECTED
         annotation.hidden = False
@@ -338,6 +340,8 @@ class Canvas(QWidget):
     def add_selected_keypoint(self, keypoint: Keypoint | None) -> None:
         if not keypoint or keypoint in self.selected_keypoints:
             return
+
+        self.set_selected_annotation(None)
 
         self.selected_keypoints.append(keypoint)
         keypoint.selected = True
@@ -425,8 +429,10 @@ class Canvas(QWidget):
         self.previous_label = label_name
 
     def create_keypoints(self) -> None:
-        if self.selected_annos:
-            annotation = self.selected_annos[-1]
+        if self.selected_annos or self.selected_keypoints:
+            annotation = self.selected_annos[-1] if self.selected_annos \
+                else self.selected_keypoints[-1].parent
+
             label_name = annotation.label_name
 
             if not annotation.label_schema.kpt_names:
