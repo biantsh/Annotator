@@ -179,8 +179,6 @@ class ActionDeleteBbox(Action):
                 anno.has_bbox = False
                 anno.fit_bbox_to_keypoints()
 
-                self.parent.add_selected_annotation(anno)
-
     def undo(self) -> None:
         self.parent.unselect_all()
 
@@ -284,8 +282,11 @@ class ActionFlipKeypoints(Action):
                 keypoint_left = anno.keypoints[index_left - 1]
                 keypoint_right = anno.keypoints[index_right - 1]
 
-                anno.keypoints[index_left - 1] = keypoint_right
-                anno.keypoints[index_right - 1] = keypoint_left
+                keypoint_left.visible, keypoint_right.visible = \
+                    keypoint_right.visible, keypoint_left.visible
+
+                keypoint_left.position, keypoint_right.position = \
+                    keypoint_right.position, keypoint_left.position
 
             self.parent.set_selected_annotation(anno)
 
