@@ -51,9 +51,14 @@ class KeypointAnnotator:
             pretty_text(kpt_name)) for kpt_name in self.kpt_names)
         self.keypoint_label.set_width(max(text_width) + 12)
 
-        self.update()
         self.reset_label()
         self.keypoint_label.show()
+
+        self.canvas.set_selected_annotation(annotation)
+        self.canvas.parent.annotation_list.redraw_widgets()
+
+        self.update()
+        self.canvas.update()
 
     def update(self) -> None:
         mouse_pos = self.canvas.mouse_handler.global_position
@@ -118,6 +123,8 @@ class KeypointAnnotator:
 
         self.canvas.set_annotating_state(AnnotatingState.IDLE)
         self.canvas.on_keypoints_created()
+
+        self.canvas.parent.annotation_list.redraw_widgets()
         self.canvas.on_mouse_hover()
 
 

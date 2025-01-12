@@ -29,7 +29,11 @@ class AnnotationList(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def redraw_widgets(self) -> None:
-        annos = self.parent.canvas.annotations
+        annos = self.parent.canvas.annotations.copy()
+        annotator = self.parent.canvas.keypoint_annotator
+
+        if annotator.active and annotator.annotation not in annos:
+            annos.append(annotator.annotation)
 
         for index in range(self.anno_layout.count()):
             self.anno_layout.itemAt(index).widget().deleteLater()
@@ -83,9 +87,11 @@ class ListItem(QWidget):
 
         elif event.type() == event.Type.Enter:
             source.setStyleSheet('background-color: rgb(53, 53, 53);')
+            self.checkbox.on_mouse_enter()
 
         elif event.type() == event.Type.Leave:
             source.setStyleSheet('background-color: rgb(33, 33, 33);')
+            self.checkbox.on_mouse_leave()
 
         return True
 
@@ -119,7 +125,7 @@ class KeypointList(QWidget):
         self.setLayout(layout)
 
         for keypoint in annotation.keypoints:
-            layout.addWidget(KeypointItem(self, keypoint))
+            layout.addWidget(KeypointItem(self.parent, keypoint))
 
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -130,7 +136,7 @@ class KeypointList(QWidget):
 
 
 class KeypointItem(QWidget):
-    def __init__(self, parent: KeypointList, keypoint: Keypoint) -> None:
+    def __init__(self, parent: ListItem, keypoint: Keypoint) -> None:
         super().__init__()
 
         self.parent = parent
@@ -145,7 +151,7 @@ class KeypointItem(QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
-        canvas = self.parent.parent.canvas
+        canvas = self.parent.canvas
 
         if event.type() in (event.Type.MouseButtonPress,
                             event.Type.MouseButtonDblClick):
@@ -155,7 +161,14 @@ class KeypointItem(QWidget):
                 canvas.on_keypoint_left_press(self.keypoint, event)
                 canvas.update()
 
-        elif event.type() in (event.Type.Enter, event.Type.Leave):
+        elif event.type() == event.Type.Enter:
+            self.keypoint.hovered = True
+            self.parent.canvas.update()
+            self.update()
+
+        elif event.type() == event.Type.Leave:
+            self.keypoint.hovered = False
+            self.parent.canvas.update()
             self.update()
 
         return True

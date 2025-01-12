@@ -658,6 +658,7 @@ class Canvas(QWidget):
         annotation = self.keypoint_annotator.annotation
 
         if not created_keypoints:
+            self.unselect_all()
             return
 
         if annotation in self.annotations:
