@@ -43,41 +43,7 @@ class CheckBoxStyleSheet(StyleSheet):
                 background-color: transparent;
                 font-weight: bold;
                 border-bottom: {underline};
-                border-left: none;
-                margin-right: 10px;
-                padding-bottom: 3px;
-            }}
-        
-            ::indicator {{
-                border: 1px solid rgb(53, 53, 53);
-                border-radius: 2px;
-            }}
-            
-            ::indicator:checked {{
-                background-color: rgb{checkbox_color};
-            }}
-        """
-
-
-class ListCheckBoxStyleSheet(StyleSheet):
-    def __init__(self,
-                 selected: bool,
-                 hovered: bool,
-                 checkbox_color: tuple[int, int, int]
-                 ) -> None:
-        super().__init__()
-
-        underline = '1px solid rgba(255, 255, 255, 0.85)' \
-            if selected else '1px solid transparent'
-
-        background_color = (53, 53, 53) if hovered else (33, 33, 33)
-
-        self.style_sheet = f"""
-            QCheckBox {{
-                background-color: rgb{background_color};
-                font-weight: bold;
-                border-bottom: {underline};
-                border-left: none;
+                margin-right: 18px;
                 padding-bottom: 3px;
             }}
 

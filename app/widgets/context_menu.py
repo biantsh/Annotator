@@ -193,7 +193,6 @@ class CanvasContextMenu(ContextMenu):
 
         def pin_menu() -> None:
             self.parent.parent.annotation_list.setVisible(True)
-            self.parent.pin_annotation_list = True
 
         hide_button = ContextButton(self.parent, set_hidden_all, text, False)
         pin_button = ContextButton(self.parent, pin_menu, ' \u276F ', False)

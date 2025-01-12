@@ -210,11 +210,11 @@ class ActionCreateKeypoints(Action):
                 continue
 
             for index, position in self.keypoints[anno.ref_id]:
-                keypoint = Keypoint(anno, position.copy(), visible)
-                anno.keypoints[index] = keypoint
+                anno.keypoints[index].position = position.copy()
+                anno.keypoints[index].visible = visible
 
                 if visible:
-                    self.parent.add_selected_keypoint(keypoint)
+                    self.parent.add_selected_keypoint(anno.keypoints[index])
 
             if not anno.has_bbox:
                 if anno.has_keypoints:
@@ -319,7 +319,7 @@ class ActionHandler:
         action = stack_from.pop()
         stack_to.append(action)
 
-        (action.undo if undo else action.do)()
+        action.undo() if undo else action.do()
         if isinstance(action, (ActionCreate, ActionDelete)):
             self.parent.parent.annotation_list.redraw_widgets()
 

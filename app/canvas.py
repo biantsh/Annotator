@@ -79,10 +79,8 @@ class Canvas(QWidget):
         self.keyboard_handler = KeyboardHandler(self)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-        self.zoom_handler = ZoomHandler(self)
-
         self.action_handler = ActionHandler(self, self.image_name)
-        self.pin_annotation_list = True
+        self.zoom_handler = ZoomHandler(self)
 
         self.pos_start_anno = None
         self.pos_start_kpt = None
@@ -725,16 +723,19 @@ class Canvas(QWidget):
 
         self.update()
 
-    def on_keypoint_left_press(self, event: QMouseEvent) -> None:
+    def on_keypoint_left_press(self,
+                               keypoint: Keypoint,
+                               event: QMouseEvent
+                               ) -> None:
         if Qt.KeyboardModifier.ControlModifier & event.modifiers():
-            if self.hovered_keypoint in self.selected_keypoints:
-                self.unselect_keypoint(self.hovered_keypoint)
+            if keypoint in self.selected_keypoints:
+                self.unselect_keypoint(keypoint)
 
             else:
-                self.add_selected_keypoint(self.hovered_keypoint)
+                self.add_selected_keypoint(keypoint)
 
         else:
-            self.set_selected_keypoint(self.hovered_keypoint)
+            self.set_selected_keypoint(keypoint)
 
     def on_mouse_left_press(self, event: QMouseEvent) -> None:
         if self.annotating_state == AnnotatingState.READY:
@@ -759,7 +760,7 @@ class Canvas(QWidget):
                 self.set_selected_annotation(None)
 
             if self.hovered_keypoint:
-                self.on_keypoint_left_press(event)
+                self.on_keypoint_left_press(self.hovered_keypoint, event)
             else:
                 self.set_selected_keypoint(None)
 
@@ -773,7 +774,7 @@ class Canvas(QWidget):
             context_menu = AnnotationContextMenu(self, self.hovered_anno)
 
         else:
-            if self.pin_annotation_list:
+            if self.parent.annotation_list.isVisible():
                 return
 
             context_menu = CanvasContextMenu(self)
@@ -875,10 +876,7 @@ class Canvas(QWidget):
 
     def on_escape(self) -> None:
         self.set_annotating_state(AnnotatingState.IDLE)
-
-        for annotation in self.annotations:
-            self.unselect_annotation(annotation)
-            annotation.highlighted = False
+        self.unselect_all()
 
         self.update()
 

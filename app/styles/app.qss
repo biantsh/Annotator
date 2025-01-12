@@ -19,6 +19,41 @@ QToolTip {
     min-width: 0px;
     max-width: 0px;
 }
+AnnotationList {
+    border-left: 1px solid rgb(53, 53, 53);
+    max-width: 150px;
+}
+AnnotationList ContextCheckBox {
+    min-width: 120px;
+    max-width: 120px;
+}
+AnnotationList UnpinButton QLabel {
+    padding-left: 4px;
+    margin-left: 1px;
+    min-height: 30px;
+}
+AnnotationList ListItem QLabel {
+    margin-bottom: 3px;
+}
+AnnotationList KeypointList QLabel {
+    margin-bottom: 0px;
+    padding-left: 16px;
+    font-weight: bold;
+    font-size: 9pt;
+    min-height: 25px;
+}
+KeypointLabel {
+    background-color: rgba(33, 33, 33, 0.75);
+    border-radius: 5px;
+    min-height: 35px;
+    margin: 5px;
+}
+CanvasContextMenu {
+    min-width: 150px;
+}
+AnnotationContextMenu {
+    min-width: 90px;
+}
 QMenu {
     background-color: transparent;
     border: 0px;
@@ -68,11 +103,5 @@ QMessageBox QPushButton {
     min-height: 20px;
 }
 QMessageBox QPushButton:hover {
-    background-color: rgb(53, 53, 53)
-}
-KeypointLabel {
-    background-color: rgba(33, 33, 33, 0.75);
-    border-radius: 5px;
-    min-height: 35px;
-    margin: 5px;
+    background-color: rgb(53, 53, 53);
 }
