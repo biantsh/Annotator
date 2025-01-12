@@ -409,7 +409,7 @@ class Canvas(QWidget):
         x_min, x_max = sorted([x_min, x_max])
         y_min, y_max = sorted([y_min, y_max])
 
-        if not label_name:
+        if not (label_name and self.label_map.contains(label_name)):
             cursor_position = self.mouse_handler.global_position
             x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
@@ -426,8 +426,19 @@ class Canvas(QWidget):
         self.action_handler.register_action(ActionCreate(self, [annotation]))
         self.previous_label = label_name
 
-    def create_keypoints(self) -> None:
-        if self.selected_annos or self.selected_keypoints:
+    def create_keypoints(self, label_name: str = None) -> None:
+        if label_name:
+            if not self.label_map.contains(label_name):
+                return
+
+            loaded_schema = self.label_map.get_label_schema(label_name)
+
+            if not loaded_schema.kpt_names:
+                return
+
+            annotation = Annotation(loaded_schema)
+
+        elif self.selected_annos or self.selected_keypoints:
             annotation = self.selected_annos[-1] if self.selected_annos \
                 else self.selected_keypoints[-1].parent
 
@@ -668,6 +679,7 @@ class Canvas(QWidget):
             action = ActionCreate(self, [annotation])
 
         self.action_handler.register_action(action)
+        self.previous_label = annotation.label_name
 
     def on_arrow_press(self, pressed_keys: set[int]) -> None:
         delta_x, delta_y = 0, 0

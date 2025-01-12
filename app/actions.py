@@ -74,6 +74,17 @@ def create_keypoints(parent: 'MainWindow') -> None:
         parent.canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
 
 
+def quick_create_keypoints(parent: 'Canvas') -> None:
+    if not (parent.annotating_state == AnnotatingState.IDLE
+            and parent.previous_label):
+        return
+
+    parent.create_keypoints(parent.previous_label)
+
+    if parent.keypoint_annotator.active:
+        parent.annotating_state = AnnotatingState.DRAWING_KEYPOINTS
+
+
 def open_settings(parent: 'MainWindow') -> None:
     parent.open_settings()
 
@@ -136,6 +147,7 @@ __toolbar_actions__ = (
 
 __canvas_actions__ = (
     ('quick_create_bbox', quick_create_bbox, 'E'),
+    ('quick_create_kpts', quick_create_keypoints, 'F'),
     ('select_next', select_next, 'Space'),
     ('select_all', select_all, 'Ctrl+A'),
     ('hide_annos', hide_annotations, 'Ctrl+H'),
