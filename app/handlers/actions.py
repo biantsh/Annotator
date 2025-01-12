@@ -200,6 +200,9 @@ class ActionCreateKeypoints(Action):
             keypoint_info = keypoint.index, keypoint.position
             self.keypoints[keypoint.parent.ref_id].append(keypoint_info)
 
+        self.annotations = {kpt.parent.ref_id: kpt.parent.copy()
+                            for kpt in keypoints}
+
     def _execute(self, visible: bool) -> None:
         self.parent.unselect_all()
 
@@ -219,9 +222,14 @@ class ActionCreateKeypoints(Action):
                     anno.fit_bbox_to_keypoints()
 
                 else:
-                    self.parent.annotations = [ann for ann in self.parent.annotations if ann != anno]
-                    self.parent.parent.annotation_list.redraw_widgets()
-                    self.parent.unselect_all()
+                    self.parent.annotations = list(
+                        filter(lambda a: a != anno, self.parent.annotations))
+
+        for anno in self.annotations.values():
+            if visible and anno not in self.parent.annotations:
+                self.parent.annotations.append(anno.copy())
+
+        self.parent.parent.annotation_list.redraw_widgets()
 
     def do(self) -> None:
         self._execute(True)
