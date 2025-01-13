@@ -202,4 +202,7 @@ class Annotation(Bbox):
         copied.selected = self.selected
         copied.keypoints = copy.deepcopy(self.keypoints)
 
+        for kpt in copied.keypoints:
+            kpt.parent = copied
+
         return copied

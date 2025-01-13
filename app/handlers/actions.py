@@ -310,7 +310,7 @@ class ActionHandler:
         self.parent = parent
         self.image_name = image_name
 
-        self.action_cache = LRUActionCache(max_images=50, max_actions=30)
+        self.action_cache = LRUActionCache(max_images=50, max_actions=50)
 
     def _execute(self, undo: bool) -> Action | None:
         if self.image_name not in self.action_cache:
