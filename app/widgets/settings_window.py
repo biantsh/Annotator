@@ -166,11 +166,8 @@ class SettingAddMissingBboxes(QWidget):
 
     def __init__(self, parent: SettingsWindow) -> None:
         super().__init__()
+
         self.parent = parent
-
-        layout = QHBoxLayout()
-        self.setLayout(layout)
-
         self.checkbox = QCheckBox('Add missing boxes')
 
         toggled = parent.parent.settings.get('add_missing_bboxes')
@@ -184,6 +181,9 @@ class SettingAddMissingBboxes(QWidget):
                        'by outlining the keypoints')
         label.setTextInteractionFlags(__text_interaction__)
 
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
         layout.addWidget(self.checkbox)
         layout.addStretch()
         layout.addWidget(label)
@@ -194,8 +194,9 @@ class SettingAddMissingBboxes(QWidget):
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if event.type() == event.Type.Enter:
-            source.setStyleSheet(
-                '::indicator {border: 1px solid rgb(60, 120, 216);}')
+            source.setStyleSheet('''::indicator {
+                border: 1px solid rgb(60, 120, 216);
+            }''')
 
         elif event.type() == event.Type.Leave:
             source.setStyleSheet('')
