@@ -72,7 +72,7 @@ class ListItem(QWidget):
         self.setLayout(self.layout)
 
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.header_layout.setContentsMargins(8, 9, 5, 6)
+        self.header_layout.setContentsMargins(8, 9, 1, 6)
 
         self.update()
 

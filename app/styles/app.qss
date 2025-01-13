@@ -26,6 +26,8 @@ AnnotationList {
 AnnotationList ContextCheckBox {
     min-width: 120px;
     max-width: 120px;
+    padding-top: 3px;
+    padding-bottom: 3px;
 }
 AnnotationList UnpinButton QLabel {
     padding-left: 4px;

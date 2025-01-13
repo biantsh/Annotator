@@ -44,7 +44,6 @@ class CheckBoxStyleSheet(StyleSheet):
                 font-weight: bold;
                 border-bottom: {underline};
                 margin-right: 18px;
-                padding-bottom: 3px;
             }}
 
             ::indicator {{
