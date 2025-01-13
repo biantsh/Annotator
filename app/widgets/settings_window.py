@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy
 )
 
+from app.styles.style_sheets import SettingCheckBoxStyleSheet
 from app.utils import clip_value
 
 if TYPE_CHECKING:
@@ -55,7 +56,7 @@ class SettingsWindow(QDialog):
         setting_add_missing_bboxes = SettingAddMissingBboxes(self)
 
         layout.addWidget(setting_add_missing_bboxes)
-        self.checkboxes.append(setting_add_missing_bboxes)
+        self.checkboxes.append(setting_add_missing_bboxes.checkbox)
 
         layout.addStretch()
 
@@ -126,7 +127,7 @@ class TitleLayout(QHBoxLayout):
         title.setStyleSheet('''
             color: rgb(200, 200, 200);
             font-size: 18px;
-            margin-top: 5px;
+            margin-top: 7px;
             margin-left: 3px;
         ''')
 
@@ -161,21 +162,49 @@ class SectionLayout(QHBoxLayout):
         self.addWidget(separator)
 
 
-class SettingAddMissingBboxes(QWidget):
-    default = False
-
-    def __init__(self, parent: SettingsWindow) -> None:
-        super().__init__()
+class SettingCheckBox(QCheckBox):
+    def __init__(self,
+                 parent: SettingsWindow,
+                 setting_id: str,
+                 text: str,
+                 default: bool,
+                 ) -> None:
+        super().__init__(text)
 
         self.parent = parent
-        self.checkbox = QCheckBox('Add missing boxes')
+        self.setting_id = setting_id
+        self.default = default
 
-        toggled = parent.parent.settings.get('add_missing_bboxes')
-        self.checkbox.setChecked(toggled)
+        self.installEventFilter(self)
+        self.setChecked(parent.parent.settings.get(setting_id))
+        self.stateChanged.connect(lambda: self.set_checked(self.isChecked()))
 
-        self.checkbox.stateChanged.connect(
-            lambda: self.set_checked(self.checkbox.isChecked()))
-        self.checkbox.installEventFilter(self)
+        self._refresh()
+
+    def _refresh(self) -> None:
+        hovered, checked = self.underMouse(), self.isChecked()
+        self.setStyleSheet(str(SettingCheckBoxStyleSheet(hovered, checked)))
+
+    def set_checked(self, checked: bool) -> None:
+        self.parent.parent.settings.set(self.setting_id, checked)
+        self.setChecked(checked)
+
+        self._refresh()
+
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        if event.type() in (event.Type.Enter, event.Type.Leave):
+            self._refresh()
+
+        return False
+
+
+class SettingAddMissingBboxes(QWidget):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__()
+        self.parent = parent
+
+        self.checkbox = SettingCheckBox(
+            self.parent, 'add_missing_bboxes', 'Add missing boxes', False)
 
         label = QLabel('Automatically adds missing boxes '
                        'by outlining the keypoints')
@@ -187,21 +216,6 @@ class SettingAddMissingBboxes(QWidget):
         layout.addWidget(self.checkbox)
         layout.addStretch()
         layout.addWidget(label)
-
-    def set_checked(self, checked: bool) -> None:
-        self.parent.parent.settings.set('add_missing_bboxes', checked)
-        self.checkbox.setChecked(checked)
-
-    def eventFilter(self, source: QObject, event: QEvent) -> bool:
-        if event.type() == event.Type.Enter:
-            source.setStyleSheet('''::indicator {
-                border: 1px solid rgb(60, 120, 216);
-            }''')
-
-        elif event.type() == event.Type.Leave:
-            source.setStyleSheet('')
-
-        return False
 
 
 class ResetButton(QPushButton):

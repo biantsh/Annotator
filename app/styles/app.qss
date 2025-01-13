@@ -1,3 +1,7 @@
+QLabel, QPushButton, QCheckBox {
+    font-family: 'DejaVu Sans';
+    font-size: 9pt;
+}
 QToolBar {
     border-right: 1px solid rgb(53, 53, 53);
     margin-left: 0px;
@@ -85,6 +89,7 @@ SettingsWindow QFrame {
 }
 SettingsWindow QLabel {
     selection-background-color: rgb(60, 120, 216);
+    color: rgb(153, 153, 153);
 }
 SettingsWindow QPushButton {
     background-color: rgb(33, 33, 33);
@@ -109,7 +114,6 @@ SettingsWindow QCheckBox::indicator {
     height: 12px;
 }
 SettingsWindow QCheckBox::indicator:checked {
-    image: url(resources/icons/checkbox.png);
     border: 1px solid rgb(60, 120, 216);
 }
 SettingsWindow ResetButton,
@@ -151,8 +155,10 @@ SettingsWindow SettingAddMissingBboxes QLabel {
 }
 QMessageBox {
     background-color: rgb(33, 33, 33);
-    font-size: 14px;
     color: rgb(200, 200, 200);
+}
+QMessageBox QLabel {
+    font-size: 10.5pt;
 }
 QMessageBox QPushButton {
     background-color: rgb(33, 33, 33);

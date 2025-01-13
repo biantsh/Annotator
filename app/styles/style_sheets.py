@@ -1,4 +1,9 @@
+import os
+import sys
 from abc import ABC
+
+__basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
+__iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
 
 
 class StyleSheet(ABC):
@@ -42,8 +47,8 @@ class CheckBoxStyleSheet(StyleSheet):
             QCheckBox {{
                 background-color: transparent;
                 font-weight: bold;
+                margin-right: 24px;
                 border-bottom: {underline};
-                margin-right: 18px;
             }}
 
             ::indicator {{
@@ -53,5 +58,21 @@ class CheckBoxStyleSheet(StyleSheet):
 
             ::indicator:checked {{
                 background-color: rgb{checkbox_color};
+            }}
+        """
+
+
+class SettingCheckBoxStyleSheet(StyleSheet):
+    def __init__(self, hovered: bool, selected: bool) -> None:
+        super().__init__()
+
+        image_url = os.path.join(__iconpath__, 'checkbox.png')
+        image_url = f'url({image_url})' if selected else 'none'
+        outline = (60, 120, 216) if hovered or selected else (53, 53, 53)
+
+        self.style_sheet = f"""
+            ::indicator {{
+                image: {image_url};
+                border: 1px solid rgb{outline};
             }}
         """
