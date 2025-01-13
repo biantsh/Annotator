@@ -1,26 +1,34 @@
-from PyQt6.QtCore import Qt, QPoint
+from typing import TYPE_CHECKING
+
+from PyQt6.QtCore import Qt, QObject, QEvent, QPoint
 from PyQt6.QtGui import QPainter, QColor, QMouseEvent, QPaintEvent
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
+    QWidget,
     QDialog,
     QFrame,
     QLabel,
     QPushButton,
+    QCheckBox,
     QSizePolicy
 )
 
 from app.utils import clip_value
 
+if TYPE_CHECKING:
+    from annotator import MainWindow
+
 __modality__ = Qt.WindowModality.NonModal
 __windowtype__ = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+__text_interaction__ = Qt.TextInteractionFlag.TextSelectableByMouse
 __background__ = Qt.WidgetAttribute.WA_TranslucentBackground
 
 __size_policy__ = QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum
 
 
 class SettingsWindow(QDialog):
-    def __init__(self, parent) -> None:
+    def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent)
         self.parent = parent
 
@@ -34,6 +42,7 @@ class SettingsWindow(QDialog):
         self.dragging = False
         self.drag_offset = QPoint()
 
+        self.checkboxes = []
         self.build_layout()
 
     def build_layout(self) -> None:
@@ -42,16 +51,21 @@ class SettingsWindow(QDialog):
         layout.addLayout(TitleLayout(self))
         layout.addSpacing(20)
 
-        layout.addLayout(SectionLayout('Appearance'))
-        layout.addSpacing(60)
+        layout.addLayout(SectionLayout('Export'))
+        setting_add_missing_bboxes = SettingAddMissingBboxes(self)
 
-        layout.addLayout(SectionLayout('Miscellaneous'))
+        layout.addWidget(setting_add_missing_bboxes)
+        self.checkboxes.append(setting_add_missing_bboxes)
+
         layout.addStretch()
 
-        label = QLabel('Note: there are currently no settings available.')
-        label.setStyleSheet('color: rgb(153, 153, 153);')
-        label.setContentsMargins(3, 0, 0, 3)
-        layout.addWidget(label)
+        close_layout = QHBoxLayout()
+        layout.addLayout(close_layout)
+
+        close_layout.addWidget(ResetButton(self))
+        close_layout.addStretch()
+        close_layout.addWidget(CloseButton(self))
+        close_layout.addWidget(FinishButton(self))
 
     def show(self) -> None:
         self.setGeometry(self.parent.frameGeometry())
@@ -128,7 +142,7 @@ class TitleLayout(QHBoxLayout):
 class SectionLayout(QHBoxLayout):
     def __init__(self, title: str) -> None:
         super().__init__()
-        self.setContentsMargins(10, 0, 5, 10)
+        self.setContentsMargins(10, 0, 5, 0)
 
         title = QLabel(title)
         title.setStyleSheet('''
@@ -145,3 +159,69 @@ class SectionLayout(QHBoxLayout):
 
         self.addWidget(title)
         self.addWidget(separator)
+
+
+class SettingAddMissingBboxes(QWidget):
+    default = False
+
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__()
+        self.parent = parent
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        self.checkbox = QCheckBox('Add missing boxes')
+
+        toggled = parent.parent.settings.get('add_missing_bboxes')
+        self.checkbox.setChecked(toggled)
+
+        self.checkbox.stateChanged.connect(
+            lambda: self.set_checked(self.checkbox.isChecked()))
+        self.checkbox.installEventFilter(self)
+
+        label = QLabel('Automatically adds missing boxes '
+                       'by outlining the keypoints')
+        label.setTextInteractionFlags(__text_interaction__)
+
+        layout.addWidget(self.checkbox)
+        layout.addStretch()
+        layout.addWidget(label)
+
+    def set_checked(self, checked: bool) -> None:
+        self.parent.parent.settings.set('add_missing_bboxes', checked)
+        self.checkbox.setChecked(checked)
+
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        if event.type() == event.Type.Enter:
+            source.setStyleSheet(
+                '::indicator {border: 1px solid rgb(60, 120, 216);}')
+
+        elif event.type() == event.Type.Leave:
+            source.setStyleSheet('')
+
+        return False
+
+
+class ResetButton(QPushButton):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__('Reset')
+
+        self.parent = parent
+        self.clicked.connect(self.reset)
+
+    def reset(self) -> None:
+        for checkbox in self.parent.checkboxes:
+            checkbox.set_checked(checkbox.default)
+
+
+class CloseButton(QPushButton):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__('Close')
+        self.clicked.connect(parent.close)
+
+
+class FinishButton(QPushButton):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__('OK')
+        self.clicked.connect(parent.close)

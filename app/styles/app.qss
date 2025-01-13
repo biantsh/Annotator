@@ -93,6 +93,70 @@ SettingsWindow QPushButton:hover {
     background-color: rgb(53, 53, 53);
     border-radius: 5px;
 }
+SettingsWindow FinishButton {
+    background-color: rgb(60, 120, 216);
+    color: rgb(200, 200, 200);
+    margin-bottom: 5px;
+    margin-right: 5px;
+    width: 70px;
+    height: 25px;
+    border-radius: 3px;
+    font-size: 12px;
+    border: 1px solid rgb(53, 53, 53);
+}
+SettingsWindow FinishButton:hover {
+    background-color: rgb(76, 136, 232);
+    border-radius: 3px;
+}
+SettingsWindow CloseButton {
+    background-color: rgb(45, 45, 45);
+    color: rgb(200, 200, 200);
+    margin-bottom: 5px;
+    margin-right: 5px;
+    width: 70px;
+    height: 25px;
+    border-radius: 3px;
+    font-size: 12px;
+    border: 1px solid rgb(53, 53, 53);
+}
+SettingsWindow CloseButton:hover {
+    background-color: rgb(53, 53, 53);
+    border-radius: 3px;
+}
+SettingsWindow ResetButton {
+    background-color: rgb(33, 33, 33);
+    color: rgb(200, 200, 200);
+    margin-bottom: 5px;
+    margin-left: 5px;
+    width: 70px;
+    height: 25px;
+    border-radius: 3px;
+    font-size: 12px;
+    border: 1px solid rgb(53, 53, 53);
+}
+SettingsWindow ResetButton:hover {
+    background-color: rgb(41, 41, 41);
+    border-radius: 3px;
+}
+SettingsWindow QCheckBox {
+    color: rgb(180, 180, 180);
+    font-size: 13px;
+    font-weight: bold;
+    margin-left: 6px;
+}
+SettingsWindow QCheckBox::indicator {
+    border: 1px solid rgb(53, 53, 53);
+    border-radius: 2px;
+    width: 12px;
+    height: 12px;
+}
+SettingsWindow QCheckBox::indicator:checked {
+    image: url(resources/icons/checkbox.png);
+    border: 1px solid rgb(60, 120, 216);
+}
+SettingsWindow SettingAddMissingBboxes QLabel {
+    font-size: 12px;
+}
 QMessageBox {
     background-color: rgb(33, 33, 33);
     font-size: 14px;

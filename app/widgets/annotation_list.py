@@ -174,7 +174,9 @@ class KeypointItem(QWidget):
         return True
 
     def update(self) -> None:
-        hovered = self.underMouse()
+        annotator = self.parent.canvas.keypoint_annotator
+        hovered = (annotator.label_index == self.keypoint.index
+                   and annotator.active) or self.underMouse()
 
         background = (53, 53, 53) if hovered or self.keypoint.selected \
             or hovered else (33, 33, 33)

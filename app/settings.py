@@ -14,16 +14,17 @@ class Settings:
 
         self._settings_path = os.path.join(app_dir, 'settings.json')
         self._settings = {
+            'label_map': [],
             'default_image_dir': '',
             'default_label_path': '',
             'default_import_path': '',
             'default_export_path': '',
-            'label_map': []
+            'add_missing_bboxes': False
         }
 
         if os.path.exists(self._settings_path):
             with open(self._settings_path, 'r') as json_file:
-                self._settings = json.load(json_file)
+                self._settings.update(json.load(json_file))
 
     def _save(self) -> None:
         with open(self._settings_path, 'w') as json_file:

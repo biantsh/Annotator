@@ -79,6 +79,8 @@ class KeypointAnnotator:
         self.keypoint_label.set_enabled_prev(self.label_index > 0)
         self.keypoint_label.set_enabled_next(self.label_index < max_index)
 
+        self.canvas.parent.annotation_list.update()
+
     def next_label(self) -> None:
         self.set_index(self.label_index + 1)
 

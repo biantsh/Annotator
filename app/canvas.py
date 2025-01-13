@@ -888,9 +888,12 @@ class Canvas(QWidget):
         self.update()
 
     def on_escape(self) -> None:
+        if self.parent.settings_window.isVisible():
+            self.parent.settings_window.close()
+            return
+
         self.set_annotating_state(AnnotatingState.IDLE)
         self.unselect_all()
-
         self.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:

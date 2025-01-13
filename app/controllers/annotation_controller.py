@@ -214,6 +214,7 @@ class AnnotationController:
         return True
 
     def export_annotations(self, output_path: str) -> bool:
+        add_missing_bboxes = self.parent.settings.get('add_missing_bboxes')
         image_paths = self.parent.image_controller.image_paths
         image_dir = self.parent.image_controller.image_dir
 
@@ -265,7 +266,9 @@ class AnnotationController:
                     'segmentation': []
                 }
 
-                if anno.has_bbox:
+                if anno.has_bbox or add_missing_bboxes:
+                    anno.position = anno.position or anno.implicit_bbox
+
                     annotation['area'] = anno.area
                     annotation['bbox'] = anno.xywh
                     annotation['segmentation'] = [
