@@ -1,3 +1,5 @@
+import os
+import sys
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent, QPoint
@@ -19,6 +21,9 @@ from app.utils import clip_value
 
 if TYPE_CHECKING:
     from annotator import MainWindow
+
+__basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
+__iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
 
 __modality__ = Qt.WindowModality.NonModal
 __windowtype__ = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
@@ -131,9 +136,17 @@ class TitleLayout(QHBoxLayout):
             margin-left: 3px;
         ''')
 
-        close_button = QPushButton('\u2A09', parent.popup)
+        from PyQt6.QtGui import QPixmap, QIcon
+
+        close_icon = QPixmap(os.path.join(__iconpath__, 'close.png'))
+        close_button = QPushButton(QIcon(close_icon.scaled(12, 12)), None)
+
         close_button.clicked.connect(parent.close)
-        close_button.setFixedSize(24, 24)
+        close_button.setStyleSheet('''
+            min-width: 20px;
+            min-height: 20px;
+            margin-right: 3px;
+        ''')
 
         self.addWidget(title)
         self.addStretch()
