@@ -279,7 +279,13 @@ class Canvas(QWidget):
         self.hovered_keypoint = None
         self.hovered_anno = None
 
-        for anno in self.annotations:
+        mouse_pos = self.mouse_handler.cursor_position
+        annotator = self.keypoint_annotator
+
+        annotations = [annotator.annotation] if annotator.active \
+            else self.annotations
+
+        for anno in annotations:
             anno.hovered = HoverType.NONE
 
             for keypoint in anno.keypoints:
@@ -289,10 +295,7 @@ class Canvas(QWidget):
                 (AnnotatingState.IDLE, AnnotatingState.DRAWING_KEYPOINTS):
             return
 
-        mouse_pos = self.mouse_handler.cursor_position
-        annotator = self.keypoint_annotator
-
-        for anno in self.annotations[::-1]:
+        for anno in annotations[::-1]:
             hovered_keypoint = anno.get_hovered_keypoint(mouse_pos)
             hovered_type = anno.get_hovered_type(mouse_pos)
 

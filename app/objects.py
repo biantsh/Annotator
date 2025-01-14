@@ -137,6 +137,9 @@ class Annotation(Bbox):
         margin = 5
 
         if not self.has_bbox:
+            if not self.implicit_bbox:
+                return HoverType.NONE
+
             x_min, y_min, x_max, y_max = self.implicit_bbox
 
             if x_min <= pos_x <= x_max and y_min <= pos_y <= y_max:
