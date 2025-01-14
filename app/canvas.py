@@ -285,21 +285,28 @@ class Canvas(QWidget):
             for keypoint in anno.keypoints:
                 keypoint.hovered = False
 
-        if self.annotating_state != AnnotatingState.IDLE:
+        if self.annotating_state not in \
+                (AnnotatingState.IDLE, AnnotatingState.DRAWING_KEYPOINTS):
             return
 
         mouse_pos = self.mouse_handler.cursor_position
+        annotator = self.keypoint_annotator
 
         for anno in self.annotations[::-1]:
             hovered_keypoint = anno.get_hovered_keypoint(mouse_pos)
             hovered_type = anno.get_hovered_type(mouse_pos)
 
             if hovered_keypoint and not anno.hidden:
+                if hovered_keypoint not in annotator.created_keypoints \
+                        and annotator.active:
+                    continue
+
                 self.hovered_keypoint = hovered_keypoint
                 hovered_keypoint.hovered = True
                 return
 
-            if hovered_type and not anno.hidden:
+            if hovered_type and not anno.hidden and \
+                    self.annotating_state == AnnotatingState.IDLE:
                 self.hovered_anno = anno
                 anno.hovered = hovered_type
                 return
@@ -764,7 +771,8 @@ class Canvas(QWidget):
             self.set_annotating_state(AnnotatingState.IDLE)
 
         elif self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
-            self.keypoint_annotator.add_keypoint()
+            if not self.hovered_keypoint:
+                self.keypoint_annotator.add_keypoint()
 
         else:
             self.set_annotating_state(AnnotatingState.IDLE)
@@ -798,6 +806,9 @@ class Canvas(QWidget):
     def on_mouse_left_drag(self, cursor_shift: tuple[int, int]) -> None:
         if self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
             self.keypoint_annotator.update()
+
+            if self.hovered_keypoint:
+                self.move_keypoint(self.hovered_keypoint, cursor_shift)
 
         elif self.hovered_anno:
             box_only = self.hovered_anno.selected == SelectionType.BOX_ONLY
@@ -858,11 +869,11 @@ class Canvas(QWidget):
                                      AnnotatingState.MOVING_KEYPOINT):
             self.set_annotating_state(AnnotatingState.IDLE)
 
-        elif self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
-            self.keypoint_annotator.update()
-
         else:
             self.set_hovered_object()
+
+            if self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+                self.keypoint_annotator.update()
 
         self.update()
 

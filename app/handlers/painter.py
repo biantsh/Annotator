@@ -186,17 +186,19 @@ class CanvasPainter(QPainter):
             if not annotation.hidden or annotation.highlighted:
                 self.anno_painter.draw_annotation(annotation)
 
+        state = self.canvas.annotating_state
         cursor_position = self.canvas.mouse_handler.cursor_position
 
-        if self.canvas.annotating_state == AnnotatingState.READY:
+        if state == AnnotatingState.READY:
             if self.canvas.is_cursor_in_bounds():
                 self.draw_crosshair(cursor_position)
 
-        elif self.canvas.annotating_state == AnnotatingState.DRAWING_ANNO:
+        elif state == AnnotatingState.DRAWING_ANNO:
             self.draw_candidate_anno((*self.canvas.anno_first_corner,
                                       *cursor_position))
 
-        elif self.canvas.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
+        elif state == AnnotatingState.DRAWING_KEYPOINTS \
+                and not self.canvas.hovered_keypoint:
             self.draw_candidate_keypoint(cursor_position)
 
         if self.canvas.zoom_handler.draw_indicator:
