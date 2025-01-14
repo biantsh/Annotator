@@ -30,12 +30,31 @@ class AnnotationController:
     def label_map(self) -> LabelMapController:
         return self.parent.label_map_controller
 
-    def load_annotations(self, image_name: str) -> dict:
-        image_dir = self.parent.image_controller.image_dir
-        annotator_dir = os.path.join(image_dir, '.annotator')
+    @property
+    def image_dir(self) -> str:
+        return self.parent.image_controller.image_dir
 
+    def get_json_path(self, image_name: str) -> str:
+        annotator_dir = os.path.join(self.image_dir, '.annotator')
         json_name = f'{os.path.splitext(image_name)[0]}.json'
-        json_path = os.path.join(annotator_dir, json_name)
+
+        return os.path.join(annotator_dir, json_name)
+
+    def has_annotations(self) -> bool:
+        for image_path in self.parent.image_controller.image_paths:
+            json_path = self.get_json_path(os.path.basename(image_path))
+
+            if os.path.exists(json_path):
+                with open(json_path, 'r') as json_file:
+                    json_content = json.load(json_file)
+
+                if json_content['annotations']:
+                    return True
+
+        return False
+
+    def load_annotations(self, image_name: str) -> dict:
+        json_path = self.get_json_path(image_name)
 
         if not os.path.exists(json_path):
             return {'image': None, 'annotations': []}
@@ -78,11 +97,8 @@ class AnnotationController:
                          annotations: list[Annotation],
                          append: bool = False
                          ) -> None:
-        image_dir = self.parent.image_controller.image_dir
-        annotator_dir = os.path.join(image_dir, '.annotator')
-
-        json_name = f'{os.path.splitext(image_name)[0]}.json'
-        json_path = os.path.join(annotator_dir, json_name)
+        annotator_dir = os.path.join(self.image_dir, '.annotator')
+        json_path = self.get_json_path(image_name)
 
         anno_data = []
         if append and os.path.exists(json_path):
@@ -174,8 +190,7 @@ class AnnotationController:
                                   append=True)
 
     def import_annotations(self, annotations_path: str) -> bool:
-        image_dir = self.parent.image_controller.image_dir
-        annotator_dir = os.path.join(image_dir, '.annotator')
+        annotator_dir = os.path.join(self.image_dir, '.annotator')
         imports_path = os.path.join(annotator_dir, '.imports.json')
 
         with open(annotations_path, 'r') as json_file:
@@ -216,9 +231,8 @@ class AnnotationController:
     def export_annotations(self, output_path: str) -> bool:
         add_missing_bboxes = self.parent.settings.get('add_missing_bboxes')
         image_paths = self.parent.image_controller.image_paths
-        image_dir = self.parent.image_controller.image_dir
 
-        annotator_dir = os.path.join(image_dir, '.annotator')
+        annotator_dir = os.path.join(self.image_dir, '.annotator')
         if not os.path.exists(annotator_dir):
             return False
 
@@ -300,18 +314,3 @@ class AnnotationController:
 
         shutil.rmtree(annotator_dir)
         return True
-
-    def has_annotations(self) -> bool:
-        image_paths = self.parent.image_controller.image_paths
-
-        if not image_paths:
-            return False
-
-        for image_path in image_paths:
-            image_name = os.path.basename(image_path)
-            annotations = self.load_annotations(image_name)
-
-            if annotations['annotations']:
-                return True
-
-        return False
