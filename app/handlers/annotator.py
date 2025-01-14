@@ -11,6 +11,9 @@ from app.utils import clip_value, pretty_text
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
+__mouse_events__ = Qt.WidgetAttribute.WA_TransparentForMouseEvents
+__styled_background__ = Qt.WidgetAttribute.WA_StyledBackground
+
 
 class KeypointAnnotator:
     color_left = 57, 109, 191
@@ -147,10 +150,11 @@ class KeypointLabel(QWidget):
         for label in self.left_arrow, self.text_label, self.right_arrow:
             layout.addWidget(label)
 
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.font_metrics = self.text_label.fontMetrics()
+
+        self.setAttribute(__mouse_events__, True)
+        self.setAttribute(__styled_background__, True)
 
     def get_width(self, text: str) -> None:
         return self.font_metrics.horizontalAdvance(pretty_text(text))
