@@ -54,7 +54,7 @@ class KeypointAnnotator:
             pretty_text(kpt_name)) for kpt_name in self.kpt_names)
         self.keypoint_label.set_width(max(text_width) + 12)
 
-        self.reset_label()
+        self.init_label()
         self.keypoint_label.show()
 
         self.canvas.set_selected_annotation(annotation)
@@ -90,6 +90,15 @@ class KeypointAnnotator:
     def prev_label(self) -> None:
         self.set_index(self.label_index - 1)
 
+    def init_label(self) -> None:
+        keypoints = self.annotation.keypoints
+        self.reset_label()
+
+        for index in range(1, len(keypoints)):
+            if not keypoints[index].visible \
+                    and keypoints[index - 1].visible:
+                self.set_index(index)
+
     def reset_label(self) -> None:
         for keypoint in self.annotation.keypoints[::-1]:
             if not keypoint.visible:
@@ -108,7 +117,10 @@ class KeypointAnnotator:
         keypoint.position = list(mouse_pos)
         keypoint.visible = True
 
-        self.next_label()
+        if keypoint == self.annotation.keypoints[-1]:
+            self.end()
+        else:
+            self.next_label()
 
     def on_mouse_press(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton and \
