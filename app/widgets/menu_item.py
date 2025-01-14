@@ -89,10 +89,7 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.parent.update()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if Qt.MouseButton.LeftButton & event.button():
-            self.on_left_click()
-        elif Qt.MouseButton.RightButton & event.button():
-            self.on_right_click()
+        event.ignore()
 
     def update(self) -> None:
         selected = self.annotation.selected

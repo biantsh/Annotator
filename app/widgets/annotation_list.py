@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent
+from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QLabel
 
+from app.enums.canvas import AnnotatingState
 from app.objects import Annotation, Keypoint
 from app.utils import pretty_text
 from app.widgets.context_menu import ContextCheckBox
@@ -44,6 +46,10 @@ class AnnotationList(QWidget):
     def update(self) -> None:
         for index in range(self.anno_layout.count()):
             self.anno_layout.itemAt(index).widget().update()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if self.parent.canvas.keypoint_annotator.active:
+            self.parent.canvas.keypoint_annotator.end()
 
 
 class ListItem(QWidget):
@@ -93,7 +99,7 @@ class ListItem(QWidget):
             source.setStyleSheet('background-color: rgb(33, 33, 33);')
             self.checkbox.on_mouse_leave()
 
-        return True
+        return False
 
     def update(self) -> None:
         anno = self.annotation
@@ -161,6 +167,11 @@ class KeypointItem(QWidget):
                 canvas.on_keypoint_left_press(self.keypoint, event)
                 canvas.update()
 
+        elif event.type() == event.Type.MouseButtonRelease:
+            if not self.keypoint.visible:
+                canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
+                canvas.keypoint_annotator.set_index(self.keypoint.index)
+
         elif event.type() == event.Type.Enter:
             self.keypoint.hovered = True
             self.parent.canvas.update()
@@ -171,7 +182,7 @@ class KeypointItem(QWidget):
             self.parent.canvas.update()
             self.update()
 
-        return True
+        return False
 
     def update(self) -> None:
         annotator = self.parent.canvas.keypoint_annotator
@@ -211,4 +222,4 @@ class UnpinButton(QWidget):
         elif event.type() == event.Type.Leave:
             source.setStyleSheet(f'background-color: rgb(33, 33, 33);')
 
-        return True
+        return False
