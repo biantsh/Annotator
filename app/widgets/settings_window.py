@@ -3,7 +3,14 @@ import sys
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent, QPoint
-from PyQt6.QtGui import QPainter, QColor, QMouseEvent, QPaintEvent
+from PyQt6.QtGui import (
+    QPainter,
+    QColor,
+    QPixmap,
+    QIcon,
+    QMouseEvent,
+    QPaintEvent
+)
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -135,8 +142,6 @@ class TitleLayout(QHBoxLayout):
             margin-top: 7px;
             margin-left: 3px;
         ''')
-
-        from PyQt6.QtGui import QPixmap, QIcon
 
         close_icon = QPixmap(os.path.join(__iconpath__, 'close.png'))
         close_button = QPushButton(QIcon(close_icon.scaled(12, 12)), None)
