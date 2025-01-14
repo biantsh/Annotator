@@ -3,7 +3,15 @@ import sys
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QPalette, QColor, QCloseEvent
+from PyQt6.QtGui import (
+    QPalette,
+    QColor,
+    QIcon,
+    QCloseEvent,
+    QDragEnterEvent,
+    QDragLeaveEvent,
+    QDropEvent
+)
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -38,8 +46,9 @@ __stylepath__ = os.path.join(__basepath__, 'app', 'styles', 'app.qss')
 
 __respath__ = os.path.join(__basepath__, 'resources')
 __iconpath__ = os.path.join(__respath__, 'icons')
-__screenpath__ = os.path.join(__respath__, 'screens')
-__homepath__ = os.path.join(__screenpath__, 'home_screen.png')
+
+__homepath__ = os.path.join(__respath__, 'screens',  'home_screen.svg')
+__homepath_alt__ = os.path.join(__respath__, 'screens', 'home_screen_alt.svg')
 
 QtCore.QDir.addSearchPath('icon', __iconpath__)
 
@@ -65,7 +74,7 @@ class MainWindow(QMainWindow):
         self.canvas = Canvas(self)
         self.annotation_list = AnnotationList(self)
 
-        self.home_screen = HomeScreen(__homepath__)
+        self.home_screen = HomeScreen(__homepath__, __homepath_alt__)
         self.main_screen = MainScreen(self)
 
         self.screens = QStackedWidget()
@@ -183,6 +192,27 @@ class MainWindow(QMainWindow):
             self.settings_window.close()
         else:
             self.settings_window.show()
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasUrls():
+            file_path = event.mimeData().urls()[0]
+
+            if os.path.isdir(file_path.toLocalFile()):
+                event.acceptProposedAction()
+
+                self.home_screen.set_highlighted(True)
+
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        self.home_screen.set_highlighted(False)
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        self.home_screen.set_highlighted(False)
+
+        if event.mimeData().hasUrls():
+            file_path = event.mimeData().urls()[0]
+
+            if os.path.isdir(file_path.toLocalFile()):
+                self.open_dir(file_path.toLocalFile())
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.canvas.save_progress()
