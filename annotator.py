@@ -201,6 +201,7 @@ class MainWindow(QMainWindow):
                 event.acceptProposedAction()
 
                 self.home_screen.set_highlighted(True)
+                self.activateWindow()
 
     def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         self.home_screen.set_highlighted(False)
