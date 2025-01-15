@@ -1,5 +1,8 @@
 import os
+import traceback
 import sys
+from types import TracebackType
+from typing import Type
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
@@ -26,6 +29,7 @@ from app.controllers.annotation_controller import AnnotationController
 from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
+from app.controllers.logging_controller import LoggingController
 from app.exceptions.io import IOException, InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
@@ -64,6 +68,7 @@ class MainWindow(QMainWindow):
         self.label_map_controller = LabelMapController(self)
         self.annotation_controller = AnnotationController(self)
         self.button_controller = ButtonController(self)
+        self.logging_controller = LoggingController(self)
 
         self.toolbar_actions = ToolBarActions(self).actions
         self.addToolBar(Qt.ToolBarArea.LeftToolBarArea,
@@ -110,10 +115,12 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(f'{__appname__} {__version__}')
 
         self.button_controller.set_enabled_buttons()
+        self.settings.set('default_image_dir', dir_path)
 
     def open_label_map(self, label_map_path: str) -> None:
         try:
             self.label_map_controller.load_labels(label_map_path)
+            self.settings.set('default_label_path', label_map_path)
         except LabelMapException as error:
             InformationBox(self, 'Invalid Label Map', error.message).exec()
             return
@@ -139,8 +146,8 @@ class MainWindow(QMainWindow):
                 return
 
         import_path_setting = 'default_import_path'
-
         path = self.settings.get(import_path_setting)
+
         title = 'Select Annotations File'
         ext = 'JSON Files (*.json)'
 
@@ -192,6 +199,17 @@ class MainWindow(QMainWindow):
             self.settings_window.close()
         else:
             self.settings_window.show()
+
+    def on_crash(self,
+                 exception_type: Type[BaseException],
+                 exception: BaseException,
+                 stack_trace: TracebackType
+                 ) -> None:
+        self.logging_controller.log_crash(''.join(traceback.format_exception(
+            exception_type, exception, stack_trace)))
+
+        sys.__excepthook__(exception_type, exception, stack_trace)
+        sys.exit()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
@@ -254,4 +272,5 @@ if __name__ == '__main__':
     window = MainWindow()
     window.showMaximized()
 
+    sys.excepthook = window.on_crash
     app.exec()

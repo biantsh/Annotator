@@ -135,7 +135,9 @@ class ComboBox(QMenu, QWidget):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
+
         self.text_widget.setFocus()
+        self.parent.update_cursor_icon(Qt.CursorShape.ArrowCursor)
 
     def update(self) -> None:
         if not self.labels_filtered:

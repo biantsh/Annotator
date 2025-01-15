@@ -12,13 +12,10 @@ if TYPE_CHECKING:
 
 
 def open_dir(parent: 'MainWindow') -> None:
-    image_dir_setting = 'default_image_dir'
-
-    path = parent.settings.get(image_dir_setting)
+    path = parent.settings.get('default_image_dir')
     title = 'Select Image Directory'
 
     if dir_path := QFileDialog.getExistingDirectory(parent, title, path):
-        parent.settings.set(image_dir_setting, dir_path)
         parent.open_dir(dir_path)
 
 
@@ -31,14 +28,11 @@ def prev_image(parent: 'MainWindow') -> None:
 
 
 def open_labels(parent: 'MainWindow') -> None:
-    label_path_setting = 'default_label_path'
-
-    path = parent.settings.get(label_path_setting)
+    path = parent.settings.get('default_label_path')
     title = 'Select Label Map'
     ext = 'JSON Files (*.json)'
 
     if file_path := QFileDialog.getOpenFileName(parent, title, path, ext)[0]:
-        parent.settings.set(label_path_setting, file_path)
         parent.open_label_map(file_path)
 
 

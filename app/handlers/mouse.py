@@ -95,6 +95,8 @@ class MouseHandler:
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            self.left_clicked = True
+
             self.parent.on_mouse_double_click(event)
             self.double_clicked = True
 

@@ -1,7 +1,7 @@
 from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent
-from PyQt6.QtGui import QKeyEvent, QCloseEvent
+from PyQt6.QtGui import QKeyEvent, QShowEvent, QCloseEvent
 from PyQt6.QtWidgets import (
     QMenu,
     QHBoxLayout,
@@ -139,6 +139,10 @@ class ContextMenu(QMenu, QWidget):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         self.on_key_press(event)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self.parent.update_cursor_icon(Qt.CursorShape.ArrowCursor)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         for menu_item in self.menu_items:

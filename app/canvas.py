@@ -188,8 +188,11 @@ class Canvas(QWidget):
 
         return 0 <= x_pos <= width and 0 <= y_pos <= height
 
-    def update_cursor_icon(self) -> None:
-        if not self.is_cursor_in_bounds():
+    def update_cursor_icon(self, cursor_shape: Qt.CursorShape = None) -> None:
+        if cursor_shape:
+            cursor = cursor_shape
+
+        elif not self.is_cursor_in_bounds():
             cursor = Qt.CursorShape.ArrowCursor
 
         elif self.annotating_state in (AnnotatingState.READY,
