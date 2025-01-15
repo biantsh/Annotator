@@ -12,7 +12,7 @@ from PyQt6.QtGui import (
     QResizeEvent,
     QPaintEvent
 )
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QApplication, QWidget
 
 from app.actions import CanvasActions
 from app.controllers.label_map_controller import LabelMapController
@@ -73,6 +73,7 @@ class Canvas(QWidget):
         self.hovered_anno = None
         self.hovered_keypoint = None
 
+        QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
         self.mouse_handler = MouseHandler(self)
         self.setMouseTracking(True)
 
@@ -189,39 +190,39 @@ class Canvas(QWidget):
 
     def update_cursor_icon(self) -> None:
         if not self.is_cursor_in_bounds():
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-            return
+            cursor = Qt.CursorShape.ArrowCursor
 
-        if self.annotating_state in (AnnotatingState.READY,
-                                     AnnotatingState.DRAWING_ANNO):
-            self.setCursor(Qt.CursorShape.CrossCursor)
-            return
+        elif self.annotating_state in (AnnotatingState.READY,
+                                       AnnotatingState.DRAWING_ANNO):
+            cursor = Qt.CursorShape.CrossCursor
 
-        if self.keypoint_annotator.active or self.hovered_keypoint:
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
-            return
+        elif self.keypoint_annotator.active or self.hovered_keypoint:
+            cursor = Qt.CursorShape.PointingHandCursor
 
-        left_clicked = self.mouse_handler.left_clicked
-        hover_type = self.hovered_anno.hovered \
-            if self.hovered_anno else HoverType.NONE
+        else:
+            left_clicked = self.mouse_handler.left_clicked
+            hover_type = self.hovered_anno.hovered \
+                if self.hovered_anno else HoverType.NONE
 
-        cursor = Qt.CursorShape.ArrowCursor
+            cursor = Qt.CursorShape.ArrowCursor
 
-        match left_clicked, hover_type:
-            case True, HoverType.FULL:
-                cursor = Qt.CursorShape.ClosedHandCursor
-            case False, HoverType.FULL:
-                cursor = Qt.CursorShape.OpenHandCursor
-            case _, HoverType.TOP | HoverType.BOTTOM:
-                cursor = Qt.CursorShape.SizeVerCursor
-            case _, HoverType.LEFT | HoverType.RIGHT:
-                cursor = Qt.CursorShape.SizeHorCursor
-            case _, HoverType.TOP_LEFT | HoverType.BOTTOM_RIGHT:
-                cursor = Qt.CursorShape.SizeFDiagCursor
-            case _, HoverType.TOP_RIGHT | HoverType.BOTTOM_LEFT:
-                cursor = Qt.CursorShape.SizeBDiagCursor
+            match left_clicked, hover_type:
+                case True, HoverType.FULL:
+                    cursor = Qt.CursorShape.ClosedHandCursor
+                case False, HoverType.FULL:
+                    cursor = Qt.CursorShape.OpenHandCursor
+                case _, HoverType.TOP | HoverType.BOTTOM:
+                    cursor = Qt.CursorShape.SizeVerCursor
+                case _, HoverType.LEFT | HoverType.RIGHT:
+                    cursor = Qt.CursorShape.SizeHorCursor
+                case _, HoverType.TOP_LEFT | HoverType.BOTTOM_RIGHT:
+                    cursor = Qt.CursorShape.SizeFDiagCursor
+                case _, HoverType.TOP_RIGHT | HoverType.BOTTOM_LEFT:
+                    cursor = Qt.CursorShape.SizeBDiagCursor
 
-        self.setCursor(cursor)
+        if cursor != QApplication.overrideCursor().shape():
+            QApplication.restoreOverrideCursor()
+            QApplication.setOverrideCursor(cursor)
 
     def set_annotating_state(self, state: AnnotatingState) -> None:
         if state == AnnotatingState.DRAWING_KEYPOINTS:
