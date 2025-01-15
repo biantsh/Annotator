@@ -185,6 +185,9 @@ class KeypointItem(QWidget):
         return False
 
     def update(self) -> None:
+        if self.keypoint not in self.keypoint.parent.keypoints:
+            return  # This can happen on anno rename, before list is redrawn
+
         annotator = self.parent.canvas.keypoint_annotator
         hovered = (annotator.label_index == self.keypoint.index
                    and annotator.active) or self.underMouse()

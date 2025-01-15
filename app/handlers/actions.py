@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import deque, defaultdict, OrderedDict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from app.controllers.label_map_controller import LabelSchema
 from app.enums.annotation import SelectionType
@@ -74,21 +74,21 @@ class ActionRename(Action):
         self.schemas_from = {anno.ref_id: anno.label_schema for anno in annos}
         self.schema_to = label_schema
 
-    def do(self) -> None:
+    def _execute(self, get_target_schema: Callable) -> None:
         self.parent.unselect_all()
 
         for anno in self.parent.annotations:
             if anno.ref_id in self.schemas_from:
-                anno.set_schema(self.schema_to)
+                anno.set_schema(get_target_schema(anno.ref_id))
                 self.parent.add_selected_annotation(anno)
+
+        self.parent.parent.annotation_list.redraw_widgets()
+
+    def do(self) -> None:
+        self._execute(lambda _: self.schema_to)
 
     def undo(self) -> None:
-        self.parent.unselect_all()
-
-        for anno in self.parent.annotations:
-            if anno.ref_id in self.schemas_from:
-                anno.set_schema(self.schemas_from[anno.ref_id])
-                self.parent.add_selected_annotation(anno)
+        self._execute(lambda ref_id: self.schemas_from[ref_id])
 
 
 class ActionMove(Action):
