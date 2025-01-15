@@ -26,8 +26,8 @@ class LoggingController:
     def log_crash(self, message: str) -> None:
         os.makedirs(self.log_dir, exist_ok=True)
 
-        current_time = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
-        log_path = os.path.join(self.log_dir, f'crash-{current_time}.txt')
+        current_time = datetime.now().strftime('%Y_%m_%d-%H-%M-%S')
+        log_path = os.path.join(self.log_dir, f'crash_{current_time}.txt')
 
         with open(log_path, 'w') as text_file:
             text_file.write(f'{message}\n')
