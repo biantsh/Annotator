@@ -124,6 +124,10 @@ def redo_action(parent: 'Canvas') -> None:
     parent.action_handler.redo()
 
 
+def search_image(parent: 'Canvas') -> None:
+    parent.on_search_image()
+
+
 def escape(parent: 'Canvas') -> None:
     parent.on_escape()
 
@@ -153,6 +157,7 @@ __canvas_actions__ = (
     ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V'),
     ('undo', undo_action, 'Ctrl+Z'),
     ('redo', redo_action, 'Ctrl+Y'),
+    ('search_image', search_image, 'Ctrl+F'),
     ('escape', escape, 'Esc')
 )
 

@@ -1,4 +1,4 @@
-QLabel, QPushButton, QCheckBox {
+QLabel, QPushButton, QCheckBox, QLineEdit {
     font-family: 'DejaVu Sans';
     font-size: 9pt;
 }

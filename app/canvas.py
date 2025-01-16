@@ -36,7 +36,7 @@ from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
 from app.handlers.painter import CanvasPainter
 from app.handlers.zoom import ZoomHandler
-from app.widgets.combo_box import ComboBox
+from app.widgets.combo_box import AnnotationComboBox, ImageComboBox
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation, Keypoint
 from app.utils import clip_value
@@ -427,7 +427,7 @@ class Canvas(QWidget):
             cursor_position = self.mouse_handler.global_position
             x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
-            combo_box = ComboBox(self, self.label_names)
+            combo_box = AnnotationComboBox(self, self.label_names)
             combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
 
             label_name = combo_box.selected_value
@@ -475,7 +475,7 @@ class Canvas(QWidget):
             options = [option for option in self.label_names
                        if self.label_map.get_label_schema(option).kpt_names]
 
-            combo_box = ComboBox(self, options)
+            combo_box = AnnotationComboBox(self, options)
             combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
 
             label_name = combo_box.selected_value
@@ -507,7 +507,7 @@ class Canvas(QWidget):
         cursor_position = self.mouse_handler.global_position
         pos_x, pos_y = cursor_position.x(), cursor_position.y()
 
-        combo_box = ComboBox(self, label_options)
+        combo_box = AnnotationComboBox(self, label_options)
         combo_box.exec(QPoint(pos_x, pos_y + 20))
 
         label_name = combo_box.selected_value
@@ -904,6 +904,20 @@ class Canvas(QWidget):
 
         self.zoom_handler.zoom_out(cursor_position)
         self.update()
+
+    def on_search_image(self) -> None:
+        image_names = [os.path.basename(path)
+                       for path in self.parent.image_controller.image_paths]
+
+        combo_box = ImageComboBox(self, image_names)
+        combo_box.exec(self.mouse_handler.global_position)
+
+        selected_image = combo_box.selected_value
+        if not selected_image:
+            return
+
+        image_index = image_names.index(selected_image)
+        self.parent.go_to_image(image_index + 1)
 
     def on_escape(self) -> None:
         if self.parent.settings_window.isVisible():
