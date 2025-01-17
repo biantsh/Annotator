@@ -411,7 +411,7 @@ class Canvas(QWidget):
                 self.set_selected_annotation(None)
 
             else:
-                for annotation in self.annotations:
+                for annotation in self.annotations.copy():
                     self.add_selected_annotation(annotation)
 
         self.update()
@@ -927,10 +927,6 @@ class Canvas(QWidget):
         self.parent.go_to_image(image_index + 1)
 
     def on_escape(self) -> None:
-        if self.parent.settings_window.isVisible():
-            self.parent.settings_window.close()
-            return
-
         self.set_annotating_state(AnnotatingState.IDLE)
         self.unselect_all()
         self.update()

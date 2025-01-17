@@ -83,15 +83,13 @@ class SettingsWindow(QDialog):
     def show(self) -> None:
         self.setGeometry(self.parent.frameGeometry())
 
-        window = self.rect()
-        popup = self.popup
+        pos_x = (self.width() - self.popup.width()) // 2
+        pos_y = (self.height() - self.popup.height()) // 2
+        self.popup.move(pos_x, pos_y)
 
-        pos_x = (window.width() - popup.width()) // 2
-        pos_y = (window.height() - popup.height()) // 2
+        super().showFullScreen() if self.parent.isFullScreen() \
+            else super().showNormal()
 
-        popup.move(pos_x, pos_y)
-
-        super().show()
         self.activateWindow()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

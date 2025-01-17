@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Callable, Any
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QWidget, QFileDialog
 
@@ -56,17 +57,46 @@ def create_bbox(parent: 'MainWindow') -> None:
         parent.canvas.set_annotating_state(AnnotatingState.IDLE)
 
 
+def create_keypoints(parent: 'MainWindow') -> None:
+    if parent.canvas.annotating_state == AnnotatingState.IDLE:
+        parent.canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
+
+
+def open_settings(parent: 'MainWindow') -> None:
+    parent.open_settings()
+
+
+def full_screen(parent: 'MainWindow') -> None:
+    window_state = parent.windowState()
+
+    if parent.isFullScreen():
+        parent.setWindowState(window_state & ~Qt.WindowState.WindowFullScreen)
+        parent.full_screen_toast.close()
+        parent.toolbar.show()
+
+    else:
+        parent.setWindowState(window_state | Qt.WindowState.WindowFullScreen)
+        parent.full_screen_toast.show()
+        parent.toolbar.hide()
+
+
+def escape(parent: 'MainWindow') -> None:
+    if parent.settings_window.isVisible():
+        parent.settings_window.close()
+
+    elif parent.isFullScreen():
+        full_screen(parent)
+
+    else:
+        parent.canvas.on_escape()
+
+
 def quick_create_bbox(parent: 'Canvas') -> None:
     if not parent.previous_label:
         return
 
     create_bbox(parent.parent)
     parent.quick_create = parent.annotating_state == AnnotatingState.READY
-
-
-def create_keypoints(parent: 'MainWindow') -> None:
-    if parent.canvas.annotating_state == AnnotatingState.IDLE:
-        parent.canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
 
 
 def quick_create_keypoints(parent: 'Canvas') -> None:
@@ -78,10 +108,6 @@ def quick_create_keypoints(parent: 'Canvas') -> None:
 
     if parent.keypoint_annotator.active:
         parent.annotating_state = AnnotatingState.DRAWING_KEYPOINTS
-
-
-def open_settings(parent: 'MainWindow') -> None:
-    parent.open_settings()
 
 
 def select_next(parent: 'Canvas') -> None:
@@ -128,10 +154,6 @@ def search_image(parent: 'Canvas') -> None:
     parent.on_search_image()
 
 
-def escape(parent: 'Canvas') -> None:
-    parent.on_escape()
-
-
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
@@ -141,7 +163,9 @@ __toolbar_actions__ = (
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
     ('keypoints', create_keypoints, 'R', 'Points', 'keypoints.png', False),
-    ('settings', open_settings, 'Shift+Tab', 'Settings', 'settings.png', True)
+    ('settings', open_settings, 'Shift+Tab', 'Settings', 'settings.png', True),
+    ('full_screen', full_screen, 'F11', 'Full Screen', None, True),
+    ('escape', escape, 'Esc', 'Escape', None, True)
 )
 
 __canvas_actions__ = (
@@ -157,8 +181,7 @@ __canvas_actions__ = (
     ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V'),
     ('undo', undo_action, 'Ctrl+Z'),
     ('redo', redo_action, 'Ctrl+Y'),
-    ('search_image', search_image, 'Ctrl+F'),
-    ('escape', escape, 'Esc')
+    ('search_image', search_image, 'Ctrl+F')
 )
 
 
@@ -194,6 +217,7 @@ class ToolBarActions(Actions):
         action = QAction(text, parent)
         action.setShortcut(shortcut)
         action.setEnabled(enabled)
+        parent.addAction(action)
 
         action.setIcon(QIcon(f'icon:{icon}'))
         action.triggered.connect(lambda: binding(parent))

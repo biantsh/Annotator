@@ -77,7 +77,7 @@ class ActionRename(Action):
     def _execute(self, get_target_schema: Callable) -> None:
         self.parent.unselect_all()
 
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id in self.schemas_from:
                 anno.set_schema(get_target_schema(anno.ref_id))
                 self.parent.add_selected_annotation(anno)
@@ -113,7 +113,7 @@ class ActionMove(Action):
                  ) -> None:
         x_min, y_min, x_max, y_max = pos_anno
 
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id == self.ref_id:
                 if anno.has_bbox:
                     anno.position = [min(x_min, x_max), min(y_min, y_max),
@@ -147,7 +147,7 @@ class ActionAddBbox(Action):
     def do(self) -> None:
         self.parent.unselect_all()
 
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id in self.ref_ids:
                 anno.position = anno.implicit_bbox.copy()
                 anno.has_bbox = True
@@ -157,7 +157,7 @@ class ActionAddBbox(Action):
     def undo(self) -> None:
         self.parent.unselect_all()
 
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id in self.ref_ids:
                 anno.position = []
                 anno.has_bbox = False
@@ -173,7 +173,7 @@ class ActionDeleteBbox(Action):
     def do(self) -> None:
         self.parent.unselect_all()
 
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id in self.annos:
                 anno.position = []
                 anno.has_bbox = False
@@ -182,7 +182,7 @@ class ActionDeleteBbox(Action):
     def undo(self) -> None:
         self.parent.unselect_all()
 
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id in self.annos:
                 anno.position = self.annos[anno.ref_id].position.copy()
                 anno.has_bbox = True
@@ -282,7 +282,7 @@ class ActionFlipKeypoints(Action):
         self.ref_id = anno.ref_id
 
     def _execute(self) -> None:
-        for anno in self.parent.annotations:
+        for anno in self.parent.annotations.copy():
             if anno.ref_id != self.ref_id:
                 continue
 

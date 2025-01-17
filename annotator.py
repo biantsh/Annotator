@@ -30,7 +30,6 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.controllers.logging_controller import LoggingController
-from app.enums.canvas import AnnotatingState
 from app.exceptions.io import IOException, InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
@@ -42,6 +41,7 @@ from app.widgets.message_box import (
     InformationBox
 )
 from app.widgets.settings_window import SettingsWindow
+from app.widgets.toast import Toast
 from app.screens.home_screen import HomeScreen
 from app.screens.main_screen import MainScreen
 from app.widgets.toolbar import ToolBar
@@ -72,8 +72,8 @@ class MainWindow(QMainWindow):
         self.logging_controller = LoggingController(self)
 
         self.toolbar_actions = ToolBarActions(self).actions
-        self.addToolBar(Qt.ToolBarArea.LeftToolBarArea,
-                        ToolBar(self.toolbar_actions))
+        self.toolbar = ToolBar(self.toolbar_actions)
+        self.addToolBar(Qt.ToolBarArea.LeftToolBarArea, self.toolbar)
 
         self.settings_window = SettingsWindow(self)
 
@@ -89,6 +89,9 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.screens)
         self.screens.setCurrentWidget(self.home_screen)
+
+        toast_message = 'Press Esc or F11 to exit full screen'
+        self.full_screen_toast = Toast(self, toast_message)
 
     def reload(self) -> None:
         image_path = self.image_controller.get_image_path()
