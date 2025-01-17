@@ -128,7 +128,7 @@ class KeypointAnnotator:
             self.end()
 
     def on_key_press(self, event: QKeyEvent) -> None:
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Escape):
+        if event.key() == Qt.Key.Key_Return:
             self.end()
 
         elif event.key() == Qt.Key.Key_Space:

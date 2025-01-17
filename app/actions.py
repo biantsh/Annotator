@@ -84,9 +84,6 @@ def escape(parent: 'MainWindow') -> None:
     if parent.settings_window.isVisible():
         parent.settings_window.close()
 
-    elif parent.isFullScreen():
-        full_screen(parent)
-
     else:
         parent.canvas.on_escape()
 

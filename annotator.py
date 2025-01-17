@@ -90,7 +90,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.screens)
         self.screens.setCurrentWidget(self.home_screen)
 
-        toast_message = 'Press Esc or F11 to exit full screen'
+        toast_message = 'Press F11 again to exit full screen'
         self.full_screen_toast = Toast(self, toast_message)
 
     def reload(self) -> None:

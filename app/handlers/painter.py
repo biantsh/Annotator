@@ -30,7 +30,7 @@ class CanvasPainter(QPainter):
         super().__init__()
 
         self.canvas = parent
-        self.anno_painter = AnnotationPainer(self)
+        self.anno_painter = AnnotationPainter(self)
 
         self.begin(parent)
         self.setRenderHints(__antialiasing__ | __pixmap_transform__)
@@ -205,7 +205,7 @@ class CanvasPainter(QPainter):
             self.draw_zoom_indicator(self.canvas.zoom_handler.zoom_level)
 
 
-class AnnotationPainer:
+class AnnotationPainter:
     fill_areas = {
         HoverType.NONE: set(),
         HoverType.FULL: {'full'},

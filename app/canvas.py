@@ -927,6 +927,9 @@ class Canvas(QWidget):
         self.parent.go_to_image(image_index + 1)
 
     def on_escape(self) -> None:
+        if self.keypoint_annotator.active:
+            self.keypoint_annotator.end()
+
         self.set_annotating_state(AnnotatingState.IDLE)
         self.unselect_all()
         self.update()
