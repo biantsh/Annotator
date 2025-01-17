@@ -334,10 +334,15 @@ class Canvas(QWidget):
             return
 
         self.set_selected_keypoint(None)
-
         self.selected_annos.append(annotation)
+
         annotation.selected = SelectionType.SELECTED
         annotation.hidden = False
+
+        # Move to the front
+        if annotation in self.annotations:
+            self.annotations.remove(annotation)
+            self.annotations.append(annotation)
 
     def unselect_annotation(self, annotation: Annotation) -> None:
         annotation.selected = SelectionType.UNSELECTED
@@ -358,8 +363,8 @@ class Canvas(QWidget):
             return
 
         self.set_selected_annotation(None)
-
         self.selected_keypoints.append(keypoint)
+
         keypoint.selected = True
 
     def unselect_keypoint(self, keypoint: Keypoint) -> None:
