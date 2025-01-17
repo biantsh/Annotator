@@ -531,6 +531,10 @@ class Canvas(QWidget):
         self.clipboard = [copy.copy(anno) for anno in to_copy]
 
     def paste_annotations(self, replace_existing: bool) -> None:
+        if replace_existing and self.annotations:
+            action = ActionDelete(self, self.annotations)
+            self.action_handler.register_action(action)
+
         existing_positions = [anno.position or anno.implicit_bbox
                               for anno in self.annotations]
 
@@ -538,15 +542,9 @@ class Canvas(QWidget):
                         if (anno.position or anno.implicit_bbox)
                         not in existing_positions]
 
-        if not pasted_annos:
-            return
-
-        if replace_existing and self.annotations:
-            action = ActionDelete(self, self.annotations)
+        if pasted_annos:
+            action = ActionCreate(self, pasted_annos)
             self.action_handler.register_action(action)
-
-        action = ActionCreate(self, pasted_annos)
-        self.action_handler.register_action(action)
 
     def hide_annotations(self) -> None:
         should_hide = not any(anno.hidden for anno in self.selected_annos)
