@@ -85,6 +85,10 @@ class ListItem(QWidget):
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if event.type() in (event.Type.MouseButtonPress,
                             event.Type.MouseButtonDblClick):
+            if self.canvas.keypoint_annotator.active:
+                self.canvas.keypoint_annotator.end()
+                self.checkbox.on_mouse_leave()
+
             if Qt.MouseButton.LeftButton & event.button():
                 self.checkbox.on_left_click()
 
@@ -156,21 +160,28 @@ class KeypointItem(QWidget):
         self.layout().addWidget(self.keypoint_label)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
-    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+    def on_mouse_press(self, event: QMouseEvent) -> None:
         canvas = self.parent.canvas
 
+        if self.keypoint.visible:
+            if canvas.keypoint_annotator.active:
+                canvas.keypoint_annotator.end()
+
+            canvas.on_keypoint_left_press(self.keypoint, event)
+            canvas.update()
+
+        else:
+            if not canvas.keypoint_annotator.active:
+                canvas.set_annotating_state(
+                    AnnotatingState.DRAWING_KEYPOINTS)
+
+            canvas.keypoint_annotator.set_index(self.keypoint.index)
+
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if event.type() in (event.Type.MouseButtonPress,
                             event.Type.MouseButtonDblClick):
-            left_clicked = Qt.MouseButton.LeftButton & event.button()
-
-            if left_clicked and self.keypoint.visible:
-                canvas.on_keypoint_left_press(self.keypoint, event)
-                canvas.update()
-
-        elif event.type() == event.Type.MouseButtonRelease:
-            if not self.keypoint.visible:
-                canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
-                canvas.keypoint_annotator.set_index(self.keypoint.index)
+            self.on_mouse_press(event)
+            return True
 
         elif event.type() == event.Type.Enter:
             self.keypoint.hovered = True
