@@ -122,6 +122,8 @@ class Canvas(QWidget):
         self.zoom_handler.reset()
 
     def load_image(self, image_path: str) -> None:
+        self.set_annotating_state(AnnotatingState.IDLE)
+        self.save_progress()
         self.reset()
 
         image = QImageReader(image_path).read()
@@ -266,16 +268,18 @@ class Canvas(QWidget):
             pos_start_kpts = self.pos_start_anno['keypoints']
             self.pos_start_anno = None
 
-            self.action_handler.register_action(ActionMove(
-                self, self.selected_annos[-1], pos_start, pos_start_kpts))
+            if self.selected_annos:
+                self.action_handler.register_action(ActionMove(
+                    self, self.selected_annos[-1], pos_start, pos_start_kpts))
 
         if (previous_state == AnnotatingState.MOVING_KEYPOINT
                 and state != AnnotatingState.MOVING_KEYPOINT):
             pos_start = self.pos_start_kpt
             self.pos_start_kpt = None
 
-            self.action_handler.register_action(ActionMoveKeypoint(
-                self, self.selected_keypoints[-1], pos_start))
+            if self.selected_keypoints:
+                self.action_handler.register_action(ActionMoveKeypoint(
+                    self, self.selected_keypoints[-1], pos_start))
 
         self.update()
 

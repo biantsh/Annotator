@@ -30,6 +30,7 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.controllers.logging_controller import LoggingController
+from app.enums.canvas import AnnotatingState
 from app.exceptions.io import IOException, InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
@@ -93,12 +94,10 @@ class MainWindow(QMainWindow):
         image_path = self.image_controller.get_image_path()
         image_name = self.image_controller.get_image_name()
 
-        self.canvas.save_progress()
         self.setWindowTitle(self.image_controller.get_image_status())
-
         self.canvas.load_image(image_path)
-        anno_info = self.annotation_controller.load_annotations(image_name)
 
+        anno_info = self.annotation_controller.load_annotations(image_name)
         self.canvas.load_annotations(anno_info['annotations'])
         self.annotation_list.redraw_widgets()
 
