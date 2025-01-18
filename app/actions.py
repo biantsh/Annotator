@@ -62,10 +62,6 @@ def create_keypoints(parent: 'MainWindow') -> None:
         parent.canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
 
 
-def open_settings(parent: 'MainWindow') -> None:
-    parent.open_settings()
-
-
 def full_screen(parent: 'MainWindow') -> None:
     window_state = parent.windowState()
 
@@ -78,6 +74,10 @@ def full_screen(parent: 'MainWindow') -> None:
         parent.setWindowState(window_state | Qt.WindowState.WindowFullScreen)
         parent.full_screen_toast.show()
         parent.toolbar.hide()
+
+
+def open_settings(parent: 'MainWindow') -> None:
+    parent.open_settings()
 
 
 def escape(parent: 'MainWindow') -> None:
@@ -151,6 +151,14 @@ def search_image(parent: 'Canvas') -> None:
     parent.on_search_image()
 
 
+def toggle_sidebar(parent: 'Canvas') -> None:
+    if parent.parent.annotation_list.isVisible():
+        parent.parent.annotation_list.setVisible(False)
+
+    else:
+        parent.parent.annotation_list.setVisible(True)
+
+
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
@@ -160,8 +168,8 @@ __toolbar_actions__ = (
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
     ('keypoints', create_keypoints, 'R', 'Points', 'keypoints.png', False),
-    ('settings', open_settings, 'Shift+Tab', 'Settings', 'settings.png', True),
     ('full_screen', full_screen, 'F11', 'Full Screen', None, True),
+    ('settings', open_settings, 'F12', 'Settings', 'settings.png', True),
     ('escape', escape, 'Esc', 'Escape', None, True)
 )
 
@@ -178,7 +186,8 @@ __canvas_actions__ = (
     ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V'),
     ('undo', undo_action, 'Ctrl+Z'),
     ('redo', redo_action, 'Ctrl+Y'),
-    ('search_image', search_image, 'Ctrl+F')
+    ('search_image', search_image, 'Ctrl+F'),
+    ('toggle_sidebar', toggle_sidebar, 'Shift+Tab')
 )
 
 
