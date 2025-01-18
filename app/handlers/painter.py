@@ -202,6 +202,7 @@ class CanvasPainter(QPainter):
             self.draw_candidate_keypoint(cursor_position)
 
         if self.canvas.zoom_handler.draw_indicator:
+            self.pen.setWidth(2)
             self.draw_zoom_indicator(self.canvas.zoom_handler.zoom_level)
 
 

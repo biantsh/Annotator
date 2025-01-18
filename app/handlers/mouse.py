@@ -24,8 +24,8 @@ class MouseHandler:
         offset_x, offset_y = self.parent.get_center_offset()
         scale = self.parent.get_scale()
 
-        return (int((event.pos().x() - offset_x) / scale),
-                int((event.pos().y() - offset_y) / scale))
+        return ((event.pos().x() - offset_x) / scale,
+                (event.pos().y() - offset_y) / scale)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         prev_cursor_position = self.cursor_position

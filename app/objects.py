@@ -132,9 +132,11 @@ class Annotation(Bbox):
         kpts_x, kpts_y = zip(*(kpt.position for kpt in self.keypoints if kpt.visible))
         self.implicit_bbox = [min(kpts_x), min(kpts_y), max(kpts_x), max(kpts_y)]
 
-    def get_hovered_type(self, mouse_pos: tuple[int, int]) -> HoverType:
+    def get_hovered_type(self,
+                         margin: float,
+                         mouse_pos: tuple[float, float]
+                         ) -> HoverType:
         pos_x, pos_y = mouse_pos
-        margin = 5
 
         if not self.has_bbox:
             if not self.implicit_bbox:
@@ -168,10 +170,10 @@ class Annotation(Bbox):
         return hover_type
 
     def get_hovered_keypoint(self,
-                             mouse_pos: tuple[int, int]
+                             margin: float,
+                             mouse_pos: tuple[float, float]
                              ) -> Keypoint | None:
         pos_x, pos_y = mouse_pos
-        margin = 5
 
         min_distance = 2 * margin
         closest_keypoint = None

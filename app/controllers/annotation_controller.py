@@ -282,6 +282,7 @@ class AnnotationController:
 
                 if anno.has_bbox or add_missing_bboxes:
                     anno.position = anno.position or anno.implicit_bbox
+                    anno.position = [round(val) for val in anno.position]
 
                     annotation['area'] = anno.area
                     annotation['bbox'] = anno.xywh
@@ -298,8 +299,11 @@ class AnnotationController:
 
                     for keypoint in anno.keypoints:
                         if keypoint.visible:
-                            keypoints.extend([*keypoint.position, 2])
                             num_keypoints += 1
+
+                            x_pos, y_pos = keypoint.position
+                            keypoints.extend([round(x_pos), round(y_pos), 2])
+
                         else:
                             keypoints.extend([0, 0, 0])
 

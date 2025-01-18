@@ -303,9 +303,11 @@ class Canvas(QWidget):
                 (AnnotatingState.IDLE, AnnotatingState.DRAWING_KEYPOINTS):
             return
 
+        margin = -0.57 * self.get_scale() + 5.3  # Consts chosen empirically
+
         for anno in annotations[::-1]:
-            hovered_keypoint = anno.get_hovered_keypoint(mouse_pos)
-            hovered_type = anno.get_hovered_type(mouse_pos)
+            hovered_keypoint = anno.get_hovered_keypoint(margin, mouse_pos)
+            hovered_type = anno.get_hovered_type(margin, mouse_pos)
 
             if hovered_keypoint and not anno.hidden:
                 if hovered_keypoint not in annotator.created_keypoints \
@@ -375,6 +377,8 @@ class Canvas(QWidget):
         keypoint.selected = False
 
     def select_next_annotation(self) -> None:
+        print(f'Scale: {self.get_scale()}')
+        return
         if not self.annotations:
             return
 
