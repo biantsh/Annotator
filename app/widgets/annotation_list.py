@@ -1,8 +1,16 @@
+import os
+import sys
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QObject, QEvent
-from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QLabel
+from PyQt6.QtCore import Qt, QObject, QEvent, QPoint, QTimer
+from PyQt6.QtGui import QMouseEvent, QPixmap
+from PyQt6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QVBoxLayout,
+    QWidget,
+    QLabel
+)
 
 from app.enums.canvas import AnnotatingState
 from app.objects import Annotation, Keypoint
@@ -13,21 +21,27 @@ if TYPE_CHECKING:
     from annotator import MainWindow
     from app.canvas import Canvas
 
+__basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
+__iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
+
+__smooth_transform__ = Qt.TransformationMode.SmoothTransformation
+
 
 class AnnotationList(QWidget):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent)
         self.parent = parent
 
-        self.main_layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
         self.anno_layout = QVBoxLayout()
+        self.control_panel = ControlPanel(self)
 
-        self.main_layout.addStretch()
-        self.main_layout.addLayout(self.anno_layout)
-        self.main_layout.addStretch()
-        self.main_layout.addWidget(UnpinButton(self))
+        main_layout.addStretch()
+        main_layout.addLayout(self.anno_layout)
+        main_layout.addStretch()
+        main_layout.addWidget(self.control_panel)
 
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def redraw_widgets(self) -> None:
@@ -42,6 +56,8 @@ class AnnotationList(QWidget):
 
         for anno in sorted(annos, key=lambda anno: anno.label_name):
             self.anno_layout.addWidget(ListItem(self.parent.canvas, anno))
+
+        self.control_panel.redraw()
 
     def update(self) -> None:
         for index in range(self.anno_layout.count()):
@@ -215,25 +231,119 @@ class KeypointItem(QWidget):
         ''')
 
 
-class UnpinButton(QWidget):
+class ControlPanel(QWidget):
     def __init__(self, parent: 'AnnotationList') -> None:
         super().__init__()
-
         self.parent = parent
-        self.installEventFilter(self)
+
+        self.unpin_button = UnpinButton(parent)
+        self.unpin_button.installEventFilter(self)
+
+        self.progress_label = QLabel()
+        self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.copy_image_button = CopyImageButton(parent)
+        self.copy_image_button.installEventFilter(self)
+        self.copy_image_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         layout = QHBoxLayout(self)
-        layout.addWidget(QLabel('\u276E'))
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(1, 0, 0, 0)
+
+        layout.addWidget(self.unpin_button)
+        layout.addStretch()
+        layout.addWidget(self.progress_label)
+        layout.addStretch()
+        layout.addWidget(self.copy_image_button)
+
+    def redraw(self) -> None:
+        main_window = self.parent.parent
+        image_name = main_window.canvas.image_name
+
+        current_image = main_window.image_controller.index
+        num_images = main_window.image_controller.num_images
+
+        self.progress_label.setText(f'{current_image + 1} / {num_images}')
+        self.copy_image_button.tooltip.setText(image_name)
+        self.copy_image_button.tooltip.adjustSize()
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
-        if event.type() == event.Type.MouseButtonPress:
-            self.parent.setVisible(False)
-
-        elif event.type() == event.Type.Enter:
-            source.setStyleSheet(f'background-color: rgb(53, 53, 53);')
+        if event.type() == event.Type.Enter:
+            source.setStyleSheet('background-color: rgb(53, 53, 53);')
 
         elif event.type() == event.Type.Leave:
-            source.setStyleSheet(f'background-color: rgb(33, 33, 33);')
+            source.setStyleSheet('background-color: rgb(33, 33, 33);')
 
         return False
+
+
+class UnpinButton(QLabel):
+    def __init__(self, parent: AnnotationList) -> None:
+        super().__init__('\u276E')
+        self.parent = parent
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.parent.setVisible(not self.parent.isVisible())
+
+
+class CopyImageButton(QLabel):
+    def __init__(self, parent: AnnotationList) -> None:
+        super().__init__(parent)
+
+        self.parent = parent
+        self.setFixedSize(28, 32)
+
+        self.copy_icon = QPixmap(os.path.join(__iconpath__, 'copy.svg')) \
+            .scaled(17, 17)
+        self.check_icon = QPixmap(os.path.join(__iconpath__, 'check.png')) \
+            .scaled(16, 16, transformMode=__smooth_transform__)
+
+        self.setPixmap(self.copy_icon)
+        self.tooltip = ImageTooltip(parent)
+
+        self.tooltip_timer = QTimer(self)
+        self.tooltip_timer.setInterval(550)
+        self.tooltip_timer.setSingleShot(True)
+        self.tooltip_timer.timeout.connect(self.show_tooltip)
+
+        self.icon_timer = QTimer(self)
+        self.icon_timer.setInterval(2500)
+        self.icon_timer.setSingleShot(True)
+        self.icon_timer.timeout.connect(
+            lambda: self.setPixmap(self.copy_icon))
+
+    def show_tooltip(self) -> None:
+        window = self.parent.parent
+
+        button_position = self.mapToGlobal(self.rect().topLeft())
+        width, height = self.tooltip.width(), self.tooltip.height()
+
+        top_bar = window.geometry().top() - window.frameGeometry().top()
+        offset = window.pos() + QPoint(width - 10, top_bar + height - 10)
+
+        self.tooltip.move(button_position - offset)
+        self.tooltip.raise_()
+        self.tooltip.show()
+
+    def enterEvent(self, event: QMouseEvent) -> None:
+        self.tooltip_timer.start()
+
+    def leaveEvent(self, event: QMouseEvent) -> None:
+        self.tooltip_timer.stop()
+        self.tooltip.hide()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.parent.parent.canvas.image_name)
+
+        self.setPixmap(self.check_icon)
+        self.icon_timer.start()
+
+        self.tooltip.hide()
+
+
+class ImageTooltip(QLabel):
+    def __init__(self, parent: AnnotationList) -> None:
+        super().__init__(parent.parent)
+
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.hide()

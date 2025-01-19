@@ -23,20 +23,27 @@ QToolTip {
     min-width: 0px;
     max-width: 0px;
 }
+ImageTooltip {
+    background-color: rgba(20, 20, 20, 0.7);
+    color: rgb(220, 220, 220);
+    font-size: 14px;
+    border-radius: 5px;
+    padding: 4px;
+}
 AnnotationList {
     border-left: 1px solid rgb(53, 53, 53);
     max-width: 150px;
+}
+AnnotationList ControlPanel QLabel {
+    font-weight: bold;
+    font-size: 13px;
+    padding: 0px 1px;
 }
 AnnotationList ContextCheckBox {
     min-width: 120px;
     max-width: 120px;
     padding-top: 3px;
     padding-bottom: 3px;
-}
-AnnotationList UnpinButton QLabel {
-    padding-left: 4px;
-    margin-left: 1px;
-    min-height: 30px;
 }
 AnnotationList ListItem QLabel {
     margin-bottom: 3px;

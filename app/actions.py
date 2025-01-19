@@ -152,11 +152,8 @@ def search_image(parent: 'Canvas') -> None:
 
 
 def toggle_sidebar(parent: 'Canvas') -> None:
-    if parent.parent.annotation_list.isVisible():
-        parent.parent.annotation_list.setVisible(False)
-
-    else:
-        parent.parent.annotation_list.setVisible(True)
+    annotation_list = parent.parent.annotation_list
+    annotation_list.setVisible(not annotation_list.isVisible())
 
 
 __toolbar_actions__ = (

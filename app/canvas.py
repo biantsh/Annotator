@@ -789,7 +789,7 @@ class Canvas(QWidget):
             self.set_annotating_state(AnnotatingState.IDLE)
 
         elif self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:
-            if not self.hovered_keypoint:
+            if self.is_cursor_in_bounds() and not self.hovered_keypoint:
                 self.keypoint_annotator.add_keypoint()
 
         else:
