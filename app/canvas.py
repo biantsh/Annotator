@@ -35,7 +35,8 @@ from app.handlers.annotator import KeypointAnnotator
 from app.handlers.keyboard import KeyboardHandler
 from app.handlers.mouse import MouseHandler
 from app.handlers.painter import CanvasPainter
-from app.handlers.zoom import ZoomHandler
+from app.handlers.image.brightness import BrightnessHandler
+from app.handlers.image.zoom import ZoomHandler
 from app.widgets.combo_box import AnnotationComboBox, ImageComboBox
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation, Keypoint
@@ -81,6 +82,7 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.action_handler = ActionHandler(self, self.image_name)
+        self.brightness_handler = BrightnessHandler(self)
         self.zoom_handler = ZoomHandler(self)
 
         self.pos_start_anno = None
@@ -120,6 +122,7 @@ class Canvas(QWidget):
     def reset(self) -> None:
         self.annotations = []
         self.zoom_handler.reset()
+        self.brightness_handler.reset()
 
     def load_image(self, image_path: str) -> None:
         self.set_annotating_state(AnnotatingState.IDLE)
@@ -128,6 +131,7 @@ class Canvas(QWidget):
 
         image = QImageReader(image_path).read()
         self.pixmap = QPixmap.fromImage(image)
+        self.brightness_handler.set_pixmap(self.pixmap)
 
         self.image_name = os.path.basename(image_path)
         self.action_handler.image_name = self.image_name
@@ -377,8 +381,6 @@ class Canvas(QWidget):
         keypoint.selected = False
 
     def select_next_annotation(self) -> None:
-        print(f'Scale: {self.get_scale()}')
-        return
         if not self.annotations:
             return
 
@@ -895,25 +897,46 @@ class Canvas(QWidget):
 
         self.update()
 
-    def on_mouse_middle_press(self, cursor_position: tuple[int, int]) -> None:
+    def on_mouse_middle_press(self,
+                              cursor_position: tuple[int, int],
+                              ctrl_pressed: bool
+                              ) -> None:
         if not self.is_cursor_in_bounds():
             return
 
-        self.zoom_handler.toggle_zoom(cursor_position)
+        if ctrl_pressed:
+            self.brightness_handler.toggle_brightness()
+        else:
+            self.zoom_handler.toggle_zoom(cursor_position)
+
         self.update()
 
-    def on_scroll_up(self, cursor_position: tuple[int, int]) -> None:
+    def on_scroll_up(self,
+                     cursor_position: tuple[int, int],
+                     ctrl_pressed: bool
+                     ) -> None:
         if not self.is_cursor_in_bounds():
             return
 
-        self.zoom_handler.zoom_in(cursor_position)
+        if ctrl_pressed:
+            self.brightness_handler.increase_brightness()
+        else:
+            self.zoom_handler.zoom_in(cursor_position)
+
         self.update()
 
-    def on_scroll_down(self, cursor_position: tuple[int, int]) -> None:
+    def on_scroll_down(self,
+                       cursor_position: tuple[int, int],
+                       ctrl_pressed: bool
+                       ) -> None:
         if not self.is_cursor_in_bounds():
             return
 
-        self.zoom_handler.zoom_out(cursor_position)
+        if ctrl_pressed:
+            self.brightness_handler.decrease_brightness()
+        else:
+            self.zoom_handler.zoom_out(cursor_position)
+
         self.update()
 
     def on_search_image(self) -> None:

@@ -54,8 +54,8 @@ class MouseHandler:
             self.parent.on_mouse_hover()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        position = event.position()
-        pos_x, pos_y = position.x(), position.y()
+        position = event.position().x(), event.position().y()
+        ctrl_pressed = Qt.KeyboardModifier.ControlModifier & event.modifiers()
 
         if Qt.MouseButton.LeftButton & event.buttons():
             self.left_clicked = True
@@ -67,7 +67,7 @@ class MouseHandler:
                                    self.parent.zoom_handler.pan_y)
 
         if Qt.MouseButton.MiddleButton & event.buttons():
-            self.parent.on_mouse_middle_press((pos_x, pos_y))
+            self.parent.on_mouse_middle_press(position, ctrl_pressed)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self.parent.keypoint_annotator.active:
@@ -105,9 +105,11 @@ class MouseHandler:
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         angle_delta = event.angleDelta().y()
-        position = event.position()
+
+        position = event.position().x(), event.position().y()
+        ctrl_pressed = Qt.KeyboardModifier.ControlModifier & event.modifiers()
 
         if angle_delta > 0:
-            self.parent.on_scroll_up((position.x(), position.y()))
+            self.parent.on_scroll_up(position, ctrl_pressed)
         elif angle_delta < 0:
-            self.parent.on_scroll_down((position.x(), position.y()))
+            self.parent.on_scroll_down(position, ctrl_pressed)

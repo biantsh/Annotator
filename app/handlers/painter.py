@@ -171,6 +171,26 @@ class CanvasPainter(QPainter):
 
         self.drawText(QPointF(text_x, text_y), f'{zoom_level}X')
 
+    def draw_brightness_indicator(self, step: int) -> None:
+        self.setPen(QColor(200, 200, 200, 255))
+        text = f'Brightness amplification: {step * 5}%'
+
+        font_metrics = self.fontMetrics()
+        text_width = font_metrics.horizontalAdvance(text)
+        text_height = font_metrics.height()
+
+        pos_x = self.canvas.width() - text_width - 26
+        pos_y = self.canvas.height() - text_height - 26
+        outer_rect = QRectF(pos_x, pos_y, text_width + 16, text_height + 16)
+
+        self.set_outline_color((255, 255, 255, 128))
+        self.fillRect(outer_rect, QColor(33, 33, 33, 130))
+        self.drawRect(outer_rect)
+
+        text_x = pos_x + 8
+        text_y = pos_y + font_metrics.ascent() + 8
+        self.drawText(QPointF(text_x, text_y), text)
+
     def paint_scene(self) -> None:
         self.draw_pixmap(self.canvas.pixmap)
 
@@ -201,9 +221,13 @@ class CanvasPainter(QPainter):
                 and not self.canvas.hovered_keypoint:
             self.draw_candidate_keypoint(cursor_position)
 
+        self.pen.setWidth(2)
+
         if self.canvas.zoom_handler.draw_indicator:
-            self.pen.setWidth(2)
             self.draw_zoom_indicator(self.canvas.zoom_handler.zoom_level)
+
+        if self.canvas.brightness_handler.draw_indicator:
+            self.draw_brightness_indicator(self.canvas.brightness_handler.step)
 
 
 class AnnotationPainter:

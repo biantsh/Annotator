@@ -51,14 +51,6 @@ class ZoomHandler:
         self.clip_pan_values()
         self.set_indicator()
 
-    def unset_indicator(self) -> None:
-        self.draw_indicator = False
-        self.parent.update()
-
-    def set_indicator(self) -> None:
-        self.draw_indicator = True
-        self.indicator_timer.start(2000)
-
     def zoom_in(self, cursor_position: tuple[float, float]) -> None:
         self._set_zoom(self.zoom_level + 0.2, cursor_position)
 
@@ -71,6 +63,14 @@ class ZoomHandler:
             self.pan_x = self.pan_y = 0
         else:
             self._set_zoom(self._max_zoom, cursor_position)
+
+    def unset_indicator(self) -> None:
+        self.draw_indicator = False
+        self.parent.update()
+
+    def set_indicator(self) -> None:
+        self.draw_indicator = True
+        self.indicator_timer.start(2000)
 
     def reset(self) -> None:
         self.zoom_level = self._min_zoom
