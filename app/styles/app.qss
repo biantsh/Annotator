@@ -1,0 +1,185 @@
+QLabel, QPushButton, QCheckBox, QLineEdit {
+    font-family: 'DejaVu Sans';
+    font-size: 9pt;
+}
+QToolBar {
+    border-right: 1px solid rgb(53, 53, 53);
+    margin-left: 0px;
+    margin-right: 0px;
+}
+QToolBar QToolButton {
+    margin-top: 5px;
+}
+QToolBar::separator {
+    background-color: rgb(53, 53, 53);
+    height: 1px;
+    margin-top: 7px;
+    margin-bottom: 3px;
+}
+QToolBar::handle {
+    width: 0px;
+}
+QToolTip {
+    min-width: 0px;
+    max-width: 0px;
+}
+ImageTooltip {
+    background-color: rgba(20, 20, 20, 0.7);
+    color: rgb(220, 220, 220);
+    font-size: 14px;
+    border-radius: 5px;
+    padding: 4px;
+}
+AnnotationList {
+    border-left: 1px solid rgb(53, 53, 53);
+    max-width: 150px;
+}
+AnnotationList ControlPanel QLabel {
+    font-weight: bold;
+    font-size: 13px;
+    padding: 0px 1px;
+}
+AnnotationList ContextCheckBox {
+    min-width: 120px;
+    max-width: 120px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+AnnotationList ListItem QLabel {
+    margin-bottom: 3px;
+}
+AnnotationList KeypointList QLabel {
+    margin-bottom: 0px;
+    padding-left: 13px;
+    font-weight: bold;
+    font-size: 9pt;
+    min-height: 25px;
+}
+KeypointLabel {
+    background-color: rgba(33, 33, 33, 0.75);
+    border-radius: 5px;
+    min-height: 35px;
+    margin: 5px;
+}
+CanvasContextMenu {
+    min-width: 150px;
+}
+AnnotationContextMenu {
+    min-width: 90px;
+}
+QMenu {
+    background-color: transparent;
+    border: 0px;
+}
+QMenu QLineEdit {
+    background-color: rgba(53, 53, 53, 0.5);
+    border: 1px solid rgb(80, 80, 80);
+    color: rgb(200, 200, 200);
+    font-weight: bold;
+    min-height: 24px;
+    max-height: 24px;
+}
+QMenu::separator {
+    background-color: rgba(53, 53, 53, 0.75);
+    height: 1.5px;
+}
+ComboBox {
+    background-color: rgba(33, 33, 33, 0.75)
+}
+ComboBox QLabel {
+    font-weight: bold;
+    padding-bottom: 3px;
+}
+SettingsWindow QFrame {
+    background-color: rgb(33, 33, 33);
+    border-radius: 4px;
+}
+SettingsWindow QLabel {
+    selection-background-color: rgb(60, 120, 216);
+    color: rgb(153, 153, 153);
+}
+SettingsWindow QPushButton {
+    background-color: rgb(33, 33, 33);
+    font-weight: bold;
+    font-size: 14px;
+    border: none;
+}
+SettingsWindow QPushButton:hover {
+    background-color: rgb(53, 53, 53);
+    border-radius: 5px;
+}
+SettingsWindow QCheckBox {
+    color: rgb(180, 180, 180);
+    font-size: 13px;
+    font-weight: bold;
+    margin-left: 6px;
+}
+SettingsWindow QCheckBox::indicator {
+    border: 1px solid rgb(53, 53, 53);
+    border-radius: 2px;
+    width: 12px;
+    height: 12px;
+}
+SettingsWindow QCheckBox::indicator:checked {
+    border: 1px solid rgb(60, 120, 216);
+}
+SettingsWindow ResetButton,
+SettingsWindow CloseButton,
+SettingsWindow FinishButton {
+    color: rgb(200, 200, 200);
+    font-size: 12px;
+    width: 70px;
+    height: 25px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    border-radius: 3px;
+    border: 1px solid rgb(53, 53, 53);
+}
+SettingsWindow ResetButton {
+    background-color: rgb(33, 33, 33);
+    margin-left: 5px;
+}
+SettingsWindow ResetButton:hover {
+    background-color: rgb(41, 41, 41);
+    border-radius: 3px;
+}
+SettingsWindow CloseButton {
+    background-color: rgb(45, 45, 45);
+}
+SettingsWindow CloseButton:hover {
+    background-color: rgb(53, 53, 53);
+    border-radius: 3px;
+}
+SettingsWindow FinishButton {
+    background-color: rgb(60, 120, 216);
+}
+SettingsWindow FinishButton:hover {
+    background-color: rgb(76, 136, 232);
+    border-radius: 3px;
+}
+SettingsWindow SettingAddMissingBboxes QLabel {
+    font-size: 12px;
+}
+Toast {
+    background-color: rgba(20, 20, 20, 0.7);
+    color: rgb(220, 220, 220);
+    border-radius: 13px;
+    padding: 15px 35px;
+    font-size: 16px;
+}
+QMessageBox {
+    background-color: rgb(33, 33, 33);
+    color: rgb(200, 200, 200);
+}
+QMessageBox QLabel {
+    font-size: 10.5pt;
+}
+QMessageBox QPushButton {
+    background-color: rgb(33, 33, 33);
+    font-size: 14px;
+    min-width: 70px;
+    min-height: 20px;
+}
+QMessageBox QPushButton:hover {
+    background-color: rgb(53, 53, 53);
+}
