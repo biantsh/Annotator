@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QWidget, QFileDialog
 
+from app.enums.annotation import VisibilityType
 from app.enums.canvas import AnnotatingState
 
 if TYPE_CHECKING:
@@ -116,7 +117,11 @@ def select_all(parent: 'Canvas') -> None:
 
 
 def hide_annotations(parent: 'Canvas') -> None:
-    parent.hide_annotations()
+    parent.hide_annotations(VisibilityType.HIDDEN)
+
+
+def hide_keypoints(parent: 'Canvas') -> None:
+    parent.hide_annotations(VisibilityType.BOX_ONLY)
 
 
 def rename_annotations(parent: 'Canvas') -> None:
@@ -176,6 +181,7 @@ __canvas_actions__ = (
     ('select_next', select_next, 'Space'),
     ('select_all', select_all, 'Ctrl+A'),
     ('hide_annos', hide_annotations, 'Ctrl+H'),
+    ('hide_keypoints', hide_keypoints, 'Ctrl+Shift+H'),
     ('rename_annos', rename_annotations, 'Ctrl+R'),
     ('delete_annos', delete_annotations, 'Del'),
     ('copy_annos', copy_annotations, 'Ctrl+C'),

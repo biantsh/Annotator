@@ -1,7 +1,7 @@
 import copy
 from uuid import uuid4
 
-from app.enums.annotation import HoverType, SelectionType
+from app.enums.annotation import HoverType, SelectionType, VisibilityType
 from app.controllers.label_map_controller import LabelSchema
 
 
@@ -86,9 +86,9 @@ class Annotation(Bbox):
             for _ in label_schema.kpt_names]
 
         self.selected = SelectionType.UNSELECTED
+        self.visible = VisibilityType.VISIBLE
         self.hovered = HoverType.NONE
         self.highlighted = False
-        self.hidden = False
 
         self.implicit_bbox = []
 

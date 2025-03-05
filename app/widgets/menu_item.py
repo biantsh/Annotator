@@ -1,11 +1,12 @@
 from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QGuiApplication, QMouseEvent
 from PyQt6.QtWidgets import QLabel, QCheckBox
 
+from app.enums.annotation import VisibilityType
 from app.objects import Annotation
-from app.utils import pretty_text, text_to_color
+from app.utils import pretty_text
 from app.styles.style_sheets import LabelStyleSheet, CheckBoxStyleSheet
 
 if TYPE_CHECKING:
@@ -83,7 +84,15 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.parent.update()
 
     def on_right_click(self) -> None:
-        self.annotation.hidden = not self.annotation.hidden
+        shift_pressed = Qt.KeyboardModifier.ShiftModifier \
+                        & QGuiApplication.keyboardModifiers()
+
+        if self.annotation.visible == VisibilityType.VISIBLE:
+            self.annotation.visible = VisibilityType.BOX_ONLY \
+                if shift_pressed else VisibilityType.HIDDEN
+
+        else:
+            self.annotation.visible = VisibilityType.VISIBLE
 
         self.update()
         self.parent.update()
@@ -92,9 +101,6 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         event.ignore()
 
     def update(self) -> None:
-        selected = self.annotation.selected
-        checkbox_color = text_to_color(self.annotation.label_name)
-
-        self.setStyleSheet(str(CheckBoxStyleSheet(selected, checkbox_color)))
+        self.setChecked(self.annotation.visible == VisibilityType.VISIBLE)
+        self.setStyleSheet(str(CheckBoxStyleSheet(self.annotation)))
         self.setText(pretty_text(self.annotation.label_name))
-        self.setChecked(not self.annotation.hidden)

@@ -2,7 +2,7 @@ import math
 from typing import Sequence, TYPE_CHECKING
 
 from app.controllers.label_map_controller import LabelMapController
-from app.enums.annotation import HoverType, SelectionType
+from app.enums.annotation import HoverType, SelectionType, VisibilityType
 from app.enums.canvas import AnnotatingState
 from app.objects import Annotation
 from app.utils import text_to_color, clip_value
@@ -203,7 +203,7 @@ class CanvasPainter(QPainter):
                 annos_to_draw.append(current_anno)
 
         for annotation in annos_to_draw:
-            if not annotation.hidden or annotation.highlighted:
+            if annotation.visible or annotation.highlighted:
                 self.anno_painter.draw_annotation(annotation)
 
         state = self.canvas.annotating_state
@@ -260,7 +260,7 @@ class AnnotationPainter:
             if highlighted and not drawing_keypoints
             else (*text_to_color(anno.label_name), 155))
 
-        if anno.hidden:
+        if not anno.visible:
             return
 
         if anno.has_bbox:
@@ -273,7 +273,7 @@ class AnnotationPainter:
         elif anno.hovered and not drawing_keypoints:
             self.fill_annotation(anno)
 
-        if anno.has_keypoints:
+        if anno.has_keypoints and anno.visible == VisibilityType.VISIBLE:
             self.draw_keypoint_edges(anno)
             self.draw_keypoints(anno)
 

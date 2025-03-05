@@ -24,3 +24,9 @@ class SelectionType(IntEnum):
     NEWLY_SELECTED = 1
     SELECTED = 2
     BOX_ONLY = 3
+
+
+class VisibilityType(IntEnum):
+    HIDDEN = 0
+    BOX_ONLY = 1
+    VISIBLE = 2

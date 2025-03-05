@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import QApplication, QWidget
 
 from app.actions import CanvasActions
 from app.controllers.label_map_controller import LabelMapController
-from app.enums.annotation import HoverType, SelectionType
+from app.enums.annotation import HoverType, SelectionType, VisibilityType
 from app.enums.canvas import AnnotatingState
 from app.handlers.actions import (
     ActionHandler,
@@ -313,7 +313,7 @@ class Canvas(QWidget):
             hovered_keypoint = anno.get_hovered_keypoint(margin, mouse_pos)
             hovered_type = anno.get_hovered_type(margin, mouse_pos)
 
-            if hovered_keypoint and not anno.hidden:
+            if hovered_keypoint and anno.visible == VisibilityType.VISIBLE:
                 if hovered_keypoint not in annotator.created_keypoints \
                         and annotator.active:
                     continue
@@ -322,7 +322,7 @@ class Canvas(QWidget):
                 hovered_keypoint.hovered = True
                 return
 
-            if hovered_type and not anno.hidden and \
+            if hovered_type and anno.visible and \
                     self.annotating_state == AnnotatingState.IDLE:
                 self.hovered_anno = anno
                 anno.hovered = hovered_type
@@ -343,7 +343,7 @@ class Canvas(QWidget):
         self.selected_annos.append(annotation)
 
         annotation.selected = SelectionType.SELECTED
-        annotation.hidden = False
+        annotation.visible = annotation.visible or VisibilityType.VISIBLE
 
         # Move to the front
         if annotation in self.annotations:
@@ -372,6 +372,7 @@ class Canvas(QWidget):
         self.selected_keypoints.append(keypoint)
 
         keypoint.selected = True
+        keypoint.parent.visible = VisibilityType.VISIBLE
 
     def unselect_keypoint(self, keypoint: Keypoint) -> None:
         if keypoint not in self.selected_keypoints:
@@ -503,6 +504,7 @@ class Canvas(QWidget):
         for action in self.actions():
             action.setEnabled(False)
 
+        annotation.visible = VisibilityType.VISIBLE
         self.keypoint_annotator.begin(annotation)
 
     def rename_annotations(self) -> None:
@@ -557,11 +559,15 @@ class Canvas(QWidget):
             action = ActionCreate(self, pasted_annos)
             self.action_handler.register_action(action)
 
-    def hide_annotations(self) -> None:
-        should_hide = not any(anno.hidden for anno in self.selected_annos)
+    def hide_annotations(self, target_visibility: VisibilityType) -> None:
+        should_hide = all(anno.visible == VisibilityType.VISIBLE
+                          for anno in self.selected_annos)
+
+        target_visibility = target_visibility \
+            if should_hide else VisibilityType.VISIBLE
 
         for anno in self.selected_annos:
-            anno.hidden = should_hide
+            anno.visible = target_visibility
 
         self.update()
 

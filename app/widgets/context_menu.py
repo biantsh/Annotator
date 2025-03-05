@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget
 )
 
+from app.enums.annotation import VisibilityType
 from app.enums.canvas import AnnotatingState
 from app.handlers.actions import ActionCreate, ActionDelete
 from app.objects import Annotation
@@ -185,14 +186,15 @@ class CanvasContextMenu(ContextMenu):
         self.clear()
 
         annos = self.parent.annotations
-        hidden_annos = [anno for anno in annos if anno.hidden]
+        hidden_annos = [anno for anno in annos if not anno.visible]
 
-        text, should_hide = ('Show All', False) \
-            if hidden_annos else ('Hide All', True)
+        text, visibility = ('Show All', VisibilityType.VISIBLE) \
+            if hidden_annos else ('Hide All', VisibilityType.HIDDEN)
 
         def set_hidden_all() -> None:
             for anno in self.parent.annotations:
-                anno.hidden = should_hide
+                anno.visible = visibility
+
             self.parent.update()
 
         def pin_menu() -> None:
@@ -257,7 +259,7 @@ class CanvasContextMenu(ContextMenu):
                 self.update()
 
         elif ctrl_pressed and event.key() == Qt.Key.Key_H:
-            self.parent.hide_annotations()
+            self.parent.hide_annotations(VisibilityType.HIDDEN)
             self.update()
 
         elif ctrl_pressed and event.key() == Qt.Key.Key_R:
@@ -293,7 +295,7 @@ class AnnotationContextMenu(ContextMenu):
             parent.unselect_all()
 
         def _hide() -> None:
-            parent.hide_annotations()
+            parent.hide_annotations(VisibilityType.HIDDEN)
             parent.unselect_all()
 
         def _flip() -> None:

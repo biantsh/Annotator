@@ -2,6 +2,10 @@ import os
 import sys
 from abc import ABC
 
+from app.enums.annotation import VisibilityType
+from app.objects import Annotation
+from app.utils import text_to_color
+
 __basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
 __iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
 
@@ -34,14 +38,16 @@ class LabelStyleSheet(StyleSheet):
 
 
 class CheckBoxStyleSheet(StyleSheet):
-    def __init__(self,
-                 selected: bool,
-                 checkbox_color: tuple[int, int, int]
-                 ) -> None:
+    def __init__(self, annotation: Annotation) -> None:
         super().__init__()
 
+        color = text_to_color(annotation.label_name)
+
         underline = '1px solid rgba(255, 255, 255, 0.85)' \
-            if selected else '1px solid transparent'
+            if annotation.selected else '1px solid transparent'
+
+        border = f'2px solid rgb{color}' \
+            if annotation.visible else '1px solid rgb(53, 53, 53)'
 
         self.style_sheet = f"""
             QCheckBox {{
@@ -52,12 +58,12 @@ class CheckBoxStyleSheet(StyleSheet):
             }}
 
             ::indicator {{
-                border: 1px solid rgb(53, 53, 53);
-                border-radius: 2px;
+                border: {border};
+                border-radius: 3px;
             }}
 
             ::indicator:checked {{
-                background-color: rgb{checkbox_color};
+                background-color: rgb{color};
             }}
         """
 
