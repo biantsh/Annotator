@@ -19,6 +19,7 @@ class Settings:
             'default_label_path': '',
             'default_import_path': '',
             'default_export_path': '',
+            'hide_keypoints': False,
             'add_missing_bboxes': False
         }
 

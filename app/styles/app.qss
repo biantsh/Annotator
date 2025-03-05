@@ -108,21 +108,7 @@ SettingsWindow QPushButton:hover {
     background-color: rgb(53, 53, 53);
     border-radius: 5px;
 }
-SettingsWindow QCheckBox {
-    color: rgb(180, 180, 180);
-    font-size: 13px;
-    font-weight: bold;
-    margin-left: 6px;
-}
-SettingsWindow QCheckBox::indicator {
-    border: 1px solid rgb(53, 53, 53);
-    border-radius: 2px;
-    width: 12px;
-    height: 12px;
-}
-SettingsWindow QCheckBox::indicator:checked {
-    border: 1px solid rgb(60, 120, 216);
-}
+SettingsWindow SettingButton,
 SettingsWindow ResetButton,
 SettingsWindow CloseButton,
 SettingsWindow FinishButton {
@@ -135,6 +121,16 @@ SettingsWindow FinishButton {
     border-radius: 3px;
     border: 1px solid rgb(53, 53, 53);
 }
+SettingsWindow SettingButton {
+    background-color: rgb(41, 41, 41);
+    width: 135px;
+    font-size: 11px;
+    margin-left: 3px;
+}
+SettingsWindow SettingButton:hover {
+    background-color: rgb(49, 49, 49);
+    border-radius: 3px;
+}
 SettingsWindow ResetButton {
     background-color: rgb(33, 33, 33);
     margin-left: 5px;
@@ -144,10 +140,10 @@ SettingsWindow ResetButton:hover {
     border-radius: 3px;
 }
 SettingsWindow CloseButton {
-    background-color: rgb(45, 45, 45);
+    background-color: rgb(41, 41, 41);
 }
 SettingsWindow CloseButton:hover {
-    background-color: rgb(53, 53, 53);
+    background-color: rgb(49, 49, 49);
     border-radius: 3px;
 }
 SettingsWindow FinishButton {
@@ -157,8 +153,21 @@ SettingsWindow FinishButton:hover {
     background-color: rgb(76, 136, 232);
     border-radius: 3px;
 }
-SettingsWindow SettingAddMissingBboxes QLabel {
-    font-size: 12px;
+SettingsWindow SettingCheckBox {
+    color: rgb(180, 180, 180);
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 6px;
+    margin-bottom: 8px;
+}
+SettingsWindow SettingCheckBox::indicator {
+    border: 1px solid rgb(53, 53, 53);
+    border-radius: 2px;
+    width: 12px;
+    height: 12px;
+}
+SettingsWindow SettingCheckBox::indicator:checked {
+    border: 1px solid rgb(60, 120, 216);
 }
 Toast {
     background-color: rgba(20, 20, 20, 0.7);

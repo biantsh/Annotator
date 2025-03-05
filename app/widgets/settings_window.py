@@ -59,16 +59,22 @@ class SettingsWindow(QDialog):
         self.build_layout()
 
     def build_layout(self) -> None:
-        layout = QVBoxLayout(self.popup)
+        setting_hide_keypoints = SettingHideKeypoints(self)
+        setting_add_missing_bboxes = SettingAddMissingBboxes(self)
 
+        self.checkboxes.append(setting_hide_keypoints.checkbox)
+        self.checkboxes.append(setting_add_missing_bboxes.checkbox)
+
+        layout = QVBoxLayout(self.popup)
         layout.addLayout(TitleLayout(self))
         layout.addSpacing(20)
 
-        layout.addLayout(SectionLayout('Export'))
-        setting_add_missing_bboxes = SettingAddMissingBboxes(self)
+        layout.addLayout(SectionLayout('Annotations'))
+        layout.addWidget(setting_hide_keypoints)
+        layout.addWidget(SettingSetHiddenCategories(self))
 
+        layout.addLayout(SectionLayout('Exporting'))
         layout.addWidget(setting_add_missing_bboxes)
-        self.checkboxes.append(setting_add_missing_bboxes.checkbox)
 
         layout.addStretch()
 
@@ -214,16 +220,63 @@ class SettingCheckBox(QCheckBox):
         return False
 
 
+class SettingButton(QPushButton):
+    def __init__(self, parent: SettingsWindow, text: str) -> None:
+        super().__init__(text)
+        self.parent = parent
+
+
+class SettingHideKeypoints(QWidget):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__()
+        self.parent = parent
+
+        self.checkbox = SettingCheckBox(
+            parent, 'hide_keypoints', 'Hide keypoints', False)
+
+        label = QLabel('Hide keypoints across all annotations')
+        label.setTextInteractionFlags(__text_interaction__)
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        layout.addWidget(self.checkbox)
+        layout.addStretch()
+        layout.addWidget(label)
+
+        layout.setContentsMargins(11, 11, 11, 0)
+
+
+class SettingSetHiddenCategories(QWidget):
+    def __init__(self, parent: SettingsWindow) -> None:
+        super().__init__()
+        self.parent = parent
+
+        self.button = SettingButton(
+            parent, 'Hide Categories...')
+
+        label = QLabel('Select categories to hide/show across sessions')
+        label.setTextInteractionFlags(__text_interaction__)
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        layout.addWidget(self.button)
+        layout.addStretch()
+        layout.addWidget(label)
+
+        layout.setContentsMargins(11, 0, 11, 11)
+
+
 class SettingAddMissingBboxes(QWidget):
     def __init__(self, parent: SettingsWindow) -> None:
         super().__init__()
         self.parent = parent
 
         self.checkbox = SettingCheckBox(
-            self.parent, 'add_missing_bboxes', 'Add missing boxes', False)
+            parent, 'add_missing_bboxes', 'Add missing boxes', False)
 
-        label = QLabel('Automatically adds missing boxes '
-                       'by outlining the keypoints')
+        label = QLabel('Generate missing boxes by outlining the keypoints')
         label.setTextInteractionFlags(__text_interaction__)
 
         layout = QHBoxLayout()
