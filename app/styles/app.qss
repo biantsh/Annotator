@@ -123,8 +123,7 @@ SettingsWindow FinishButton {
 }
 SettingsWindow SettingButton {
     background-color: rgb(41, 41, 41);
-    width: 135px;
-    font-size: 11px;
+    width: 140px;
     margin-left: 3px;
 }
 SettingsWindow SettingButton:hover {
@@ -155,10 +154,10 @@ SettingsWindow FinishButton:hover {
 }
 SettingsWindow SettingCheckBox {
     color: rgb(180, 180, 180);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     margin-left: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 SettingsWindow SettingCheckBox::indicator {
     border: 1px solid rgb(53, 53, 53);
