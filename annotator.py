@@ -90,8 +90,11 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.screens)
         self.screens.setCurrentWidget(self.home_screen)
 
-        toast_message = 'Press F11 again to exit full screen'
-        self.full_screen_toast = Toast(self, toast_message)
+        self.full_screen_toast = Toast(
+            self, 'Press F11 again to exit full screen')
+
+        self.keypoints_hidden_toast = Toast(
+            self, 'Cannot add keypoints while \'Hide keypoints\' is enabled')
 
     def reload(self) -> None:
         image_path = self.image_controller.get_image_path()

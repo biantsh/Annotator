@@ -245,6 +245,7 @@ class AnnotationPainter:
     }
 
     def __init__(self, parent: 'CanvasPainter') -> None:
+        self.settings = parent.canvas.parent.settings
         self.parent = parent
 
     @property
@@ -273,7 +274,9 @@ class AnnotationPainter:
         elif anno.hovered and not drawing_keypoints:
             self.fill_annotation(anno)
 
-        if anno.has_keypoints and anno.visible == VisibilityType.VISIBLE:
+        if anno.has_keypoints \
+                and anno.visible == VisibilityType.VISIBLE \
+                and not self.settings.get('hide_keypoints'):
             self.draw_keypoint_edges(anno)
             self.draw_keypoints(anno)
 

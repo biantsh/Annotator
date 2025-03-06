@@ -211,6 +211,7 @@ class SettingCheckBox(QCheckBox):
         self.parent.parent.settings.set(self.setting_id, checked)
         self.setChecked(checked)
 
+        self.parent.parent.canvas.update()
         self._refresh()
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:

@@ -313,7 +313,9 @@ class Canvas(QWidget):
             hovered_keypoint = anno.get_hovered_keypoint(margin, mouse_pos)
             hovered_type = anno.get_hovered_type(margin, mouse_pos)
 
-            if hovered_keypoint and anno.visible == VisibilityType.VISIBLE:
+            if hovered_keypoint \
+                    and anno.visible == VisibilityType.VISIBLE \
+                    and not self.parent.settings.get('hide_keypoints'):
                 if hovered_keypoint not in annotator.created_keypoints \
                         and annotator.active:
                     continue
@@ -457,6 +459,10 @@ class Canvas(QWidget):
         self.previous_label = label_name
 
     def create_keypoints(self, label_name: str = None) -> None:
+        if self.parent.settings.get('hide_keypoints'):
+            self.parent.keypoints_hidden_toast.show()
+            return
+
         if label_name:
             if not self.label_map.contains(label_name):
                 return

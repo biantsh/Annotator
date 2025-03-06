@@ -130,8 +130,16 @@ class ListItem(QWidget):
         self.keypoint_list.update()
         self.checkbox.update()
 
-        if selected_kpts and all(kpt.parent == anno for kpt in selected_kpts) \
-                or selected_annos == [anno]:
+        if self.canvas.parent.settings.get('hide_keypoints'):
+            self.arrow.setStyleSheet('color: rgb(100, 100, 100);')
+            show_kpt_list = False
+
+        else:
+            self.arrow.setStyleSheet('color: rgb(200, 200, 200);')
+            show_kpt_list = bool(selected_kpts) or selected_annos == [anno]
+            show_kpt_list &= all(kpt.parent == anno for kpt in selected_kpts)
+
+        if show_kpt_list:
             self.keypoint_list.show()
             self.arrow.setText('\u276E')
 
