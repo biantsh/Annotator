@@ -40,7 +40,7 @@ from app.widgets.message_box import (
     ImportFailedBox,
     InformationBox
 )
-from app.widgets.settings_window import SettingsWindow
+from app.widgets.settings.settings_window import SettingsWindow
 from app.widgets.toast import Toast
 from app.screens.home_screen import HomeScreen
 from app.screens.main_screen import MainScreen
