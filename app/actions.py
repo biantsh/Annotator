@@ -78,6 +78,9 @@ def full_screen(parent: 'MainWindow') -> None:
 
 
 def open_settings(parent: 'MainWindow') -> None:
+    parent.canvas.unset_hovered_objects()
+    parent.canvas.update_cursor_icon()
+
     parent.open_settings()
 
 

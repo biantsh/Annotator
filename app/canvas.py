@@ -287,11 +287,10 @@ class Canvas(QWidget):
 
         self.update()
 
-    def set_hovered_object(self) -> None:
+    def unset_hovered_objects(self) -> None:
         self.hovered_keypoint = None
         self.hovered_anno = None
 
-        mouse_pos = self.mouse_handler.cursor_position
         annotator = self.keypoint_annotator
 
         annotations = [annotator.annotation] if annotator.active \
@@ -303,11 +302,19 @@ class Canvas(QWidget):
             for keypoint in anno.keypoints:
                 keypoint.hovered = False
 
+    def set_hovered_object(self) -> None:
+        self.unset_hovered_objects()
+
         if self.annotating_state not in \
                 (AnnotatingState.IDLE, AnnotatingState.DRAWING_KEYPOINTS):
             return
 
         margin = -0.57 * self.get_scale() + 5.3  # Consts chosen empirically
+        mouse_pos = self.mouse_handler.cursor_position
+
+        annotator = self.keypoint_annotator
+        annotations = [annotator.annotation] if annotator.active \
+            else self.annotations
 
         for anno in annotations[::-1]:
             hovered_keypoint = anno.get_hovered_keypoint(margin, mouse_pos)
