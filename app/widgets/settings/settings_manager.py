@@ -59,7 +59,8 @@ class SettingSetHiddenCategories(QWidget):
     def __init__(self, parent: 'SettingsWindow') -> None:
         super().__init__()
 
-        self.hidden_categories = set()
+        self.settings = parent.parent.settings
+        self.hidden_categories = set(self.settings.get('hidden_categories'))
 
         self.button = SettingButton(parent, 'Hide Categories...')
         self.button.clicked.connect(lambda: parent.set_layout(
@@ -79,6 +80,7 @@ class SettingSetHiddenCategories(QWidget):
 
     def reset(self) -> None:
         self.hidden_categories.clear()
+        self.settings.set('hidden_categories', [])
 
 
 class SettingAddMissingBboxes(QWidget):

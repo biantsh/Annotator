@@ -130,6 +130,9 @@ SettingsWindow SettingButton:hover {
     background-color: rgb(49, 49, 49);
     border-radius: 3px;
 }
+SettingsWindow SettingButton:pressed {
+    background-color: rgb(57, 57, 57);
+}
 SettingsWindow ResetButton {
     background-color: rgb(33, 33, 33);
     margin-left: 5px;
@@ -138,6 +141,9 @@ SettingsWindow ResetButton:hover {
     background-color: rgb(41, 41, 41);
     border-radius: 3px;
 }
+SettingsWindow ResetButton:pressed {
+    background-color: rgb(49, 49, 49);
+}
 SettingsWindow CloseButton {
     background-color: rgb(41, 41, 41);
 }
@@ -145,12 +151,18 @@ SettingsWindow CloseButton:hover {
     background-color: rgb(49, 49, 49);
     border-radius: 3px;
 }
+SettingsWindow CloseButton:pressed {
+    background-color: rgb(57, 57, 57);
+}
 SettingsWindow FinishButton {
     background-color: rgb(60, 120, 216);
 }
 SettingsWindow FinishButton:hover {
     background-color: rgb(76, 136, 232);
     border-radius: 3px;
+}
+SettingsWindow FinishButton:pressed {
+    background-color: rgb(92, 152, 248);
 }
 SettingsWindow SettingCheckBox {
     color: rgb(180, 180, 180);
@@ -167,6 +179,44 @@ SettingsWindow SettingCheckBox::indicator {
 }
 SettingsWindow SettingCheckBox::indicator:checked {
     border: 1px solid rgb(60, 120, 216);
+}
+SettingsWindow CategoryList {
+    margin-bottom: 8px;
+}
+SettingsWindow CategoryList QScrollBar {
+    background: transparent;
+    width: 11px;
+}
+SettingsWindow CategoryList QScrollBar::handle {
+    background: rgb(83, 83, 83);
+    border-radius: 3px;
+    margin-left: 4px;
+}
+SettingsWindow CategoryList QScrollBar::handle::hover {
+    background: rgb(99, 99, 99);
+}
+SettingsWindow CategoryList QScrollBar::handle::pressed {
+    background: rgb(115, 115, 115);
+}
+SettingsWindow CategoryList QScrollBar::add-line,
+SettingsWindow CategoryList QScrollBar::sub-line,
+SettingsWindow CategoryList QScrollBar::add-page,
+SettingsWindow CategoryList QScrollBar::sub-page {
+    background: none;
+}
+SettingsWindow CategoryItem {
+    background-color: rgb(30, 30, 30);
+    border-radius: 3px;
+}
+SettingsWindow CategoryItem:hover {
+    background-color: rgb(46, 46, 46);
+}
+SettingsWindow CategoryItem QWidget {
+    background-color: transparent;
+}
+SettingsWindow VisibilityLabel {
+    color: rgb(155, 155, 155);
+    font-size: 13px;
 }
 Toast {
     background-color: rgba(20, 20, 20, 0.7);

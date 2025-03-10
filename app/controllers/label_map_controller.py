@@ -70,6 +70,10 @@ class LabelMapController:
         self._index_labels()
 
         self.parent.settings.set('label_map', label_map)
+        self.parent.settings.set('hidden_categories', [])
+
+        self.parent.settings_window.settings_manager.\
+            setting_hidden_categories.hidden_categories.clear()
 
     def get_id(self, label_name: str) -> int:
         if label_name in self._id_index:

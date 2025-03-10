@@ -20,6 +20,7 @@ class Settings:
             'default_import_path': '',
             'default_export_path': '',
             'hide_keypoints': False,
+            'hidden_categories': [],
             'add_missing_bboxes': False
         }
 
