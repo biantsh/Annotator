@@ -180,29 +180,52 @@ SettingsWindow SettingCheckBox::indicator {
 SettingsWindow SettingCheckBox::indicator:checked {
     border: 1px solid rgb(60, 120, 216);
 }
-SettingsWindow CategoryList {
+SettingsWindow CategoriesList {
     margin-bottom: 8px;
 }
-SettingsWindow CategoryList QScrollBar {
+SettingsWindow CategoriesList QScrollBar {
     background: transparent;
     width: 11px;
 }
-SettingsWindow CategoryList QScrollBar::handle {
+SettingsWindow CategoriesList QScrollBar::handle {
     background: rgb(83, 83, 83);
     border-radius: 3px;
     margin-left: 4px;
 }
-SettingsWindow CategoryList QScrollBar::handle::hover {
+SettingsWindow CategoriesList QScrollBar::handle::hover {
     background: rgb(99, 99, 99);
 }
-SettingsWindow CategoryList QScrollBar::handle::pressed {
+SettingsWindow CategoriesList QScrollBar::handle::pressed {
     background: rgb(115, 115, 115);
 }
-SettingsWindow CategoryList QScrollBar::add-line,
-SettingsWindow CategoryList QScrollBar::sub-line,
-SettingsWindow CategoryList QScrollBar::add-page,
-SettingsWindow CategoryList QScrollBar::sub-page {
+SettingsWindow CategoriesList QScrollBar::add-line,
+SettingsWindow CategoriesList QScrollBar::sub-line,
+SettingsWindow CategoriesList QScrollBar::add-page,
+SettingsWindow CategoriesList QScrollBar::sub-page {
     background: none;
+    height: 0px;
+}
+SettingsWindow CategoriesToggleButton {
+    max-width: 100px;
+    margin: 0px;
+}
+SettingsWindow CategoriesSearchBar {
+    background-color: rgb(30, 30, 30);
+    border: 1px solid rgb(53, 53, 53);
+    border-radius: 3px;
+    color: rgb(200, 200, 200);
+    font-weight: bold;
+    min-height: 25px;
+    padding-left: 4px;
+}
+SettingsWindow CategoriesSearchBar QPushButton {
+    background-color: rgb(30, 30, 30);
+    min-height: 25px;
+    padding: 0px 2px;
+}
+SettingsWindow CategoriesSearchBar QPushButton:hover {
+    background-color: rgb(53, 53, 53);
+    border-radius: 2px;
 }
 SettingsWindow CategoryItem {
     background-color: rgb(30, 30, 30);
@@ -214,7 +237,7 @@ SettingsWindow CategoryItem:hover {
 SettingsWindow CategoryItem QWidget {
     background-color: transparent;
 }
-SettingsWindow VisibilityLabel {
+SettingsWindow CategoryItem QLabel {
     color: rgb(155, 155, 155);
     font-size: 13px;
 }

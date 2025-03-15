@@ -1,8 +1,22 @@
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QPaintEvent, QMouseEvent, QPainter, QColor
-from PyQt6.QtWidgets import QStackedLayout, QWidget, QFrame, QDialog
+from PyQt6.QtGui import (
+    QMouseEvent,
+    QPaintEvent,
+    QCloseEvent,
+    QShowEvent,
+    QPainter,
+    QColor
+)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QStackedLayout,
+    QWidget,
+    QFrame,
+    QDialog,
+    QLineEdit
+)
 
 from app.enums.settings import SettingsLayout
 from app.utils import clip_value
@@ -44,11 +58,16 @@ class SettingsWindow(QDialog):
         self.dragging = False
         self.drag_offset = QPoint()
 
+    def _set_actions_enabled(self, enabled: bool) -> None:
+        canvas = self.parent.canvas
+        main_window = self.parent
+
+        for action in canvas.actions() + main_window.actions():
+            if action.text() not in ('Settings', 'Escape'):
+                action.setEnabled(enabled)
+
     def set_layout(self, layout: SettingsLayout) -> None:
         self.layout.setCurrentWidget(self.layouts[layout])
-
-        if layout == SettingsLayout.CATEGORIES:
-            self.layouts[layout].layout().redraw()
 
     def show(self) -> None:
         self.layout.setCurrentWidget(self.layouts[SettingsLayout.MAIN])
@@ -71,8 +90,12 @@ class SettingsWindow(QDialog):
             self.close()
 
         elif event.button() == Qt.MouseButton.LeftButton:
-            self.dragging = True
             self.drag_offset = global_position - self.popup.pos()
+            self.dragging = True
+
+            focused_widget = QApplication.focusWidget()
+            if isinstance(focused_widget, QLineEdit):
+                focused_widget.clearFocus()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if not self.dragging:
@@ -98,3 +121,9 @@ class SettingsWindow(QDialog):
 
         overlay_color = QColor(0, 0, 0, 150)
         painter.fillRect(self.rect(), overlay_color)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._set_actions_enabled(True)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self._set_actions_enabled(False)

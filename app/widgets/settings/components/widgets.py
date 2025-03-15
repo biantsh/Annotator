@@ -1,10 +1,12 @@
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QObject, QEvent
-from PyQt6.QtWidgets import QCheckBox, QPushButton
+from PyQt6.QtCore import QObject, QEvent, QPropertyAnimation, QEasingCurve
+from PyQt6.QtGui import QWheelEvent
+from PyQt6.QtWidgets import QCheckBox, QPushButton, QScrollArea
 
 from app.enums.settings import SettingsLayout
 from app.styles.style_sheets import SettingCheckBoxStyleSheet
+from app.utils import clip_value
 
 if TYPE_CHECKING:
     from app.widgets.settings.settings_window import SettingsWindow
@@ -48,9 +50,8 @@ class SettingCheckBox(QCheckBox):
 
 
 class SettingButton(QPushButton):
-    def __init__(self, parent: 'SettingsWindow', text: str) -> None:
+    def __init__(self, text: str) -> None:
         super().__init__(text)
-        self.parent = parent
 
 
 class ResetButton(QPushButton):
@@ -89,3 +90,29 @@ class FinishButton(QPushButton):
 
     def _on_click(self) -> None:
         self.parent.close()
+
+
+class ScrollableArea(QScrollArea):
+    def __init__(self) -> None:
+        super().__init__()
+
+        scroll_bar = self.verticalScrollBar()
+        self._animation = QPropertyAnimation(scroll_bar, b'value')
+        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        if self._animation.state() == QPropertyAnimation.State.Running:
+            self._animation.stop()
+
+        scroll_bar = self.verticalScrollBar()
+        minimum, maximum = scroll_bar.minimum(), scroll_bar.maximum()
+
+        delta = event.angleDelta().y()
+        delta = clip_value(delta, -120, 120)
+
+        target_value = scroll_bar.value() - delta
+        target_value = clip_value(target_value, minimum, maximum)
+
+        self._animation.setStartValue(scroll_bar.value())
+        self._animation.setEndValue(target_value)
+        self._animation.start()
