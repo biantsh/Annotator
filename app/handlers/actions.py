@@ -82,8 +82,6 @@ class ActionRename(Action):
                 anno.set_schema(get_target_schema(anno.ref_id))
                 self.parent.add_selected_annotation(anno)
 
-        self.parent.parent.annotation_list.redraw_widgets()
-
     def do(self) -> None:
         self._execute(lambda _: self.schema_to)
 
@@ -229,8 +227,6 @@ class ActionCreateKeypoints(Action):
             if visible and anno not in self.parent.annotations:
                 self.parent.annotations.append(anno.copy())
 
-        self.parent.parent.annotation_list.redraw_widgets()
-
     def do(self) -> None:
         self._execute(True)
 
@@ -329,9 +325,8 @@ class ActionHandler:
         stack_to.append(action)
 
         action.undo() if undo else action.do()
-        if isinstance(action, (ActionCreate, ActionDelete)):
-            self.parent.parent.annotation_list.redraw_widgets()
 
+        self.parent.parent.annotation_list.redraw_widgets()
         self.parent.unsaved_changes = True
         self.parent.update()
 

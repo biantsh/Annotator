@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass, asdict
 from typing import TYPE_CHECKING
 
+from app.enums.settings import Setting
 from app.exceptions.label_map import (
     InvalidJSONException,
     InvalidFormatException,
@@ -27,8 +28,10 @@ class LabelSchema:
 
 class LabelMapController:
     def __init__(self, parent: 'MainWindow') -> None:
-        self.labels = parent.settings.get('label_map')
         self.parent = parent
+
+        self.settings = parent.settings
+        self.labels = self.settings.get(Setting.LABEL_MAP)
 
         self._id_index, self._schema_index = {}, {}
         self._index_labels()
@@ -69,11 +72,11 @@ class LabelMapController:
         self.labels = label_map
         self._index_labels()
 
-        self.parent.settings.set('label_map', label_map)
-        self.parent.settings.set('hidden_categories', [])
+        self.settings.set(Setting.LABEL_MAP, label_map)
+        self.settings.set(Setting.HIDDEN_CATEGORIES, [])
 
         self.parent.settings_window.settings_manager.\
-            setting_hidden_categories.hidden_categories.clear()
+            setting_hidden_categories.categories.clear()
 
     def get_id(self, label_name: str) -> int:
         if label_name in self._id_index:

@@ -1,12 +1,6 @@
 import math
 from typing import Sequence, TYPE_CHECKING
 
-from app.controllers.label_map_controller import LabelMapController
-from app.enums.annotation import HoverType, SelectionType, VisibilityType
-from app.enums.canvas import AnnotatingState
-from app.objects import Annotation
-from app.utils import text_to_color, clip_value
-
 from PyQt6.QtCore import Qt, QPoint, QPointF, QRectF
 from PyQt6.QtGui import (
     QPen,
@@ -18,6 +12,12 @@ from PyQt6.QtGui import (
     QPainterPath
 )
 
+from app.controllers.label_map_controller import LabelMapController
+from app.enums.annotation import HoverType, SelectionType
+from app.enums.canvas import AnnotatingState
+from app.objects import Annotation
+from app.utils import text_to_color, clip_value
+
 if TYPE_CHECKING:
     from app.canvas import Canvas
 
@@ -28,9 +28,10 @@ __pixmap_transform__ = QPainter.RenderHint.SmoothPixmapTransform
 class CanvasPainter(QPainter):
     def __init__(self, parent: 'Canvas') -> None:
         super().__init__()
-
         self.canvas = parent
+
         self.anno_painter = AnnotationPainter(self)
+        self.visibility_handler = parent.visibility_handler
 
         self.begin(parent)
         self.setRenderHints(__antialiasing__ | __pixmap_transform__)
@@ -202,9 +203,9 @@ class CanvasPainter(QPainter):
             if current_anno not in annos_to_draw:
                 annos_to_draw.append(current_anno)
 
-        for annotation in annos_to_draw:
-            if annotation.visible or annotation.highlighted:
-                self.anno_painter.draw_annotation(annotation)
+        for anno in annos_to_draw:
+            if self.visibility_handler.drawable(anno):
+                self.anno_painter.draw_annotation(anno)
 
         state = self.canvas.annotating_state
         cursor_position = self.canvas.mouse_handler.cursor_position
@@ -245,7 +246,7 @@ class AnnotationPainter:
     }
 
     def __init__(self, parent: 'CanvasPainter') -> None:
-        self.settings = parent.canvas.parent.settings
+        self.visibility_handler = parent.canvas.visibility_handler
         self.parent = parent
 
     @property
@@ -274,9 +275,7 @@ class AnnotationPainter:
         elif anno.hovered and not drawing_keypoints:
             self.fill_annotation(anno)
 
-        if anno.has_keypoints \
-                and anno.visible == VisibilityType.VISIBLE \
-                and not self.settings.get('hide_keypoints'):
+        if self.visibility_handler.drawable_kpts(anno):
             self.draw_keypoint_edges(anno)
             self.draw_keypoints(anno)
 

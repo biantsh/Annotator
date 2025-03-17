@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QLabel
 )
 
+from app.enums.annotation import VisibilityType
 from app.enums.canvas import AnnotatingState
 from app.objects import Annotation, Keypoint
 from app.utils import pretty_text
@@ -30,7 +31,9 @@ __smooth_transform__ = Qt.TransformationMode.SmoothTransformation
 class AnnotationList(QWidget):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent)
+
         self.parent = parent
+        self.list_items = []
 
         main_layout = QVBoxLayout(self)
         self.anno_layout = QVBoxLayout()
@@ -45,19 +48,42 @@ class AnnotationList(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def redraw_widgets(self) -> None:
-        annos = self.parent.canvas.annotations.copy()
+        visibility_handler = self.parent.canvas.visibility_handler
         annotator = self.parent.canvas.keypoint_annotator
+        annos = self.parent.canvas.annotations.copy()
 
         if annotator.active and annotator.annotation not in annos:
             annos.append(annotator.annotation)
 
-        for index in range(self.anno_layout.count()):
-            self.anno_layout.itemAt(index).widget().deleteLater()
+        for list_item in self.list_items:
+            list_item.deleteLater()
 
-        for anno in sorted(annos, key=lambda anno: anno.label_name):
-            self.anno_layout.addWidget(ListItem(self.parent.canvas, anno))
+        self.list_items.clear()
+
+        for anno in self._sort(annos):
+            list_item = ListItem(self.parent.canvas, anno)
+
+            interactable = visibility_handler.interactable(anno)
+            list_item.set_hidden(not interactable)
+
+            self.anno_layout.addWidget(list_item)
+            self.list_items.append(list_item)
 
         self.control_panel.redraw()
+
+    def _sort(self, annotations: list[Annotation]) -> list[Annotation]:
+        visibility_handler = self.parent.canvas.visibility_handler
+        label_map = self.parent.label_map_controller
+
+        def _is_hidden(anno: Annotation) -> bool:
+            return not visibility_handler.interactable(anno)
+
+        def _get_id(anno: Annotation) -> int:
+            return label_map.get_id(anno.label_name) \
+                if label_map.contains(anno.label_name) else float('inf')
+
+        return sorted(annotations, key=lambda anno: (
+            _is_hidden(anno), _get_id(anno), anno.label_name))
 
     def update(self) -> None:
         for index in range(self.anno_layout.count()):
@@ -98,9 +124,16 @@ class ListItem(QWidget):
 
         self.update()
 
+    def set_hidden(self, hidden: bool) -> None:
+        self.checkbox.set_hidden(hidden)
+        self.setEnabled(not hidden)
+
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if event.type() in (event.Type.MouseButtonPress,
                             event.Type.MouseButtonDblClick):
+            if not self.isEnabled():
+                return True
+
             if self.canvas.keypoint_annotator.active:
                 self.canvas.keypoint_annotator.end()
                 self.checkbox.on_mouse_leave()
@@ -125,12 +158,13 @@ class ListItem(QWidget):
         anno = self.annotation
         selected_annos = self.canvas.selected_annos
         selected_kpts = self.canvas.selected_keypoints
+        hide_keypoints = self.canvas.keypoints_hidden
 
         self.arrow.show() if anno.kpt_names else self.arrow.hide()
         self.keypoint_list.update()
         self.checkbox.update()
 
-        if self.canvas.parent.settings.get('hide_keypoints'):
+        if hide_keypoints or anno.visible == VisibilityType.BOX_ONLY:
             self.arrow.setStyleSheet('color: rgb(100, 100, 100);')
             show_kpt_list = False
 

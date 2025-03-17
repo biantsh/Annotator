@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QWidget, QFileDialog
 
 from app.enums.annotation import VisibilityType
 from app.enums.canvas import AnnotatingState
+from app.enums.settings import Setting
 
 if TYPE_CHECKING:
     from annotator import MainWindow
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def open_dir(parent: 'MainWindow') -> None:
-    path = parent.settings.get('default_image_dir')
+    path = parent.settings.get(Setting.DEFAULT_IMAGE_DIR)
     title = 'Select Image Directory'
 
     if dir_path := QFileDialog.getExistingDirectory(parent, title, path):
@@ -30,7 +31,7 @@ def prev_image(parent: 'MainWindow') -> None:
 
 
 def open_labels(parent: 'MainWindow') -> None:
-    path = parent.settings.get('default_label_path')
+    path = parent.settings.get(Setting.DEFAULT_LABEL_PATH)
     title = 'Select Label Map'
     ext = 'JSON Files (*.json)'
 

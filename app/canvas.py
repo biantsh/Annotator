@@ -18,6 +18,7 @@ from app.actions import CanvasActions
 from app.controllers.label_map_controller import LabelMapController
 from app.enums.annotation import HoverType, SelectionType, VisibilityType
 from app.enums.canvas import AnnotatingState
+from app.enums.settings import Setting
 from app.handlers.actions import (
     ActionHandler,
     ActionCreate,
@@ -37,6 +38,7 @@ from app.handlers.mouse import MouseHandler
 from app.handlers.painter import CanvasPainter
 from app.handlers.image.brightness import BrightnessHandler
 from app.handlers.image.zoom import ZoomHandler
+from app.handlers.visibility import VisibilityHandler
 from app.widgets.combo_box import AnnotationComboBox, ImageComboBox
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
 from app.objects import Annotation, Keypoint
@@ -82,6 +84,8 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.action_handler = ActionHandler(self, self.image_name)
+        self.visibility_handler = VisibilityHandler(self)
+
         self.brightness_handler = BrightnessHandler(self)
         self.zoom_handler = ZoomHandler(self)
 
@@ -98,6 +102,14 @@ class Canvas(QWidget):
     @property
     def label_names(self) -> list[str]:
         return [label['name'] for label in self.label_map.labels]
+
+    @property
+    def keypoints_hidden(self) -> bool:
+        return self.parent.settings.get(Setting.HIDE_KEYPOINTS)
+
+    @property
+    def hidden_categories(self) -> set[str]:
+        return self.parent.settings.get(Setting.HIDDEN_CATEGORIES)
 
     def on_next(self) -> None:
         if self.keypoint_annotator.active:
@@ -317,22 +329,18 @@ class Canvas(QWidget):
             else self.annotations
 
         for anno in annotations[::-1]:
-            hovered_keypoint = anno.get_hovered_keypoint(margin, mouse_pos)
+            hovered_kpt = anno.get_hovered_keypoint(margin, mouse_pos)
             hovered_type = anno.get_hovered_type(margin, mouse_pos)
 
-            if hovered_keypoint \
-                    and anno.visible == VisibilityType.VISIBLE \
-                    and not self.parent.settings.get('hide_keypoints'):
-                if hovered_keypoint not in annotator.created_keypoints \
-                        and annotator.active:
-                    continue
-
-                self.hovered_keypoint = hovered_keypoint
-                hovered_keypoint.hovered = True
+            if hovered_kpt \
+                    and self.visibility_handler.hoverable_kpt(hovered_kpt):
+                self.hovered_keypoint = hovered_kpt
+                hovered_kpt.hovered = True
                 return
 
-            if hovered_type and anno.visible and \
-                    self.annotating_state == AnnotatingState.IDLE:
+            if hovered_type \
+                    and self.visibility_handler.hoverable(anno) \
+                    and self.annotating_state == AnnotatingState.IDLE:
                 self.hovered_anno = anno
                 anno.hovered = hovered_type
                 return
@@ -345,7 +353,8 @@ class Canvas(QWidget):
         self.add_selected_annotation(annotation)
 
     def add_selected_annotation(self, annotation: Annotation | None) -> None:
-        if not annotation or annotation in self.selected_annos:
+        interactable = self.visibility_handler.interactable(annotation)
+        if not interactable or annotation in self.selected_annos:
             return
 
         self.set_selected_keypoint(None)
@@ -374,7 +383,8 @@ class Canvas(QWidget):
         self.add_selected_keypoint(keypoint)
 
     def add_selected_keypoint(self, keypoint: Keypoint | None) -> None:
-        if not keypoint or keypoint in self.selected_keypoints:
+        interactable = self.visibility_handler.interactable_kpt(keypoint)
+        if not interactable or keypoint in self.selected_keypoints:
             return
 
         self.set_selected_annotation(None)
@@ -391,29 +401,23 @@ class Canvas(QWidget):
         keypoint.selected = False
 
     def select_next_annotation(self) -> None:
-        if not self.annotations:
+        list_items = self.parent.annotation_list.list_items
+        annos = [item.annotation for item in list_items if item.isEnabled()]
+
+        if not annos:
             return
 
-        selected_idx = -1  # Newest annotation
+        last_anno = (self.selected_annos or annos)[-1]
+        selected_idx = (annos.index(last_anno) + 1) % len(annos)
 
-        if len(self.selected_annos) > 1:
-            selected_idx = self.annotations.index(self.selected_annos[-1])
-        elif len(self.selected_annos) == 1:
-            selected_idx = self.annotations.index(self.selected_annos[0]) - 1
-
-        selected_idx %= len(self.annotations)
-
-        self.set_selected_annotation(self.annotations[selected_idx])
+        self.set_selected_annotation(annos[selected_idx])
         self.update()
 
     def select_all(self) -> None:
         if self.selected_keypoints:
-            visible_kpts = []
-
-            for keypoint in self.selected_keypoints:
-                for kpt in keypoint.parent.keypoints:
-                    if kpt.visible:
-                        visible_kpts.append(kpt)
+            visible_kpts = [
+                kpt for keypoint in self.selected_keypoints
+                for kpt in keypoint.parent.keypoints if kpt.visible]
 
             if all(kpt.selected for kpt in visible_kpts):
                 self.set_selected_keypoint(None)
@@ -423,11 +427,14 @@ class Canvas(QWidget):
                     self.add_selected_keypoint(keypoint)
 
         else:
-            if all(anno.selected for anno in self.annotations):
+            visible_annos = list(filter(
+                self.visibility_handler.interactable, self.annotations))
+
+            if all(anno.selected for anno in visible_annos):
                 self.set_selected_annotation(None)
 
             else:
-                for annotation in self.annotations.copy():
+                for annotation in visible_annos:
                     self.add_selected_annotation(annotation)
 
         self.update()
@@ -452,7 +459,10 @@ class Canvas(QWidget):
             cursor_position = self.mouse_handler.global_position
             x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
-            combo_box = AnnotationComboBox(self, self.label_names)
+            label_options = [label for label in self.label_names
+                             if label not in self.hidden_categories]
+
+            combo_box = AnnotationComboBox(self, label_options)
             combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
 
             label_name = combo_box.selected_value
@@ -466,7 +476,7 @@ class Canvas(QWidget):
         self.previous_label = label_name
 
     def create_keypoints(self, label_name: str = None) -> None:
-        if self.parent.settings.get('hide_keypoints'):
+        if self.keypoints_hidden:
             self.parent.keypoints_hidden_toast.show()
             return
 
@@ -501,10 +511,12 @@ class Canvas(QWidget):
             cursor_position = self.mouse_handler.global_position
             x_pos, y_pos = cursor_position.x(), cursor_position.y()
 
-            options = [option for option in self.label_names
-                       if self.label_map.get_label_schema(option).kpt_names]
+            label_options = [
+                label for label in self.label_names
+                if label not in self.hidden_categories
+                and self.label_map.get_label_schema(label).kpt_names]
 
-            combo_box = AnnotationComboBox(self, options)
+            combo_box = AnnotationComboBox(self, label_options)
             combo_box.exec(QPoint(x_pos - 35, y_pos - 20))
 
             label_name = combo_box.selected_value
@@ -524,7 +536,8 @@ class Canvas(QWidget):
         if not self.selected_annos:
             return
 
-        label_options = self.label_names
+        label_options = [label for label in self.label_names
+                         if label not in self.hidden_categories]
 
         for anno in self.selected_annos:
             if not anno.has_keypoints:
@@ -549,7 +562,8 @@ class Canvas(QWidget):
             self, self.selected_annos, label_schema))
 
     def copy_annotations(self) -> None:
-        to_copy = self.annotations[::-1]
+        to_copy = [anno for anno in self.annotations[::-1]
+                   if self.visibility_handler.interactable(anno)]
 
         if self.selected_annos:
             to_copy = filter(lambda anno: anno.selected, to_copy)
@@ -576,11 +590,11 @@ class Canvas(QWidget):
         should_hide = all(anno.visible == VisibilityType.VISIBLE
                           for anno in self.selected_annos)
 
-        target_visibility = target_visibility \
-            if should_hide else VisibilityType.VISIBLE
+        target, default = (target_visibility, VisibilityType.HIDDEN) \
+            if should_hide else [VisibilityType.VISIBLE] * 2
 
         for anno in self.selected_annos:
-            anno.visible = target_visibility
+            anno.visible = target if anno.has_bbox else default
 
         self.update()
 
@@ -624,7 +638,8 @@ class Canvas(QWidget):
         kpts_x, kpts_y = None, None
         edge_right, edge_bot = self.pixmap.width(), self.pixmap.height()
 
-        if anno.has_keypoints and anno.selected != SelectionType.BOX_ONLY:
+        if anno.has_keypoints \
+                and self.visibility_handler.has_movable_keypoints(anno):
             kpts_x, kpts_y = zip(*[keypoint.position for keypoint in
                                    anno.keypoints if keypoint.visible])
 
@@ -751,6 +766,8 @@ class Canvas(QWidget):
 
         annotation = self.hovered_anno
         selection_type = annotation.selected
+
+        has_keypoints = self.visibility_handler.has_keypoints(annotation)
         ctrl_pressed = Qt.KeyboardModifier.ControlModifier & event.modifiers()
 
         if not ctrl_pressed:
@@ -761,7 +778,7 @@ class Canvas(QWidget):
                 annotation.selected = SelectionType.NEWLY_SELECTED
 
             case False, SelectionType.SELECTED | SelectionType.NEWLY_SELECTED:
-                if annotation.has_bbox and annotation.has_keypoints:
+                if annotation.has_bbox and has_keypoints:
                     annotation.selected = SelectionType.BOX_ONLY
 
             case False, SelectionType.BOX_ONLY:
@@ -772,7 +789,7 @@ class Canvas(QWidget):
                 annotation.selected = SelectionType.NEWLY_SELECTED
 
             case True, SelectionType.SELECTED | SelectionType.NEWLY_SELECTED:
-                if annotation.has_bbox and annotation.has_keypoints:
+                if annotation.has_bbox and has_keypoints:
                     annotation.selected = SelectionType.BOX_ONLY
                 else:
                     self.unselect_annotation(annotation)
@@ -892,12 +909,15 @@ class Canvas(QWidget):
         if self.hovered_anno.selected == SelectionType.UNSELECTED:
             if Qt.KeyboardModifier.ControlModifier & event.modifiers():
                 self.add_selected_annotation(self.hovered_anno)
+
             else:
                 self.set_selected_annotation(self.hovered_anno)
 
         elif self.hovered_anno.selected == SelectionType.NEWLY_SELECTED:
-            if self.hovered_anno.has_keypoints:
+            if self.visibility_handler.has_keypoints(self.hovered_anno) \
+                    and self.hovered_anno.has_bbox:
                 self.hovered_anno.selected = SelectionType.BOX_ONLY
+
             elif Qt.KeyboardModifier.ControlModifier & event.modifiers():
                 self.unselect_annotation(self.hovered_anno)
 

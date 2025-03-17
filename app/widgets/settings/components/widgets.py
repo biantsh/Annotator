@@ -4,7 +4,7 @@ from PyQt6.QtCore import QObject, QEvent, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QWheelEvent
 from PyQt6.QtWidgets import QCheckBox, QPushButton, QScrollArea
 
-from app.enums.settings import SettingsLayout
+from app.enums.settings import Setting, SettingsLayout
 from app.styles.style_sheets import SettingCheckBoxStyleSheet
 from app.utils import clip_value
 
@@ -15,18 +15,20 @@ if TYPE_CHECKING:
 class SettingCheckBox(QCheckBox):
     def __init__(self,
                  parent: 'SettingsWindow',
-                 setting_id: str,
+                 setting_id: Setting,
                  text: str,
                  default: bool,
                  ) -> None:
         super().__init__(text)
 
         self.parent = parent
+        self.settings = parent.parent.settings
+
         self.setting_id = setting_id
         self.default = default
 
         self.installEventFilter(self)
-        self.setChecked(parent.parent.settings.get(setting_id))
+        self.setChecked(self.settings.get(setting_id))
         self.stateChanged.connect(lambda: self.set_checked(self.isChecked()))
 
         self._refresh()
@@ -36,7 +38,7 @@ class SettingCheckBox(QCheckBox):
         self.setStyleSheet(str(SettingCheckBoxStyleSheet(hovered, checked)))
 
     def set_checked(self, checked: bool) -> None:
-        self.parent.parent.settings.set(self.setting_id, checked)
+        self.settings.set(self.setting_id, checked)
         self.setChecked(checked)
 
         self.parent.parent.canvas.update()

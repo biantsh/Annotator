@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QHBoxLayout, QWidget, QLabel
 
-from app.enums.settings import SettingsLayout
+from app.enums.settings import Setting, SettingsLayout
 from app.widgets.settings.components.widgets import (
     SettingCheckBox,
     SettingButton
@@ -37,7 +37,10 @@ class SettingHideKeypoints(QWidget):
         super().__init__()
 
         self.checkbox = SettingCheckBox(
-            parent, 'hide_keypoints', 'Hide keypoints', False)
+            parent, Setting.HIDE_KEYPOINTS, 'Hide keypoints', False)
+
+        self.checkbox.clicked.connect(
+            lambda: parent.parent.annotation_list.redraw_widgets())
 
         label = QLabel('Hide keypoints across all annotations')
         label.setTextInteractionFlags(__text_interaction__)
@@ -61,7 +64,7 @@ class SettingSetHiddenCategories(QWidget):
         self.parent = parent
 
         self.settings = parent.parent.settings
-        self.hidden_categories = set(self.settings.get('hidden_categories'))
+        self.categories = set(self.settings.get(Setting.HIDDEN_CATEGORIES))
 
         self.button = SettingButton('Hide Categories...')
         self.button.clicked.connect(lambda: parent.set_layout(
@@ -80,8 +83,8 @@ class SettingSetHiddenCategories(QWidget):
         layout.setContentsMargins(11, 0, 11, 11)
 
     def reset(self) -> None:
-        self.hidden_categories.clear()
-        self.settings.set('hidden_categories', [])
+        self.categories.clear()
+        self.settings.set(Setting.HIDDEN_CATEGORIES, [])
 
         canvas = self.parent.parent.canvas
         canvas.parent.annotation_list.redraw_widgets()
@@ -93,7 +96,7 @@ class SettingAddMissingBboxes(QWidget):
         super().__init__()
 
         self.checkbox = SettingCheckBox(
-            parent, 'add_missing_bboxes', 'Add missing boxes', False)
+            parent, Setting.ADD_MISSING_BBOXES, 'Add missing boxes', False)
 
         label = QLabel('Generate missing boxes by outlining the keypoints')
         label.setTextInteractionFlags(__text_interaction__)

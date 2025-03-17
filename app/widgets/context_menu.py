@@ -77,6 +77,8 @@ class ContextMenu(QMenu, QWidget):
 
     def on_mouse_click(self, source: QObject, event: QEvent) -> None:
         source_widget = source.layout().itemAt(0).widget()
+        if not source_widget.isEnabled():
+            return
 
         if isinstance(source_widget, ContextButton):
             clicked_widget = source.childAt(event.position().toPoint())
@@ -223,9 +225,17 @@ class CanvasContextMenu(ContextMenu):
         self.addAction(widget_action)
         self.addSeparator()
 
-        for annotation in self.parent.annotations[::-1]:
-            check_box = ContextCheckBox(self.parent, annotation)
+        annotation_list = self.parent.parent.annotation_list
+        visibility_handler = self.parent.parent.canvas.visibility_handler
+
+        for item in annotation_list.list_items:
+            anno = item.annotation
+
+            check_box = ContextCheckBox(self.parent, anno)
             self._add_item(check_box, None)
+
+            interactable = visibility_handler.interactable(anno)
+            check_box.set_hidden(not interactable)
 
     def on_key_press(self, event: QKeyEvent) -> None:
         ctrl_pressed = event.modifiers() & Qt.KeyboardModifier.ControlModifier

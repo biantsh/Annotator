@@ -2,7 +2,7 @@ from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication, QMouseEvent
-from PyQt6.QtWidgets import QLabel, QCheckBox
+from PyQt6.QtWidgets import QGraphicsOpacityEffect, QLabel, QCheckBox
 
 from app.enums.annotation import VisibilityType
 from app.objects import Annotation
@@ -66,6 +66,13 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
 
         self.update()
 
+    def set_hidden(self, hidden: bool) -> None:
+        fade_effect = QGraphicsOpacityEffect()
+        fade_effect.setOpacity(0.6)
+
+        self.setGraphicsEffect(fade_effect if hidden else None)
+        self.setEnabled(not hidden)
+
     def on_mouse_enter(self) -> None:
         self.annotation.highlighted = True
         self.parent.update()
@@ -88,8 +95,10 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
                         & QGuiApplication.keyboardModifiers()
 
         if self.annotation.visible == VisibilityType.VISIBLE:
-            self.annotation.visible = VisibilityType.BOX_ONLY \
-                if shift_pressed else VisibilityType.HIDDEN
+            self.annotation.visible = VisibilityType.HIDDEN
+
+            if shift_pressed and self.annotation.has_bbox:
+                self.annotation.visible = VisibilityType.BOX_ONLY
 
         else:
             self.annotation.visible = VisibilityType.VISIBLE

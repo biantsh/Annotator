@@ -16,6 +16,7 @@ from app.exceptions.io import (
     InvalidLabelException,
     InvalidSchemaException
 )
+from app.enums.settings import Setting
 from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 
 class AnnotationController:
     def __init__(self, parent: 'MainWindow') -> None:
+        self.settings = parent.settings
         self.parent = parent
 
     @property
@@ -229,7 +231,7 @@ class AnnotationController:
         return True
 
     def export_annotations(self, output_path: str) -> bool:
-        add_missing_bboxes = self.parent.settings.get('add_missing_bboxes')
+        add_missing_bboxes = self.settings.get(Setting.ADD_MISSING_BBOXES)
         image_paths = self.parent.image_controller.image_paths
 
         annotator_dir = os.path.join(self.image_dir, '.annotator')

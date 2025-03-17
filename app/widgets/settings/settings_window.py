@@ -127,3 +127,7 @@ class SettingsWindow(QDialog):
 
     def showEvent(self, event: QShowEvent) -> None:
         self._set_actions_enabled(False)
+
+        self.parent.canvas.set_selected_annotation(None)
+        self.parent.canvas.set_selected_keypoint(None)
+        self.parent.annotation_list.update()

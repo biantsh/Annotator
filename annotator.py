@@ -30,6 +30,7 @@ from app.controllers.button_controller import ButtonController
 from app.controllers.image_controller import ImageController
 from app.controllers.label_map_controller import LabelMapController
 from app.controllers.logging_controller import LoggingController
+from app.enums.settings import Setting
 from app.exceptions.io import IOException, InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
@@ -120,12 +121,12 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(f'{__appname__} {__version__}')
 
         self.button_controller.set_enabled_buttons()
-        self.settings.set('default_image_dir', dir_path)
+        self.settings.set(Setting.DEFAULT_IMAGE_DIR, dir_path)
 
     def open_label_map(self, label_map_path: str) -> None:
         try:
             self.label_map_controller.load_labels(label_map_path)
-            self.settings.set('default_label_path', label_map_path)
+            self.settings.set(Setting.DEFAULT_LABEL_PATH, label_map_path)
         except LabelMapException as error:
             InformationBox(self, 'Invalid Label Map', error.message).exec()
             return
@@ -150,14 +151,12 @@ class MainWindow(QMainWindow):
             if not ConfirmImportBox(self).exec():
                 return
 
-        import_path_setting = 'default_import_path'
-        path = self.settings.get(import_path_setting)
-
+        path = self.settings.get(Setting.DEFAULT_IMPORT_PATH)
         title = 'Select Annotations File'
         ext = 'JSON Files (*.json)'
 
         if file_path := QFileDialog.getOpenFileName(self, title, path, ext)[0]:
-            self.settings.set(import_path_setting, file_path)
+            self.settings.set(Setting.DEFAULT_IMPORT_PATH, file_path)
 
             try:
                 self.import_annotations(file_path)
@@ -166,14 +165,12 @@ class MainWindow(QMainWindow):
                 return
 
     def prompt_export(self) -> str | None:
-        export_path_setting = 'default_export_path'
-
-        path = self.settings.get(export_path_setting)
+        path = self.settings.get(Setting.DEFAULT_EXPORT_PATH)
         title = 'Select Output File'
         ext = 'JSON Files (*.json)'
 
         if file_path := QFileDialog.getSaveFileName(self, title, path, ext)[0]:
-            self.settings.set(export_path_setting, file_path)
+            self.settings.set(Setting.DEFAULT_EXPORT_PATH, file_path)
 
             try:
                 self.export_annotations(file_path)

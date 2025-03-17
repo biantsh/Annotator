@@ -2,7 +2,7 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QShowEvent, QResizeEvent, QMouseEvent, QPixmap, QIcon
 from PyQt6.QtWidgets import (
     QSizePolicy,
@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QLabel
 )
 
+from app.enums.settings import Setting
 from app.styles.style_sheets import CategoryCheckBoxStyleSheet
 from app.utils import pretty_text, text_to_color
 from app.widgets.settings.components.widgets import (
@@ -66,13 +67,13 @@ class CategoriesList(ScrollableArea):
     @property
     def hidden_categories(self) -> set[str]:
         return self.parent.parent.settings_manager \
-            .setting_hidden_categories.hidden_categories
+            .setting_hidden_categories.categories
 
     def save_categories(self) -> None:
         main_window = self.parent.parent.parent
         hidden_cats = self.hidden_categories
 
-        main_window.settings.set('hidden_categories', list(hidden_cats))
+        main_window.settings.set(Setting.HIDDEN_CATEGORIES, list(hidden_cats))
         main_window.canvas.parent.annotation_list.redraw_widgets()
         main_window.canvas.update()
 
@@ -90,14 +91,16 @@ class CategoriesList(ScrollableArea):
         settings_window = self.parent.parent
 
         for index in reversed(range(self.items_layout.count())):
-            self.items_layout.itemAt(index).widget().setParent(None)
+            self.items_layout.itemAt(index).widget().deleteLater()
 
         for label in settings_window.parent.canvas.label_names:
             self.items_layout.addWidget(CategoryItem(self, label))
 
         self.verticalScrollBar().setValue(0)
         self.toolbar.search_bar.setText('')
-        self.toolbar.toggle_button.update()
+
+        # Update after `deleteLater` calls are processed
+        QTimer.singleShot(0, self.toolbar.toggle_button.update)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.toolbar.setFixedWidth(self.viewport().width())

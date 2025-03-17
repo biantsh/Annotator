@@ -200,12 +200,13 @@ class Annotation(Bbox):
 
     def copy(self) -> 'Annotation':
         copied = Annotation(copy.copy(self.label_schema))
-        copied.has_bbox = self.has_bbox
-        copied.position = self.position.copy()
-        copied.implicit_bbox = self.implicit_bbox.copy()
         copied.ref_id = self.ref_id
-        copied.selected = self.selected
+
+        copied.position = self.position.copy()
         copied.keypoints = copy.deepcopy(self.keypoints)
+
+        copied.has_bbox = self.has_bbox
+        copied.implicit_bbox = self.implicit_bbox.copy()
 
         for kpt in copied.keypoints:
             kpt.parent = copied

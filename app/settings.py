@@ -5,6 +5,7 @@ from typing import Any
 from platformdirs import user_config_dir
 
 from app import __appname__
+from app.enums.settings import Setting
 
 
 class Settings:
@@ -14,14 +15,14 @@ class Settings:
 
         self._settings_path = os.path.join(app_dir, 'settings.json')
         self._settings = {
-            'label_map': [],
-            'default_image_dir': '',
-            'default_label_path': '',
-            'default_import_path': '',
-            'default_export_path': '',
-            'hide_keypoints': False,
-            'hidden_categories': [],
-            'add_missing_bboxes': False
+            Setting.LABEL_MAP: [],
+            Setting.DEFAULT_IMAGE_DIR: '',
+            Setting.DEFAULT_LABEL_PATH: '',
+            Setting.DEFAULT_IMPORT_PATH: '',
+            Setting.DEFAULT_EXPORT_PATH: '',
+            Setting.HIDE_KEYPOINTS: False,
+            Setting.HIDDEN_CATEGORIES: [],
+            Setting.ADD_MISSING_BBOXES: False
         }
 
         if os.path.exists(self._settings_path):
@@ -32,9 +33,9 @@ class Settings:
         with open(self._settings_path, 'w') as json_file:
             json.dump(self._settings, json_file, indent=2)
 
-    def get(self, setting: str) -> str:
-        return self._settings[setting]
+    def get(self, setting_id: Setting) -> str:
+        return self._settings[setting_id]
 
-    def set(self, setting: str, value: Any) -> None:
-        self._settings[setting] = value
+    def set(self, setting_id: Setting, value: Any) -> None:
+        self._settings[setting_id] = value
         self._save()
