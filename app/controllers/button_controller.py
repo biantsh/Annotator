@@ -11,7 +11,9 @@ class ButtonController:
         'import',
         'export',
         'bbox',
-        'keypoints'
+        'keypoints',
+        'search_image',
+        'hide_sidebar'
     }
 
     def __init__(self, parent: 'MainWindow') -> None:

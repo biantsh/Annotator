@@ -41,6 +41,7 @@ from app.handlers.image.zoom import ZoomHandler
 from app.handlers.visibility import VisibilityHandler
 from app.widgets.combo_box import AnnotationComboBox, ImageComboBox
 from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
+from app.widgets.canvas.invalid_image import InvalidImageLabel
 from app.objects import Annotation, Keypoint
 from app.utils import clip_value
 
@@ -89,6 +90,8 @@ class Canvas(QWidget):
         self.brightness_handler = BrightnessHandler(self)
         self.zoom_handler = ZoomHandler(self)
 
+        self.invalid_image_label = InvalidImageLabel(self)
+
         self.pos_start_anno = None
         self.pos_start_kpt = None
 
@@ -133,6 +136,8 @@ class Canvas(QWidget):
 
     def reset(self) -> None:
         self.annotations = []
+        self.pixmap = QPixmap()
+
         self.zoom_handler.reset()
         self.brightness_handler.reset()
 
@@ -141,12 +146,18 @@ class Canvas(QWidget):
         self.save_progress()
         self.reset()
 
-        image = QImageReader(image_path).read()
-        self.pixmap = QPixmap.fromImage(image)
-        self.brightness_handler.set_pixmap(self.pixmap)
-
         self.image_name = os.path.basename(image_path)
         self.action_handler.image_name = self.image_name
+
+        image = QImageReader(image_path).read()
+        self.invalid_image_label.hide()
+
+        if image.isNull():
+            self.invalid_image_label.show()
+            return
+
+        self.pixmap = QPixmap.fromImage(image)
+        self.brightness_handler.set_pixmap(self.pixmap)
 
         self.unsaved_changes = True
         self.update()
@@ -1025,7 +1036,9 @@ class Canvas(QWidget):
         self.keyboard_handler.keyReleaseEvent(event)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
+        self.invalid_image_label.resize(self.size())
         self.zoom_handler.clip_pan_values()
+
         super().resizeEvent(event)
 
     def paintEvent(self, _: QPaintEvent) -> None:

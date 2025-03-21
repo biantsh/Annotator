@@ -64,6 +64,15 @@ def create_keypoints(parent: 'MainWindow') -> None:
         parent.canvas.set_annotating_state(AnnotatingState.DRAWING_KEYPOINTS)
 
 
+def search_image(parent: 'MainWindow') -> None:
+    parent.canvas.on_search_image()
+
+
+def hide_sidebar(parent: 'MainWindow') -> None:
+    annotation_list = parent.annotation_list
+    annotation_list.setVisible(not annotation_list.isVisible())
+
+
 def full_screen(parent: 'MainWindow') -> None:
     window_state = parent.windowState()
 
@@ -156,15 +165,6 @@ def redo_action(parent: 'Canvas') -> None:
     parent.action_handler.redo()
 
 
-def search_image(parent: 'Canvas') -> None:
-    parent.on_search_image()
-
-
-def toggle_sidebar(parent: 'Canvas') -> None:
-    annotation_list = parent.parent.annotation_list
-    annotation_list.setVisible(not annotation_list.isVisible())
-
-
 __toolbar_actions__ = (
     ('open_dir', open_dir, 'Ctrl+O', 'Open', 'open.png', True),
     ('next_image', next_image, 'D', 'Next', 'next.png', False),
@@ -174,6 +174,8 @@ __toolbar_actions__ = (
     ('export', export_annos, 'Ctrl+Return', 'Export', 'export.png', False),
     ('bbox', create_bbox, 'W', 'Box', 'bbox.png', False),
     ('keypoints', create_keypoints, 'R', 'Points', 'keypoints.png', False),
+    ('search_image', search_image, 'Ctrl+F', 'Search Image', None, False),
+    ('hide_sidebar', hide_sidebar, 'Shift+Tab', 'Hide Sidebar', None, False),
     ('full_screen', full_screen, 'F11', 'Full Screen', None, True),
     ('settings', open_settings, 'F12', 'Settings', 'settings.png', True),
     ('escape', escape, 'Esc', 'Escape', None, True)
@@ -192,9 +194,7 @@ __canvas_actions__ = (
     ('paste_annos', paste_annotations, 'Ctrl+Shift+V'),
     ('paste_annos_replace', paste_annotations_replace, 'Ctrl+V'),
     ('undo', undo_action, 'Ctrl+Z'),
-    ('redo', redo_action, 'Ctrl+Y'),
-    ('search_image', search_image, 'Ctrl+F'),
-    ('toggle_sidebar', toggle_sidebar, 'Shift+Tab')
+    ('redo', redo_action, 'Ctrl+Y')
 )
 
 

@@ -2,6 +2,9 @@ QLabel, QPushButton, QCheckBox, QLineEdit {
     font-family: 'DejaVu Sans';
     font-size: 9pt;
 }
+QLabel {
+    selection-background-color: rgb(66, 133, 244);
+}
 QToolBar {
     border-right: 1px solid rgb(53, 53, 53);
     margin-left: 0px;
@@ -61,6 +64,10 @@ KeypointLabel {
     min-height: 35px;
     margin: 5px;
 }
+Canvas InvalidImageLabel QLabel {
+    color: rgb(153, 153, 153);
+    font-size: 16px;
+}
 CanvasContextMenu {
     min-width: 150px;
 }
@@ -95,7 +102,6 @@ SettingsWindow QFrame {
     border-radius: 4px;
 }
 SettingsWindow QLabel {
-    selection-background-color: rgb(60, 120, 216);
     color: rgb(153, 153, 153);
 }
 SettingsWindow QPushButton {
