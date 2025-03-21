@@ -37,12 +37,16 @@ class CategoriesMenu(QVBoxLayout):
 
         self.parent = parent
         self.category_list = CategoriesList(self)
+        self.hidden_categories_label = HiddenCategoriesLabel(self)
+
+        footer_layout = QHBoxLayout()
+        footer_layout.addWidget(self.hidden_categories_label)
+        footer_layout.addLayout(FooterLayout(parent, submenu=True))
 
         self.addLayout(TitleLayout(parent, 'Hidden categories'))
         self.addSpacing(10)
-
         self.addWidget(self.category_list)
-        self.addLayout(FooterLayout(parent, submenu=True))
+        self.addLayout(footer_layout)
 
 
 class CategoriesList(ScrollableArea):
@@ -96,6 +100,7 @@ class CategoriesList(ScrollableArea):
         for label in settings_window.parent.canvas.label_names:
             self.items_layout.addWidget(CategoryItem(self, label))
 
+        self.parent.hidden_categories_label.update()
         self.verticalScrollBar().setValue(0)
         self.toolbar.search_bar.setText('')
 
@@ -144,6 +149,7 @@ class CategoriesToggleButton(SettingButton):
         for item in category_list.findChildren(CategoryItem):
             item.checkbox.setChecked(checked)
 
+        self.parent.parent.hidden_categories_label.update()
         self.parent.toolbar.search_bar.clear()
         self.parent.save_categories()
 
@@ -231,6 +237,7 @@ class CategoryItem(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self.checkbox.toggle()
 
+            self.parent.parent.hidden_categories_label.update()
             self.parent.toolbar.toggle_button.update()
             self.parent.save_categories()
 
@@ -245,3 +252,29 @@ class CategoryCheckBox(QCheckBox):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.parent.mouseReleaseEvent(event)
+
+
+class HiddenCategoriesLabel(QLabel):
+    def __init__(self, parent: CategoriesMenu) -> None:
+        super().__init__()
+        self.parent = parent
+
+    def update(self) -> None:
+        hidden_categories = self.parent.category_list.hidden_categories
+        label_names = self.parent.parent.parent.canvas.label_names
+
+        label_text = None
+
+        if hidden_categories == set(label_names):
+            label_text = 'All categories hidden'
+
+        elif len(hidden_categories) == 1:
+            hidden_category, *_ = hidden_categories
+            label_text = f'\'{pretty_text(hidden_category)}\' hidden'
+
+        elif len(hidden_categories) > 1:
+            num_hidden_categories = len(hidden_categories)
+            label_text = f'{num_hidden_categories} categories hidden'
+
+        self.setText(label_text)
+        self.setVisible(bool(hidden_categories))
