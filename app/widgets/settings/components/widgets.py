@@ -1,8 +1,14 @@
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QObject, QEvent, QPropertyAnimation, QEasingCurve
+from PyQt6.QtCore import (
+    QObject,
+    QEvent,
+    QRect,
+    QPropertyAnimation,
+    QEasingCurve
+)
 from PyQt6.QtGui import QWheelEvent
-from PyQt6.QtWidgets import QCheckBox, QPushButton, QScrollArea
+from PyQt6.QtWidgets import QWidget, QCheckBox, QPushButton, QScrollArea
 
 from app.enums.settings import Setting, SettingsLayout
 from app.styles.style_sheets import SettingCheckBoxStyleSheet
@@ -102,10 +108,31 @@ class ScrollableArea(QScrollArea):
         self._animation = QPropertyAnimation(scroll_bar, b'value')
         self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-    def wheelEvent(self, event: QWheelEvent) -> None:
-        if self._animation.state() == QPropertyAnimation.State.Running:
-            self._animation.stop()
+    def is_in_view(self, widget: QWidget) -> bool:
+        viewport = self.viewport()
 
+        top_left = widget.mapTo(viewport, widget.rect().topLeft())
+        bottom_right = widget.mapTo(viewport, widget.rect().bottomRight())
+
+        return viewport.rect().intersects(QRect(top_left, bottom_right))
+
+    def can_scroll_to_widget(self, widget: QWidget) -> bool:
+        target_point = widget.mapTo(self.widget(), widget.rect().topLeft())
+        return target_point.y() <= self.verticalScrollBar().maximum()
+
+    def scroll_to_widget(self, widget: QWidget) -> None:
+        target_point = widget.mapTo(self.widget(), widget.rect().topLeft())
+        self.scroll_to_value(target_point.y())
+
+    def scroll_to_value(self, value: int) -> None:
+        if self._animation.state() == QPropertyAnimation.State.Running:
+            self._animation.setCurrentTime(self._animation.duration())
+
+        self._animation.setStartValue(self.verticalScrollBar().value())
+        self._animation.setEndValue(value)
+        self._animation.start()
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
         scroll_bar = self.verticalScrollBar()
         minimum, maximum = scroll_bar.minimum(), scroll_bar.maximum()
 
@@ -115,6 +142,4 @@ class ScrollableArea(QScrollArea):
         target_value = scroll_bar.value() - delta
         target_value = clip_value(target_value, minimum, maximum)
 
-        self._animation.setStartValue(scroll_bar.value())
-        self._animation.setEndValue(target_value)
-        self._animation.start()
+        self.scroll_to_value(target_value)

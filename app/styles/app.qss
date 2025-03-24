@@ -211,11 +211,12 @@ SettingsWindow CategoriesList QScrollBar::sub-page {
     background: none;
     height: 0px;
 }
-SettingsWindow HiddenCategoriesLabel {
+SettingsWindow HiddenCategoriesLabel QLabel {
     color: rgb(200, 200, 200);
-    font-size: 14px;
-    margin-left: 2px;
-    margin-bottom: 2px;
+    font-size: 13px;
+}
+SettingsWindow HiddenCategoriesLabel ClickableLabel {
+    color: rgb(60, 120, 216);
 }
 SettingsWindow CategoriesToggleButton {
     max-width: 100px;

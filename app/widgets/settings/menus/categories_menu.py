@@ -22,6 +22,7 @@ from app.widgets.settings.components.widgets import (
     SettingButton,
     ScrollableArea
 )
+from app.widgets.labels import InteractiveLabel
 from app.widgets.settings.components.layouts import TitleLayout, FooterLayout
 
 if TYPE_CHECKING:
@@ -254,27 +255,56 @@ class CategoryCheckBox(QCheckBox):
         self.parent.mouseReleaseEvent(event)
 
 
-class HiddenCategoriesLabel(QLabel):
+class HiddenCategoriesLabel(InteractiveLabel):
     def __init__(self, parent: CategoriesMenu) -> None:
         super().__init__()
+
         self.parent = parent
+        self.setContentsMargins(6, 0, 0, 0)
+
+    def _view_next_hidden(self) -> None:
+        category_list = self.parent.category_list
+        scroll_bar = category_list.verticalScrollBar()
+
+        widgets = category_list.findChildren(CategoryItem)
+        hidden_cats = category_list.hidden_categories
+
+        start_index = next((
+            index + 1 for index in range(len(widgets))
+            if category_list.is_in_view(widgets[index])))
+
+        # Rotate widgets to start from top-most visible widget
+        widgets = widgets[start_index:] + widgets[:start_index]
+        widgets = filter(lambda w: w.category_name in hidden_cats, widgets)
+
+        for widget in widgets:
+            if category_list.can_scroll_to_widget(widget):
+                category_list.scroll_to_widget(widget)
+                break
+
+            elif scroll_bar.value() < scroll_bar.maximum():
+                category_list.scroll_to_value(scroll_bar.maximum())
+                break
 
     def update(self) -> None:
-        hidden_categories = self.parent.category_list.hidden_categories
+        hidden_cats = self.parent.category_list.hidden_categories
         label_names = self.parent.parent.parent.canvas.label_names
 
-        label_text = None
+        self.setVisible(bool(hidden_cats))
+        self.clear()
 
-        if hidden_categories == set(label_names):
-            label_text = 'All categories hidden'
+        if hidden_cats == set(label_names):
+            self.add_text('All categories hidden')
+            return
 
-        elif len(hidden_categories) == 1:
-            hidden_category, *_ = hidden_categories
-            label_text = f'\'{pretty_text(hidden_category)}\' hidden'
+        if len(hidden_cats) == 1:
+            hypertext = pretty_text(next(iter(hidden_cats)))
 
-        elif len(hidden_categories) > 1:
-            num_hidden_categories = len(hidden_categories)
-            label_text = f'{num_hidden_categories} categories hidden'
+        else:
+            hypertext = f'{len(hidden_cats)} categories'
 
-        self.setText(label_text)
-        self.setVisible(bool(hidden_categories))
+        self.add_hypertext(hypertext, self._view_next_hidden)
+        self.add_text('hidden')
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        event.accept()

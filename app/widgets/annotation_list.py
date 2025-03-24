@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, QObject, QEvent, QPoint, QTimer
 from PyQt6.QtGui import QMouseEvent, QPixmap
 from PyQt6.QtWidgets import (
+    QGraphicsOpacityEffect,
     QApplication,
     QHBoxLayout,
     QVBoxLayout,
@@ -125,7 +126,10 @@ class ListItem(QWidget):
         self.update()
 
     def set_hidden(self, hidden: bool) -> None:
-        self.checkbox.set_hidden(hidden)
+        fade_effect = QGraphicsOpacityEffect()
+        fade_effect.setOpacity(0.6)
+
+        self.setGraphicsEffect(fade_effect if hidden else None)
         self.setEnabled(not hidden)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
