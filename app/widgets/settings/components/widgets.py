@@ -126,7 +126,7 @@ class ScrollableArea(QScrollArea):
 
     def scroll_to_value(self, value: int) -> None:
         if self._animation.state() == QPropertyAnimation.State.Running:
-            self._animation.setCurrentTime(self._animation.duration())
+            self._animation.stop()
 
         self._animation.setStartValue(self.verticalScrollBar().value())
         self._animation.setEndValue(value)
