@@ -1042,6 +1042,9 @@ class Canvas(QWidget):
         super().resizeEvent(event)
 
     def paintEvent(self, _: QPaintEvent) -> None:
+        if self.pixmap.isNull():
+            return
+
         painter = CanvasPainter(self)
         painter.paint_scene()
         painter.end()
