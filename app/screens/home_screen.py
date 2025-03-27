@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 class HomeScreen(QWidget):
     def __init__(self, path_default: str, path_alt: str) -> None:
         super().__init__()
-        self.svg_size = 1350, 760
+        self.svg_size = 1350, 675
 
         self.renderer_default = QSvgRenderer(path_default)
         self.renderer_alt = QSvgRenderer(path_alt)
