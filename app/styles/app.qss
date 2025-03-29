@@ -37,6 +37,10 @@ AnnotationList {
     border-left: 1px solid rgb(53, 53, 53);
     max-width: 150px;
 }
+AnnotationList EmptyBanner QLabel {
+    color: rgb(83, 83, 83);
+    font-size: 14px;
+}
 AnnotationList ControlPanel QLabel {
     font-weight: bold;
     font-size: 13px;
@@ -64,8 +68,8 @@ KeypointLabel {
     min-height: 35px;
     margin: 5px;
 }
-Canvas InvalidImageLabel QLabel {
-    color: rgb(153, 153, 153);
+Canvas InvalidImageBanner QLabel {
+    color: rgb(83, 83, 83);
     font-size: 16px;
 }
 CanvasContextMenu {
@@ -170,6 +174,12 @@ SettingsWindow FinishButton:hover {
 SettingsWindow FinishButton:pressed {
     background-color: rgb(92, 152, 248);
 }
+SettingsWindow InteractiveLabel QLabel {
+    color: rgb(185, 185, 185);
+}
+SettingsWindow InteractiveLabel ClickableLabel {
+    color: rgb(60, 120, 216);
+}
 SettingsWindow SettingCheckBox {
     color: rgb(180, 180, 180);
     font-size: 12px;
@@ -219,6 +229,7 @@ SettingsWindow HiddenCategoriesLabel ClickableLabel {
     color: rgb(60, 120, 216);
 }
 SettingsWindow CategoriesToggleButton {
+    min-height: 25px;
     max-width: 100px;
     margin: 0px;
 }
@@ -253,6 +264,11 @@ SettingsWindow CategoryItem QWidget {
 SettingsWindow CategoryItem QLabel {
     color: rgb(155, 155, 155);
     font-size: 13px;
+}
+SettingsWindow EmptyBanner QLabel {
+    color: rgb(83, 83, 83);
+    font-size: 14px;
+    padding-bottom: 2px;
 }
 Toast {
     background-color: rgba(20, 20, 20, 0.7);

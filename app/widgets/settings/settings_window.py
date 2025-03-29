@@ -69,6 +69,10 @@ class SettingsWindow(QDialog):
     def set_layout(self, layout: SettingsLayout) -> None:
         self.layout.setCurrentWidget(self.layouts[layout])
 
+        if layout == SettingsLayout.CATEGORIES:
+            categories_menu = self.layouts[layout].layout()
+            categories_menu.category_list.redraw_widgets()
+
     def show(self) -> None:
         self.layout.setCurrentWidget(self.layouts[SettingsLayout.MAIN])
         self.setGeometry(self.parent.frameGeometry())

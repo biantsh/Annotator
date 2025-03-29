@@ -3,7 +3,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QShowEvent, QResizeEvent, QMouseEvent, QPixmap, QIcon
+from PyQt6.QtGui import QResizeEvent, QMouseEvent, QPixmap, QIcon
 from PyQt6.QtWidgets import (
     QSizePolicy,
     QHBoxLayout,
@@ -31,12 +31,15 @@ if TYPE_CHECKING:
 __basepath__ = sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.'
 __iconpath__ = os.path.join(__basepath__, 'resources', 'icons')
 
+__smooth_transform__ = Qt.TransformationMode.SmoothTransformation
+
 
 class CategoriesMenu(QVBoxLayout):
     def __init__(self, parent: 'SettingsWindow') -> None:
         super().__init__()
-
         self.parent = parent
+
+        self.empty_banner = EmptyBanner()
         self.category_list = CategoriesList(self)
         self.hidden_categories_label = HiddenCategoriesLabel(self)
 
@@ -46,8 +49,37 @@ class CategoriesMenu(QVBoxLayout):
 
         self.addLayout(TitleLayout(parent, 'Hidden categories'))
         self.addSpacing(10)
+        self.addWidget(self.empty_banner)
         self.addWidget(self.category_list)
         self.addLayout(footer_layout)
+
+
+class EmptyBanner(QWidget):
+    icon_name = 'robo_bear_sleeping.png'
+    message = 'No categories loaded.\nUpload a label map to get started.'
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        pixmap = QPixmap(os.path.join(__iconpath__, self.icon_name)).scaled(
+            192, 104, transformMode=__smooth_transform__)
+
+        icon_label = QLabel()
+        icon_label.setPixmap(pixmap)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        message_label = QLabel(self.message)
+        message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+
+        layout.addStretch()
+        layout.addWidget(icon_label)
+        layout.addWidget(message_label)
+        layout.addStretch()
+
+        self.setLayout(layout)
 
 
 class CategoriesList(ScrollableArea):
@@ -92,14 +124,18 @@ class CategoriesList(ScrollableArea):
 
             category_item.setVisible(query_text in category_name)
 
-    def showEvent(self, event: QShowEvent) -> None:
+    def redraw_widgets(self) -> None:
         settings_window = self.parent.parent
+        category_names = settings_window.parent.canvas.label_names
+
+        (self.parent.empty_banner.hide(), self.show()) if category_names \
+            else (self.parent.empty_banner.show(), self.hide())
 
         for index in reversed(range(self.items_layout.count())):
             self.items_layout.itemAt(index).widget().deleteLater()
 
-        for label in settings_window.parent.canvas.label_names:
-            self.items_layout.addWidget(CategoryItem(self, label))
+        for name in category_names:
+            self.items_layout.addWidget(CategoryItem(self, name))
 
         self.parent.hidden_categories_label.update()
         self.verticalScrollBar().setValue(0)

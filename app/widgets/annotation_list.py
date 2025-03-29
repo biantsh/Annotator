@@ -38,9 +38,11 @@ class AnnotationList(QWidget):
 
         main_layout = QVBoxLayout(self)
         self.anno_layout = QVBoxLayout()
+        self.empty_banner = EmptyBanner()
         self.control_panel = ControlPanel(self)
 
         main_layout.addStretch()
+        main_layout.addWidget(self.empty_banner)
         main_layout.addLayout(self.anno_layout)
         main_layout.addStretch()
         main_layout.addWidget(self.control_panel)
@@ -71,6 +73,7 @@ class AnnotationList(QWidget):
             self.list_items.append(list_item)
 
         self.control_panel.redraw()
+        self.empty_banner.setHidden(bool(annos))
 
     def _sort(self, annotations: list[Annotation]) -> list[Annotation]:
         visibility_handler = self.parent.canvas.visibility_handler
@@ -93,6 +96,30 @@ class AnnotationList(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if self.parent.canvas.keypoint_annotator.active:
             self.parent.canvas.keypoint_annotator.end()
+
+
+class EmptyBanner(QWidget):
+    icon_name = 'robo_bear_waiting.png'
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        pixmap = QPixmap(os.path.join(__iconpath__, self.icon_name)) \
+            .scaled(72, 96, transformMode=__smooth_transform__)
+
+        icon_label = QLabel()
+        icon_label.setPixmap(pixmap)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        text_label = QLabel('Annotations will\nshow here')
+        text_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(icon_label)
+        self.layout.addWidget(text_label)
+
+        self.setLayout(self.layout)
+        self.layout.setSpacing(12)
 
 
 class ListItem(QWidget):
