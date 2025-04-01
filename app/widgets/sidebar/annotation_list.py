@@ -56,8 +56,12 @@ class AnnotationList(QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+    @property
+    def list_items(self) -> list['ListItem']:
+        return self.findChildren(ListItem)
+
     def redraw_widgets(self) -> None:
-        for list_item in self.findChildren(ListItem):
+        for list_item in self.list_items:
             (list_item.hide(), list_item.deleteLater())
 
         visibility_handler = self.parent.canvas.visibility_handler
@@ -107,7 +111,7 @@ class AnnotationList(QWidget):
             _is_hidden(anno), _get_id(anno), anno.label_name, anno.ref_id))
 
     def update(self) -> None:
-        for list_item in self.findChildren(ListItem):
+        for list_item in self.list_items:
             list_item.update()
 
     def showEvent(self, event: QShowEvent) -> None:
