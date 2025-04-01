@@ -34,7 +34,7 @@ from app.enums.settings import Setting
 from app.exceptions.io import IOException, InvalidCOCOException
 from app.exceptions.label_map import LabelMapException
 from app.settings import Settings
-from app.widgets.annotation_list import AnnotationList
+from app.widgets.sidebar.annotation_list import AnnotationList
 from app.widgets.message_box import (
     ConfirmImportBox,
     ConfirmExitBox,

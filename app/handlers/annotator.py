@@ -58,7 +58,9 @@ class KeypointAnnotator:
         self.keypoint_label.show()
 
         self.canvas.set_selected_annotation(annotation)
-        self.canvas.parent.annotation_list.redraw_widgets()
+
+        if annotation not in self.canvas.annotations:
+            self.canvas.parent.annotation_list.redraw_widgets()
 
         self.update()
         self.canvas.update()

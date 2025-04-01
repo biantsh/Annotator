@@ -2,11 +2,10 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QObject, QEvent, QPoint, QTimer
-from PyQt6.QtGui import QMouseEvent, QPixmap
+from PyQt6.QtCore import Qt, QObject, QEvent
+from PyQt6.QtGui import QMouseEvent, QShowEvent, QPixmap
 from PyQt6.QtWidgets import (
     QGraphicsOpacityEffect,
-    QApplication,
     QHBoxLayout,
     QVBoxLayout,
     QWidget,
@@ -18,6 +17,8 @@ from app.enums.canvas import AnnotatingState
 from app.objects import Annotation, Keypoint
 from app.utils import pretty_text
 from app.widgets.context_menu import ContextCheckBox
+from app.widgets.sidebar.collapsible_section import CollapsibleSection
+from app.widgets.sidebar.control_panel import ControlPanel
 
 if TYPE_CHECKING:
     from annotator import MainWindow
@@ -32,25 +33,33 @@ __smooth_transform__ = Qt.TransformationMode.SmoothTransformation
 class AnnotationList(QWidget):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent)
-
         self.parent = parent
-        self.list_items = []
 
-        main_layout = QVBoxLayout(self)
-        self.anno_layout = QVBoxLayout()
         self.empty_banner = EmptyBanner()
         self.control_panel = ControlPanel(self)
 
+        self.anno_section = CollapsibleSection('Annotations', False)
+        self.hidden_section = CollapsibleSection('Hidden', True)
+
+        self.anno_layout = self.anno_section.content_layout
+        self.hidden_layout = self.hidden_section.content_layout
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
         main_layout.addStretch()
         main_layout.addWidget(self.empty_banner)
-        main_layout.addLayout(self.anno_layout)
+        main_layout.addWidget(self.anno_section)
+        main_layout.addWidget(self.hidden_section)
         main_layout.addStretch()
         main_layout.addWidget(self.control_panel)
 
-        main_layout.setContentsMargins(0, 0, 0, 0)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def redraw_widgets(self) -> None:
+        for list_item in self.findChildren(ListItem):
+            (list_item.hide(), list_item.deleteLater())
+
         visibility_handler = self.parent.canvas.visibility_handler
         annotator = self.parent.canvas.keypoint_annotator
         annos = self.parent.canvas.annotations.copy()
@@ -58,22 +67,30 @@ class AnnotationList(QWidget):
         if annotator.active and annotator.annotation not in annos:
             annos.append(annotator.annotation)
 
-        for list_item in self.list_items:
-            list_item.deleteLater()
+        sorted_annos = self._sort(annos)
+        num_visible, num_hidden = 0, 0
 
-        self.list_items.clear()
-
-        for anno in self._sort(annos):
+        for anno in sorted_annos:
             list_item = ListItem(self.parent.canvas, anno)
 
-            interactable = visibility_handler.interactable(anno)
-            list_item.set_hidden(not interactable)
+            if visibility_handler.interactable(anno):
+                self.anno_layout.addWidget(list_item)
+                list_item.set_hidden(False)
+                num_visible += 1
 
-            self.anno_layout.addWidget(list_item)
-            self.list_items.append(list_item)
+            else:
+                self.hidden_layout.addWidget(list_item)
+                list_item.set_hidden(True)
+                num_hidden += 1
 
-        self.control_panel.redraw()
+        self.anno_section.setVisible(bool(annos))
+        self.anno_section.set_count(num_visible)
+
+        self.hidden_section.setVisible(bool(num_hidden))
+        self.hidden_section.set_count(num_hidden)
+
         self.empty_banner.setHidden(bool(annos))
+        self.control_panel.redraw()
 
     def _sort(self, annotations: list[Annotation]) -> list[Annotation]:
         visibility_handler = self.parent.canvas.visibility_handler
@@ -87,11 +104,14 @@ class AnnotationList(QWidget):
                 if label_map.contains(anno.label_name) else float('inf')
 
         return sorted(annotations, key=lambda anno: (
-            _is_hidden(anno), _get_id(anno), anno.label_name))
+            _is_hidden(anno), _get_id(anno), anno.label_name, anno.ref_id))
 
     def update(self) -> None:
-        for index in range(self.anno_layout.count()):
-            self.anno_layout.itemAt(index).widget().update()
+        for list_item in self.findChildren(ListItem):
+            list_item.update()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self.update()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if self.parent.canvas.keypoint_annotator.active:
@@ -111,7 +131,7 @@ class EmptyBanner(QWidget):
         icon_label.setPixmap(pixmap)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        text_label = QLabel('Annotations will\nshow here')
+        text_label = QLabel('No annotations for\nthis image yet')
         text_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self.layout = QVBoxLayout()
@@ -131,7 +151,9 @@ class ListItem(QWidget):
 
         self.checkbox = ContextCheckBox(self.canvas, self.annotation)
         self.keypoint_list = KeypointList(self, annotation)
+
         self.arrow = QLabel()
+        self.arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         header = QWidget(self)
         header.installEventFilter(self)
@@ -148,13 +170,15 @@ class ListItem(QWidget):
         self.setLayout(self.layout)
 
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.header_layout.setContentsMargins(8, 9, 1, 6)
+        self.layout.setSpacing(0)
+
+        self.header_layout.setContentsMargins(11, 9, 7, 9)
 
         self.update()
 
     def set_hidden(self, hidden: bool) -> None:
         fade_effect = QGraphicsOpacityEffect()
-        fade_effect.setOpacity(0.6)
+        fade_effect.setOpacity(0.5)
 
         self.setGraphicsEffect(fade_effect if hidden else None)
         self.setEnabled(not hidden)
@@ -180,7 +204,7 @@ class ListItem(QWidget):
             self.checkbox.on_mouse_enter()
 
         elif event.type() == event.Type.Leave:
-            source.setStyleSheet('background-color: rgb(33, 33, 33);')
+            source.setStyleSheet('background-color: transparent;')
             self.checkbox.on_mouse_leave()
 
         return False
@@ -191,38 +215,35 @@ class ListItem(QWidget):
         selected_kpts = self.canvas.selected_keypoints
         hide_keypoints = self.canvas.keypoints_hidden
 
-        self.arrow.show() if anno.kpt_names else self.arrow.hide()
         self.keypoint_list.update()
         self.checkbox.update()
 
-        if hide_keypoints or anno.visible == VisibilityType.BOX_ONLY:
-            self.arrow.setStyleSheet('color: rgb(100, 100, 100);')
+        if hide_keypoints or anno.visible != VisibilityType.VISIBLE:
+            arrow_color = 117, 117, 117
             show_kpt_list = False
 
         else:
-            self.arrow.setStyleSheet('color: rgb(200, 200, 200);')
+            arrow_color = 200, 200, 200
             show_kpt_list = bool(selected_kpts) or selected_annos == [anno]
             show_kpt_list &= all(kpt.parent == anno for kpt in selected_kpts)
 
-        if show_kpt_list:
-            self.keypoint_list.show()
-            self.arrow.setText('\u276E')
+        self.arrow.setStyleSheet(f'color: rgb{arrow_color}; padding: 0px;')
+        self.arrow.setText('\u276E' if show_kpt_list else '\u276F')
+        self.arrow.setVisible(bool(anno.kpt_names))
 
-        else:
-            self.keypoint_list.hide()
-            self.arrow.setText('\u276F')
+        if self.keypoint_list.isVisible() != show_kpt_list:
+            self.keypoint_list.setVisible(show_kpt_list)
 
 
 class KeypointList(QWidget):
     def __init__(self, parent: ListItem, annotation: Annotation) -> None:
         super().__init__()
 
+        self.hide()
         self.parent = parent
         self.annotation = annotation
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
+        layout = QVBoxLayout(self)
         for keypoint in annotation.keypoints:
             layout.addWidget(KeypointItem(self.parent, keypoint))
 
@@ -230,8 +251,8 @@ class KeypointList(QWidget):
         layout.setSpacing(0)
 
     def update(self) -> None:
-        for index in range(self.layout().count()):
-            self.layout().itemAt(index).widget().update()
+        for keypoint_item in self.findChildren(KeypointItem):
+            keypoint_item.update()
 
 
 class KeypointItem(QWidget):
@@ -292,131 +313,13 @@ class KeypointItem(QWidget):
         hovered = (annotator.label_index == self.keypoint.index
                    and annotator.active) or self.underMouse()
 
-        background = (53, 53, 53) if hovered or self.keypoint.selected \
-            or hovered else (33, 33, 33)
+        highlighted = hovered or self.keypoint.selected
+        background = 'rgb(53, 53, 53)' if highlighted else 'transparent'
 
         color = (255, 255, 255) if hovered and self.keypoint.selected \
-            else (200, 200, 200) if self.keypoint.visible else (82, 82, 82)
+            else (200, 200, 200) if self.keypoint.visible else (83, 83, 83)
 
         self.keypoint_label.setStyleSheet(f'''
-            background-color: rgb{background};
+            background-color: {background};
             color: rgb{color};
         ''')
-
-
-class ControlPanel(QWidget):
-    def __init__(self, parent: 'AnnotationList') -> None:
-        super().__init__()
-        self.parent = parent
-
-        self.unpin_button = UnpinButton(parent)
-        self.unpin_button.installEventFilter(self)
-
-        self.progress_label = QLabel()
-        self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.copy_image_button = CopyImageButton(parent)
-        self.copy_image_button.installEventFilter(self)
-        self.copy_image_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(1, 0, 0, 0)
-
-        layout.addWidget(self.unpin_button)
-        layout.addStretch()
-        layout.addWidget(self.progress_label)
-        layout.addStretch()
-        layout.addWidget(self.copy_image_button)
-
-    def redraw(self) -> None:
-        main_window = self.parent.parent
-        image_name = main_window.canvas.image_name
-
-        current_image = main_window.image_controller.index
-        num_images = main_window.image_controller.num_images
-
-        self.progress_label.setText(f'{current_image + 1} / {num_images}')
-        self.copy_image_button.tooltip.setText(image_name)
-        self.copy_image_button.tooltip.adjustSize()
-
-    def eventFilter(self, source: QObject, event: QEvent) -> bool:
-        if event.type() == event.Type.Enter:
-            source.setStyleSheet('background-color: rgb(53, 53, 53);')
-
-        elif event.type() == event.Type.Leave:
-            source.setStyleSheet('background-color: rgb(33, 33, 33);')
-
-        return False
-
-
-class UnpinButton(QLabel):
-    def __init__(self, parent: AnnotationList) -> None:
-        super().__init__('\u276E')
-        self.parent = parent
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        self.parent.setVisible(not self.parent.isVisible())
-
-
-class CopyImageButton(QLabel):
-    def __init__(self, parent: AnnotationList) -> None:
-        super().__init__(parent)
-
-        self.parent = parent
-        self.setFixedSize(28, 32)
-
-        self.copy_icon = QPixmap(os.path.join(__iconpath__, 'copy.svg')) \
-            .scaled(17, 17)
-        self.check_icon = QPixmap(os.path.join(__iconpath__, 'check.png')) \
-            .scaled(16, 16, transformMode=__smooth_transform__)
-
-        self.setPixmap(self.copy_icon)
-        self.tooltip = ImageTooltip(parent)
-
-        self.tooltip_timer = QTimer(self)
-        self.tooltip_timer.setInterval(550)
-        self.tooltip_timer.setSingleShot(True)
-        self.tooltip_timer.timeout.connect(self.show_tooltip)
-
-        self.icon_timer = QTimer(self)
-        self.icon_timer.setInterval(2500)
-        self.icon_timer.setSingleShot(True)
-        self.icon_timer.timeout.connect(
-            lambda: self.setPixmap(self.copy_icon))
-
-    def show_tooltip(self) -> None:
-        window = self.parent.parent
-
-        button_position = self.mapToGlobal(self.rect().topLeft())
-        width, height = self.tooltip.width(), self.tooltip.height()
-
-        top_bar = window.geometry().top() - window.frameGeometry().top()
-        offset = window.pos() + QPoint(width - 10, top_bar + height - 10)
-
-        self.tooltip.move(button_position - offset)
-        self.tooltip.raise_()
-        self.tooltip.show()
-
-    def enterEvent(self, event: QMouseEvent) -> None:
-        self.tooltip_timer.start()
-
-    def leaveEvent(self, event: QMouseEvent) -> None:
-        self.tooltip_timer.stop()
-        self.tooltip.hide()
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self.parent.parent.canvas.image_name)
-
-        self.setPixmap(self.check_icon)
-        self.icon_timer.start()
-
-        self.tooltip.hide()
-
-
-class ImageTooltip(QLabel):
-    def __init__(self, parent: AnnotationList) -> None:
-        super().__init__(parent.parent)
-
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.hide()

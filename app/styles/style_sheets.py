@@ -2,7 +2,6 @@ import os
 import sys
 from abc import ABC
 
-from app.enums.annotation import VisibilityType
 from app.objects import Annotation
 from app.utils import text_to_color
 
@@ -41,29 +40,30 @@ class CheckBoxStyleSheet(StyleSheet):
     def __init__(self, annotation: Annotation) -> None:
         super().__init__()
 
-        color = text_to_color(annotation.label_name)
+        anno_color = text_to_color(annotation.label_name)
 
-        underline = '1px solid rgba(255, 255, 255, 0.85)' \
-            if annotation.selected else '1px solid transparent'
+        text_color, anno_color = ((200, 200, 200), (*anno_color, 1)) \
+            if annotation.visible else ((117, 117, 117), (*anno_color, 0.5))
 
-        border = f'2px solid rgb{color}' \
-            if annotation.visible else '1px solid rgb(53, 53, 53)'
+        underline = 'rgba(255, 255, 255, 0.85)' \
+            if annotation.selected else 'transparent'
 
         self.style_sheet = f"""
             QCheckBox {{
+                color: rgb{text_color};
+                border-bottom: 1px solid {underline};
                 background-color: transparent;
                 font-weight: bold;
                 margin-right: 24px;
-                border-bottom: {underline};
+                padding: 2px 0px;
             }}
 
             ::indicator {{
-                border: {border};
-                border-radius: 3px;
-            }}
-
-            ::indicator:checked {{
-                background-color: rgb{color};
+                background-color: rgba{anno_color};
+                border-radius: 1px;
+                margin-top: 1px;
+                height: 14px;
+                width: 2px;
             }}
         """
 

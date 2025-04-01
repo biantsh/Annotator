@@ -262,9 +262,6 @@ class AnnotationPainter:
             if highlighted and not drawing_keypoints
             else (*text_to_color(anno.label_name), 155))
 
-        if not anno.visible:
-            return
-
         if anno.has_bbox:
             left, top, right, bot = self.parent.scale_box(anno.position)
             self.parent.drawRect(left, top, right - left, bot - top)

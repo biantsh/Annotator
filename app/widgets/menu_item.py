@@ -64,6 +64,7 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.parent = parent
         self.annotation = annotation
 
+        self.setChecked(True)
         self.update()
 
     def set_hidden(self, hidden: bool) -> None:
@@ -110,6 +111,5 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         event.ignore()
 
     def update(self) -> None:
-        self.setChecked(self.annotation.visible == VisibilityType.VISIBLE)
         self.setStyleSheet(str(CheckBoxStyleSheet(self.annotation)))
         self.setText(pretty_text(self.annotation.label_name))

@@ -39,21 +39,33 @@ AnnotationList {
 }
 AnnotationList EmptyBanner QLabel {
     color: rgb(83, 83, 83);
-    font-size: 14px;
+    font-size: 13px;
+}
+AnnotationList CollapsibleSectionHeader QLabel {
+    color: rgb(153, 153, 153);
+    font-weight: bold;
+    font-size: 12px;
+    margin-left: 1px;
+}
+AnnotationList CollapsibleSectionCount {
+    background-color: rgb(53, 53, 53);
+    border-radius: 2px;
+    padding: 0px 3px;
+}
+AnnotationList CollapsibleSectionArrow {
+    padding-right: 3px;
 }
 AnnotationList ControlPanel QLabel {
     font-weight: bold;
     font-size: 13px;
     padding: 0px 1px;
 }
+AnnotationList ListItem QLabel {
+    font-weight: bold;
+    min-width: 7px;
+}
 AnnotationList ContextCheckBox {
     min-width: 120px;
-    max-width: 120px;
-    padding-top: 3px;
-    padding-bottom: 3px;
-}
-AnnotationList ListItem QLabel {
-    margin-bottom: 3px;
 }
 AnnotationList KeypointList QLabel {
     margin-bottom: 0px;
