@@ -19,6 +19,7 @@ from app.utils import pretty_text
 from app.widgets.context_menu import ContextCheckBox
 from app.widgets.sidebar.collapsible_section import CollapsibleSection
 from app.widgets.sidebar.control_panel import ControlPanel
+from app.widgets.tooltip import Tooltip
 
 if TYPE_CHECKING:
     from annotator import MainWindow
@@ -56,8 +57,12 @@ class AnnotationList(QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+    @property
+    def list_items(self) -> list['ListItem']:
+        return self.findChildren(ListItem)
+
     def redraw_widgets(self) -> None:
-        for list_item in self.findChildren(ListItem):
+        for list_item in self.list_items:
             (list_item.hide(), list_item.deleteLater())
 
         visibility_handler = self.parent.canvas.visibility_handler
@@ -93,21 +98,17 @@ class AnnotationList(QWidget):
         self.control_panel.redraw()
 
     def _sort(self, annotations: list[Annotation]) -> list[Annotation]:
-        visibility_handler = self.parent.canvas.visibility_handler
         label_map = self.parent.label_map_controller
-
-        def _is_hidden(anno: Annotation) -> bool:
-            return not visibility_handler.interactable(anno)
 
         def _get_id(anno: Annotation) -> int:
             return label_map.get_id(anno.label_name) \
                 if label_map.contains(anno.label_name) else float('inf')
 
         return sorted(annotations, key=lambda anno: (
-            _is_hidden(anno), _get_id(anno), anno.label_name, anno.ref_id))
+            _get_id(anno), anno.label_name, anno.ref_id))
 
     def update(self) -> None:
-        for list_item in self.findChildren(ListItem):
+        for list_item in self.list_items:
             list_item.update()
 
     def showEvent(self, event: QShowEvent) -> None:
@@ -149,6 +150,7 @@ class ListItem(QWidget):
         self.canvas = canvas
         self.annotation = annotation
 
+        self.tooltip = Tooltip(self, 1200, pretty_text(annotation.label_name))
         self.checkbox = ContextCheckBox(self.canvas, self.annotation)
         self.keypoint_list = KeypointList(self, annotation)
 
@@ -233,6 +235,9 @@ class ListItem(QWidget):
 
         if self.keypoint_list.isVisible() != show_kpt_list:
             self.keypoint_list.setVisible(show_kpt_list)
+
+        self.tooltip.enable() if self.checkbox.is_elided \
+            else self.tooltip.disable()
 
 
 class KeypointList(QWidget):

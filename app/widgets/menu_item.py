@@ -1,18 +1,27 @@
 from typing import Callable, TYPE_CHECKING
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QGuiApplication, QMouseEvent
-from PyQt6.QtWidgets import QGraphicsOpacityEffect, QLabel, QCheckBox
+from PyQt6.QtGui import (
+    QGuiApplication,
+    QFontMetrics,
+    QResizeEvent,
+    QMouseEvent
+)
+from PyQt6.QtWidgets import (
+    QGraphicsOpacityEffect,
+    QStyleOptionButton,
+    QStyle,
+    QLabel,
+    QCheckBox
+)
 
 from app.enums.annotation import VisibilityType
-from app.objects import Annotation
-from app.utils import pretty_text
 from app.styles.style_sheets import LabelStyleSheet, CheckBoxStyleSheet
+from app.utils import pretty_text
 
 if TYPE_CHECKING:
     from app.canvas import Canvas
-
-__background__ = Qt.WidgetAttribute.WA_TranslucentBackground
+    from app.objects import Annotation
 
 
 class ContextMenuItem:
@@ -37,9 +46,7 @@ class ContextButton(QLabel, ContextMenuItem):
                  risky: bool,
                  name: str = None
                  ) -> None:
-        QLabel.__init__(self, text)
-        ContextMenuItem.__init__(self)
-        self.setAttribute(__background__)
+        super().__init__(text)
 
         self.parent = parent
         self.risky = risky
@@ -49,23 +56,29 @@ class ContextButton(QLabel, ContextMenuItem):
         self.on_right_click = binding
 
         self.setStyleSheet(str(LabelStyleSheet(risky)))
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
 
 class ContextCheckBox(QCheckBox, ContextMenuItem):
-    def __init__(self,
-                 parent: 'Canvas',
-                 annotation: Annotation
-                 ) -> None:
-        QCheckBox.__init__(self)
-        ContextMenuItem.__init__(self)
-
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    def __init__(self, parent: 'Canvas', annotation: 'Annotation') -> None:
+        super().__init__()
 
         self.parent = parent
         self.annotation = annotation
+        self.is_elided = False
 
         self.setChecked(True)
         self.update()
+
+    def _elide_text(self, text: str) -> str:
+        option = QStyleOptionButton()
+        option.rect = self.contentsRect()
+
+        text_rect = self.style().subElementRect(
+            QStyle.SubElement.SE_CheckBoxContents, option, self)
+
+        return QFontMetrics(self.font()).elidedText(
+            text, Qt.TextElideMode.ElideRight, text_rect.width())
 
     def set_hidden(self, hidden: bool) -> None:
         fade_effect = QGraphicsOpacityEffect()
@@ -107,9 +120,15 @@ class ContextCheckBox(QCheckBox, ContextMenuItem):
         self.update()
         self.parent.update()
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        base_text = pretty_text(self.annotation.label_name)
+        elided_text = self._elide_text(base_text)
+
+        self.is_elided = base_text != elided_text
+        self.setText(elided_text)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         event.ignore()
 
     def update(self) -> None:
         self.setStyleSheet(str(CheckBoxStyleSheet(self.annotation)))
-        self.setText(pretty_text(self.annotation.label_name))

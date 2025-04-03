@@ -26,12 +26,11 @@ QToolTip {
     min-width: 0px;
     max-width: 0px;
 }
-ImageTooltip {
-    background-color: rgba(20, 20, 20, 0.7);
-    color: rgb(220, 220, 220);
-    font-size: 14px;
-    border-radius: 5px;
-    padding: 4px;
+Tooltip {
+    color: rgb(200, 200, 200);
+    font-weight: bold;
+    font-size: 12px;
+    padding: 6px 4px;
 }
 AnnotationList {
     border-left: 1px solid rgb(53, 53, 53);
