@@ -150,7 +150,6 @@ class ListItem(QWidget):
         self.canvas = canvas
         self.annotation = annotation
 
-        self.tooltip = Tooltip(self, 1200, pretty_text(annotation.label_name))
         self.checkbox = ContextCheckBox(self.canvas, self.annotation)
         self.keypoint_list = KeypointList(self, annotation)
 
@@ -159,6 +158,9 @@ class ListItem(QWidget):
 
         header = QWidget(self)
         header.installEventFilter(self)
+
+        tooltip_text = pretty_text(annotation.label_name)
+        self.tooltip = Tooltip(header, 1200, tooltip_text)
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(header)

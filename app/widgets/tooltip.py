@@ -2,9 +2,9 @@ from PyQt6.QtCore import Qt, QEvent, QObject, QTimer, QPoint
 from PyQt6.QtGui import QCursor, QPainter, QBrush, QColor
 from PyQt6.QtWidgets import QWidget, QLabel
 
-__window_type__ = (Qt.WindowType.ToolTip |
+__window_type__ = (Qt.WindowType.WindowTransparentForInput |
                    Qt.WindowType.FramelessWindowHint |
-                   Qt.WindowType.WindowTransparentForInput)
+                   Qt.WindowType.Tool)
 
 
 class Tooltip(QLabel):
@@ -23,7 +23,6 @@ class Tooltip(QLabel):
 
         self.setWindowFlags(__window_type__)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
     def disable(self) -> None:
         self._enabled = False
