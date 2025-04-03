@@ -92,7 +92,7 @@ class Canvas(QWidget):
 
         self.invalid_image_banner = InvalidImageBanner(self)
 
-        self.pos_start_anno = None
+        self.moving_anno = None
         self.pos_start_kpt = None
 
         for action in CanvasActions(self).actions.values():
@@ -142,12 +142,16 @@ class Canvas(QWidget):
         self.brightness_handler.reset()
 
     def load_image(self, image_path: str) -> None:
+        image_name = os.path.basename(image_path)
+        if image_name == self.image_name:
+            return
+
         self.set_annotating_state(AnnotatingState.IDLE)
         self.save_progress()
         self.reset()
 
-        self.image_name = os.path.basename(image_path)
-        self.action_handler.image_name = self.image_name
+        self.image_name = image_name
+        self.action_handler.image_name = image_name
 
         image = QImageReader(image_path).read()
         self.parent.annotation_list.show()
@@ -283,9 +287,10 @@ class Canvas(QWidget):
         elif state == AnnotatingState.MOVING_ANNO:
             anno = self.selected_annos[-1]
 
-            self.pos_start_anno = self.pos_start_anno or {
-                'annotation': anno.position or anno.implicit_bbox,
-                'keypoints': [kpt.position.copy() for kpt in anno.keypoints]}
+            self.moving_anno = self.moving_anno or {
+                'annotation': anno,
+                'pos_start': anno.position or anno.implicit_bbox,
+                'kpts_start': [kpt.position.copy() for kpt in anno.keypoints]}
 
         elif state == AnnotatingState.MOVING_KEYPOINT:
             self.pos_start_kpt = self.pos_start_kpt \
@@ -293,13 +298,13 @@ class Canvas(QWidget):
 
         if (previous_state == AnnotatingState.MOVING_ANNO
                 and state != AnnotatingState.MOVING_ANNO):
-            pos_start = self.pos_start_anno['annotation']
-            pos_start_kpts = self.pos_start_anno['keypoints']
-            self.pos_start_anno = None
+            anno = self.moving_anno['annotation']
+            pos_start = self.moving_anno['pos_start']
+            pos_start_kpts = self.moving_anno['kpts_start']
 
-            if self.selected_annos:
-                self.action_handler.register_action(ActionMove(
-                    self, self.selected_annos[-1], pos_start, pos_start_kpts))
+            self.moving_anno = None
+            self.action_handler.register_action(ActionMove(
+                self, anno, pos_start, pos_start_kpts))
 
         if (previous_state == AnnotatingState.MOVING_KEYPOINT
                 and state != AnnotatingState.MOVING_KEYPOINT):
@@ -636,6 +641,9 @@ class Canvas(QWidget):
             if to_delete:
                 action = ActionDelete(self, to_delete)
                 self.action_handler.register_action(action)
+
+        self.set_hovered_object()
+        self.update()
 
     def add_bboxes(self) -> None:
         annos = [anno for anno in self.selected_annos if not anno.has_bbox]

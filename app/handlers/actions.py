@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable
 
 from app.controllers.label_map_controller import LabelSchema
 from app.enums.annotation import SelectionType
+from app.enums.canvas import AnnotatingState
 from app.objects import Annotation, Keypoint
 
 if TYPE_CHECKING:
@@ -312,6 +313,7 @@ class ActionHandler:
         if self.image_name not in self.action_cache:
             return None
 
+        self.parent.set_annotating_state(AnnotatingState.IDLE)
         self.action_cache.move_to_end(self.image_name)
         stacks = self.action_cache[self.image_name]
 
