@@ -6,6 +6,8 @@ from PyQt6.QtWidgets import QMessageBox
 if TYPE_CHECKING:
     from annotator import MainWindow
 
+__confirm_reset__ = 'Reset all settings to their default values?'
+
 __confirm_import__ = ('You already have existing annotations in this session. '
                       'Are you sure you want to import a file?'
                       '\n\nThe imported annotations will be '
@@ -22,13 +24,12 @@ class MessageBox(QMessageBox):
     def __init__(self,
                  parent: 'MainWindow',
                  title: str,
-                 icon_path: str,
                  message: str,
-                 default: bool
+                 default: bool,
+                 icon_path: str = None,
                  ) -> None:
         super().__init__(parent)
 
-        self.setIconPixmap(QIcon(icon_path).pixmap(96, 96))
         self.setWindowTitle(title)
         self.setText(message)
 
@@ -39,6 +40,7 @@ class MessageBox(QMessageBox):
             if default else QMessageBox.StandardButton.No
 
         self.setDefaultButton(default_button)
+        self.setIconPixmap(QIcon(icon_path).pixmap(96, 96))
 
     def exec(self) -> bool:
         return super().exec() == QMessageBox.StandardButton.Yes
@@ -53,22 +55,27 @@ class InformationBox(QMessageBox):
         self.setText(text)
 
 
+class ConfirmResetSettingsBox(MessageBox):
+    def __init__(self, parent: 'MainWindow') -> None:
+        super().__init__(parent, 'Confirm Reset', __confirm_reset__, False)
+
+
 class ConfirmImportBox(MessageBox):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent,
                          'Confirm Import',
-                         'icon:import.png',
                          __confirm_import__,
-                         False)
+                         False,
+                         'icon:import.png',)
 
 
 class ConfirmExitBox(MessageBox):
     def __init__(self, parent: 'MainWindow') -> None:
         super().__init__(parent,
                          'Confirm Exit',
-                         'icon:export.png',
                          __confirm_export__,
-                         True)
+                         True,
+                         'icon:export.png',)
 
 
 class ImportFailedBox(InformationBox):

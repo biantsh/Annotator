@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import QWidget, QCheckBox, QPushButton, QScrollArea
 from app.enums.settings import Setting, SettingsLayout
 from app.styles.style_sheets import SettingCheckBoxStyleSheet
 from app.utils import clip_value
+from app.widgets.message_box import ConfirmResetSettingsBox
 
 if TYPE_CHECKING:
     from app.widgets.settings.settings_window import SettingsWindow
@@ -70,7 +71,8 @@ class ResetButton(QPushButton):
         self.clicked.connect(self._on_click)
 
     def _on_click(self) -> None:
-        self.parent.settings_manager.reset()
+        if ConfirmResetSettingsBox(self.parent.parent).exec():
+            self.parent.settings_manager.reset()
 
 
 class CloseButton(QPushButton):
