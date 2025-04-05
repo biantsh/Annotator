@@ -17,15 +17,6 @@ class StyleSheet(ABC):
         return self.style_sheet
 
 
-class WidgetStyleSheet(StyleSheet):
-    def __init__(self, background_color: str) -> None:
-        super().__init__()
-
-        self.style_sheet = f"""
-            background-color: {background_color};
-        """
-
-
 class LabelStyleSheet(StyleSheet):
     def __init__(self, risky: bool) -> None:
         super().__init__()

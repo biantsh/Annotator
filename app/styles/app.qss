@@ -63,7 +63,7 @@ AnnotationList ListItem QLabel {
     font-weight: bold;
     min-width: 7px;
 }
-AnnotationList ContextCheckBox {
+AnnotationList AnnotationCheckBox {
     min-width: 120px;
 }
 AnnotationList KeypointList QLabel {
@@ -83,10 +83,7 @@ Canvas InvalidImageBanner QLabel {
     color: rgb(83, 83, 83);
     font-size: 16px;
 }
-CanvasContextMenu {
-    min-width: 150px;
-}
-AnnotationContextMenu {
+ContextMenu {
     min-width: 90px;
 }
 QMenu {

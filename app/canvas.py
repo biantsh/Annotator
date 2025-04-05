@@ -40,7 +40,7 @@ from app.handlers.image.brightness import BrightnessHandler
 from app.handlers.image.zoom import ZoomHandler
 from app.handlers.visibility import VisibilityHandler
 from app.widgets.combo_box import AnnotationComboBox, ImageComboBox
-from app.widgets.context_menu import AnnotationContextMenu, CanvasContextMenu
+from app.widgets.context_menu import ContextMenu
 from app.widgets.canvas.invalid_image import InvalidImageBanner
 from app.objects import Annotation, Keypoint
 from app.utils import clip_value
@@ -872,16 +872,9 @@ class Canvas(QWidget):
 
         if self.hovered_anno:
             self.set_selected_annotation(self.hovered_anno)
-            context_menu = AnnotationContextMenu(self, self.hovered_anno)
 
-        else:
-            if self.parent.annotation_list.isVisible():
-                return
-
-            context_menu = CanvasContextMenu(self)
-
-        context_menu.exec(event.globalPosition().toPoint())
-        self.update()
+            ContextMenu(self, self.hovered_anno).exec(
+                event.globalPosition().toPoint())
 
     def on_mouse_left_drag(self, cursor_shift: tuple[int, int]) -> None:
         if self.annotating_state == AnnotatingState.DRAWING_KEYPOINTS:

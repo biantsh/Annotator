@@ -3,20 +3,30 @@ import sys
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QObject, QEvent
-from PyQt6.QtGui import QMouseEvent, QShowEvent, QPixmap
+from PyQt6.QtGui import (
+    QGuiApplication,
+    QMouseEvent,
+    QShowEvent,
+    QResizeEvent,
+    QFontMetrics,
+    QPixmap
+)
 from PyQt6.QtWidgets import (
     QGraphicsOpacityEffect,
+    QStyleOptionButton,
     QHBoxLayout,
     QVBoxLayout,
     QWidget,
-    QLabel
+    QCheckBox,
+    QLabel,
+    QStyle
 )
 
 from app.enums.annotation import VisibilityType
 from app.enums.canvas import AnnotatingState
 from app.objects import Annotation, Keypoint
+from app.styles.style_sheets import CheckBoxStyleSheet
 from app.utils import pretty_text
-from app.widgets.context_menu import ContextCheckBox
 from app.widgets.sidebar.collapsible_section import CollapsibleSection
 from app.widgets.sidebar.control_panel import ControlPanel
 from app.widgets.tooltip import Tooltip
@@ -143,6 +153,73 @@ class EmptyBanner(QWidget):
         self.layout.setSpacing(12)
 
 
+class AnnotationCheckBox(QCheckBox):
+    def __init__(self, parent: 'Canvas', annotation: 'Annotation') -> None:
+        super().__init__()
+
+        self.parent = parent
+        self.annotation = annotation
+        self.is_elided = False
+
+    def _elide_text(self, text: str) -> str:
+        option = QStyleOptionButton()
+        option.rect = self.contentsRect()
+
+        text_rect = self.style().subElementRect(
+            QStyle.SubElement.SE_CheckBoxContents, option, self)
+
+        return QFontMetrics(self.font()).elidedText(
+            text, Qt.TextElideMode.ElideRight, text_rect.width())
+
+    def on_mouse_enter(self) -> None:
+        self.annotation.highlighted = True
+        self.parent.update()
+
+    def on_mouse_leave(self) -> None:
+        self.annotation.highlighted = False
+        self.parent.update()
+
+    def on_left_click(self) -> None:
+        if self.annotation.selected:
+            self.parent.unselect_annotation(self.annotation)
+        else:
+            self.parent.add_selected_annotation(self.annotation)
+
+        self.parent.update()
+
+    def on_right_click(self) -> None:
+        shift_pressed = Qt.KeyboardModifier.ShiftModifier \
+                        & QGuiApplication.keyboardModifiers()
+
+        if self.annotation.visible == VisibilityType.VISIBLE:
+            self.annotation.visible = VisibilityType.HIDDEN
+
+            if shift_pressed and self.annotation.has_bbox:
+                self.annotation.visible = VisibilityType.BOX_ONLY
+
+        else:
+            self.annotation.visible = VisibilityType.VISIBLE
+
+        self.parent.update()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        base_text = pretty_text(self.annotation.label_name)
+        elided_text = self._elide_text(base_text)
+
+        self.is_elided = base_text != elided_text
+        self.setText(elided_text)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if Qt.MouseButton.LeftButton & event.button():
+            self.on_left_click()
+
+        elif Qt.MouseButton.RightButton & event.button():
+            self.on_right_click()
+
+    def update(self) -> None:
+        self.setStyleSheet(str(CheckBoxStyleSheet(self.annotation)))
+
+
 class ListItem(QWidget):
     def __init__(self, canvas: 'Canvas', annotation: Annotation) -> None:
         super().__init__()
@@ -150,7 +227,7 @@ class ListItem(QWidget):
         self.canvas = canvas
         self.annotation = annotation
 
-        self.checkbox = ContextCheckBox(self.canvas, self.annotation)
+        self.checkbox = AnnotationCheckBox(self.canvas, self.annotation)
         self.keypoint_list = KeypointList(self, annotation)
 
         self.arrow = QLabel()
@@ -197,11 +274,7 @@ class ListItem(QWidget):
                 self.canvas.keypoint_annotator.end()
                 self.checkbox.on_mouse_leave()
 
-            if Qt.MouseButton.LeftButton & event.button():
-                self.checkbox.on_left_click()
-
-            elif Qt.MouseButton.RightButton & event.button():
-                self.checkbox.on_right_click()
+            self.checkbox.mousePressEvent(event)
 
         elif event.type() == event.Type.Enter:
             source.setStyleSheet('background-color: rgb(53, 53, 53);')
@@ -211,7 +284,7 @@ class ListItem(QWidget):
             source.setStyleSheet('background-color: transparent;')
             self.checkbox.on_mouse_leave()
 
-        return False
+        return True
 
     def update(self) -> None:
         anno = self.annotation
