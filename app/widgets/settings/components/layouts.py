@@ -81,6 +81,7 @@ class FooterLayout(QHBoxLayout):
                  submenu: bool = False
                  ) -> None:
         super().__init__()
+        self.setContentsMargins(4, 0, 4, 4)
 
         if not submenu:
             self.addWidget(ResetButton(parent))

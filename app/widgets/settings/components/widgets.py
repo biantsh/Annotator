@@ -127,21 +127,16 @@ class ScrollableArea(QScrollArea):
         self.scroll_to_value(target_point.y())
 
     def scroll_to_value(self, value: int) -> None:
-        if self._animation.state() == QPropertyAnimation.State.Running:
-            self._animation.stop()
-
-        self._animation.setStartValue(self.verticalScrollBar().value())
-        self._animation.setEndValue(value)
-        self._animation.start()
-
-    def wheelEvent(self, event: QWheelEvent) -> None:
         scroll_bar = self.verticalScrollBar()
         minimum, maximum = scroll_bar.minimum(), scroll_bar.maximum()
 
-        delta = event.angleDelta().y()
-        delta = clip_value(delta, -120, 120)
+        if self._animation.state() == QPropertyAnimation.State.Running:
+            self._animation.stop()
 
-        target_value = scroll_bar.value() - delta
-        target_value = clip_value(target_value, minimum, maximum)
+        self._animation.setStartValue(scroll_bar.value())
+        self._animation.setEndValue(clip_value(value, minimum, maximum))
+        self._animation.start()
 
-        self.scroll_to_value(target_value)
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        delta = clip_value(event.angleDelta().y(), -120, 120)
+        self.scroll_to_value(self.verticalScrollBar().value() - delta)

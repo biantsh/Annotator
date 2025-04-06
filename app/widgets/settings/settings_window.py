@@ -53,7 +53,7 @@ class SettingsWindow(QDialog):
 
         self.popup = QFrame(self)
         self.popup.setLayout(self.layout)
-        self.popup.setFixedSize(600, 400)
+        self.popup.setFixedSize(750, 500)
 
         self.dragging = False
         self.drag_offset = QPoint()
@@ -71,7 +71,9 @@ class SettingsWindow(QDialog):
 
         if layout == SettingsLayout.CATEGORIES:
             categories_menu = self.layouts[layout].layout()
-            categories_menu.category_list.redraw_widgets()
+
+            categories_menu.category_list.toolbar.search_bar.setFocus()
+            categories_menu.category_list.rebuild_categories()
 
     def show(self) -> None:
         self.layout.setCurrentWidget(self.layouts[SettingsLayout.MAIN])

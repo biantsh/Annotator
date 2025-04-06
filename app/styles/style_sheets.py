@@ -73,25 +73,3 @@ class SettingCheckBoxStyleSheet(StyleSheet):
                 border: 1px solid rgb{outline};
             }}
         """
-
-
-class CategoryCheckBoxStyleSheet(StyleSheet):
-    def __init__(self, color: str) -> None:
-        super().__init__()
-
-        self.style_sheet = f"""
-            QCheckBox {{
-                min-height: 48px;
-                font-weight: bold;
-                padding-left: 12px;
-            }}
-
-            ::indicator {{
-                border: 1px solid rgb(53, 53, 53);
-                border-radius: 3px;
-            }}
-
-            ::indicator:checked {{
-                background-color: rgb{color};
-            }}
-        """

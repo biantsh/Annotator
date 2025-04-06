@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 from typing import TYPE_CHECKING
@@ -6,6 +7,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QResizeEvent, QMouseEvent, QPixmap, QIcon
 from PyQt6.QtWidgets import (
     QSizePolicy,
+    QGridLayout,
     QHBoxLayout,
     QVBoxLayout,
     QWidget,
@@ -16,7 +18,6 @@ from PyQt6.QtWidgets import (
 )
 
 from app.enums.settings import Setting
-from app.styles.style_sheets import CategoryCheckBoxStyleSheet
 from app.utils import pretty_text, text_to_color
 from app.widgets.settings.components.widgets import (
     SettingButton,
@@ -48,7 +49,8 @@ class CategoriesMenu(QVBoxLayout):
         footer_layout.addLayout(FooterLayout(parent, submenu=True))
 
         self.addLayout(TitleLayout(parent, 'Hidden categories'))
-        self.addSpacing(10)
+        self.addSpacing(12)
+
         self.addWidget(self.empty_banner)
         self.addWidget(self.category_list)
         self.addLayout(footer_layout)
@@ -62,7 +64,7 @@ class EmptyBanner(QWidget):
         super().__init__()
 
         pixmap = QPixmap(os.path.join(__iconpath__, self.icon_name)).scaled(
-            192, 104, transformMode=__smooth_transform__)
+            228, 124, transformMode=__smooth_transform__)
 
         icon_label = QLabel()
         icon_label.setPixmap(pixmap)
@@ -79,10 +81,10 @@ class EmptyBanner(QWidget):
         layout.addWidget(message_label)
         layout.addStretch()
 
-        self.setLayout(layout)
-
 
 class CategoriesList(ScrollableArea):
+    NUM_COLUMNS = 2
+
     def __init__(self, parent: CategoriesMenu) -> None:
         super().__init__()
         self.parent = parent
@@ -94,7 +96,7 @@ class CategoriesList(ScrollableArea):
         items_widget.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
 
-        self.items_layout = QVBoxLayout(items_widget)
+        self.items_layout = QGridLayout(items_widget)
         self.items_layout.setContentsMargins(0, 0, 0, 0)
         self.items_layout.setSpacing(2)
 
@@ -114,25 +116,15 @@ class CategoriesList(ScrollableArea):
         main_window.canvas.parent.annotation_list.redraw_widgets()
         main_window.canvas.update()
 
-    def filter_categories(self) -> None:
-        self.verticalScrollBar().setValue(0)
-        query_text = self.toolbar.search_bar.text().lower()
-
-        for category_item in self.findChildren(CategoryItem):
-            category_name = category_item.category_name \
-                .replace('_', ' ').replace('-', ' ')
-
-            category_item.setVisible(query_text in category_name)
-
-    def redraw_widgets(self) -> None:
+    def rebuild_categories(self) -> None:
         settings_window = self.parent.parent
         category_names = settings_window.parent.canvas.label_names
 
         (self.parent.empty_banner.hide(), self.show()) if category_names \
             else (self.parent.empty_banner.show(), self.hide())
 
-        for index in reversed(range(self.items_layout.count())):
-            self.items_layout.itemAt(index).widget().deleteLater()
+        for category_item in self.findChildren(CategoryItem):
+            category_item.deleteLater()
 
         for name in category_names:
             self.items_layout.addWidget(CategoryItem(self, name))
@@ -143,6 +135,27 @@ class CategoriesList(ScrollableArea):
 
         # Update after `deleteLater` calls are processed
         QTimer.singleShot(0, self.toolbar.toggle_button.update)
+        QTimer.singleShot(0, self.redraw_categories)
+
+    def redraw_categories(self) -> None:
+        category_items = self.findChildren(CategoryItem)
+        search_text = self.toolbar.search_bar.text().lower()
+
+        visible_items = [item for item in category_items
+                         if search_text in item.query_name]
+
+        for item in category_items:
+            item.hide()
+
+        for index, item in enumerate(visible_items):
+            item.show()
+
+            self.items_layout.addWidget(
+                item, index // self.NUM_COLUMNS, index % self.NUM_COLUMNS)
+
+    def filter_categories(self) -> None:
+        self.verticalScrollBar().setValue(0)
+        self.redraw_categories()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.toolbar.setFixedWidth(self.viewport().width())
@@ -165,7 +178,7 @@ class CategoriesToolBar(QWidget):
         layout.addWidget(self.toggle_button)
         layout.addWidget(self.search_bar)
 
-        layout.setContentsMargins(0, 0, 0, 9)
+        layout.setContentsMargins(0, 0, 0, 13)
         layout.setSpacing(3)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -193,7 +206,7 @@ class CategoriesToggleButton(SettingButton):
         self.update()
 
     def update(self) -> None:
-        category_items = self.parent.widget().findChildren(CategoryItem)
+        category_items = self.parent.findChildren(CategoryItem)
         hide = all(item.checkbox.isChecked() for item in category_items)
 
         toggle, text = (False, 'Hide All') if hide \
@@ -207,12 +220,8 @@ class CategoriesSearchBar(QLineEdit):
     def __init__(self):
         super().__init__()
 
-        clear_icon_path = os.path.join(__iconpath__, 'clear.png')
-        clear_icon = QPixmap(clear_icon_path).scaled(
-            10, 14,
-            Qt.AspectRatioMode.IgnoreAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
-        )
+        clear_icon = QPixmap(os.path.join(__iconpath__, 'clear.png')).scaled(
+            12, 16, transformMode=Qt.TransformationMode.SmoothTransformation)
 
         self.clear_button = QPushButton(QIcon(clear_icon), '', self)
         self.clear_button.clicked.connect(self._on_clear)
@@ -228,7 +237,7 @@ class CategoriesSearchBar(QLineEdit):
         frame_size = self.contentsRect()
 
         x_pos = frame_size.right() - button_size.width()
-        y_pos = frame_size.center().y() - button_size.height() // 2
+        y_pos = frame_size.center().y() - button_size.height() // 2 + 1
 
         self.clear_button.move(x_pos, y_pos)
 
@@ -236,9 +245,10 @@ class CategoriesSearchBar(QLineEdit):
 class CategoryItem(QWidget):
     def __init__(self, parent: CategoriesList, category_name: str) -> None:
         super().__init__()
-
         self.parent = parent
+
         self.category_name = category_name
+        self.query_name = pretty_text(category_name).lower()
 
         checked = category_name not in parent.hidden_categories
         self.visibility_label = QLabel('Visible' if checked else 'Hidden')
@@ -247,12 +257,13 @@ class CategoryItem(QWidget):
         self.checkbox.stateChanged.connect(self._on_toggle)
         self.checkbox.setChecked(checked)
 
+        self.checkbox.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 14, 0)
 
         layout.addWidget(self.checkbox)
-        layout.addWidget(QLabel(category_name))
-        layout.addStretch()
         layout.addWidget(self.visibility_label)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
@@ -271,12 +282,11 @@ class CategoryItem(QWidget):
         event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.checkbox.toggle()
+        self.checkbox.toggle()
 
-            self.parent.parent.hidden_categories_label.update()
-            self.parent.toolbar.toggle_button.update()
-            self.parent.save_categories()
+        self.parent.parent.hidden_categories_label.update()
+        self.parent.toolbar.toggle_button.update()
+        self.parent.save_categories()
 
 
 class CategoryCheckBox(QCheckBox):
@@ -284,8 +294,8 @@ class CategoryCheckBox(QCheckBox):
         super().__init__(pretty_text(category_name))
         self.parent = parent
 
-        color = str(text_to_color(category_name))
-        self.setStyleSheet(str(CategoryCheckBoxStyleSheet(color)))
+        self.setStyleSheet(f'''::indicator:checked {{
+            background-color: rgb{text_to_color(category_name)};}}''')
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.parent.mouseReleaseEvent(event)
@@ -308,6 +318,9 @@ class HiddenCategoriesLabel(InteractiveLabel):
         start_index = next((
             index + 1 for index in range(len(widgets))
             if category_list.is_in_view(widgets[index])))
+
+        num_columns = category_list.NUM_COLUMNS
+        start_index = math.ceil(start_index / num_columns) * num_columns
 
         # Rotate widgets to start from top-most visible widget
         widgets = widgets[start_index:] + widgets[:start_index]

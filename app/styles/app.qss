@@ -115,6 +115,7 @@ SettingsWindow QFrame {
 }
 SettingsWindow QLabel {
     color: rgb(153, 153, 153);
+    font-size: 13px;
 }
 SettingsWindow QPushButton {
     background-color: rgb(33, 33, 33);
@@ -131,18 +132,16 @@ SettingsWindow ResetButton,
 SettingsWindow CloseButton,
 SettingsWindow FinishButton {
     color: rgb(200, 200, 200);
-    font-size: 12px;
-    width: 70px;
-    height: 25px;
-    margin-bottom: 5px;
-    margin-right: 5px;
+    font-size: 13px;
+    width: 80px;
+    height: 30px;
     border-radius: 3px;
     border: 1px solid rgb(53, 53, 53);
 }
 SettingsWindow SettingButton {
     background-color: rgb(41, 41, 41);
-    width: 140px;
     margin-left: 3px;
+    width: 160px;
 }
 SettingsWindow SettingButton:hover {
     background-color: rgb(49, 49, 49);
@@ -153,7 +152,6 @@ SettingsWindow SettingButton:pressed {
 }
 SettingsWindow ResetButton {
     background-color: rgb(33, 33, 33);
-    margin-left: 5px;
 }
 SettingsWindow ResetButton:hover {
     background-color: rgb(41, 41, 41);
@@ -190,7 +188,7 @@ SettingsWindow InteractiveLabel ClickableLabel {
 }
 SettingsWindow SettingCheckBox {
     color: rgb(180, 180, 180);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: bold;
     margin-left: 6px;
     margin-bottom: 6px;
@@ -231,7 +229,7 @@ SettingsWindow CategoriesList QScrollBar::sub-page {
 }
 SettingsWindow HiddenCategoriesLabel QLabel {
     color: rgb(200, 200, 200);
-    font-size: 13px;
+    font-size: 14px;
 }
 SettingsWindow HiddenCategoriesLabel ClickableLabel {
     color: rgb(60, 120, 216);
@@ -247,12 +245,14 @@ SettingsWindow CategoriesSearchBar {
     border-radius: 3px;
     color: rgb(200, 200, 200);
     font-weight: bold;
-    min-height: 25px;
+    font-size: 13px;
+    min-height: 30px;
     padding-left: 4px;
 }
 SettingsWindow CategoriesSearchBar QPushButton {
     background-color: rgb(30, 30, 30);
-    min-height: 25px;
+    min-height: 30px;
+    min-width: 26px;
     padding: 0px 2px;
 }
 SettingsWindow CategoriesSearchBar QPushButton:hover {
@@ -262,6 +262,7 @@ SettingsWindow CategoriesSearchBar QPushButton:hover {
 SettingsWindow CategoryItem {
     background-color: rgb(30, 30, 30);
     border-radius: 3px;
+    min-height: 55px;
 }
 SettingsWindow CategoryItem:hover {
     background-color: rgb(46, 46, 46);
@@ -269,9 +270,20 @@ SettingsWindow CategoryItem:hover {
 SettingsWindow CategoryItem QWidget {
     background-color: transparent;
 }
+SettingsWindow CategoryItem QCheckBox {
+    font-size: 13px;
+    font-weight: bold;
+    padding-left: 12px;
+}
+SettingsWindow CategoryItem QCheckBox::indicator {
+    border: 1px solid rgb(53, 53, 53);
+    border-radius: 3px;
+    min-height: 14px;
+    min-width: 14px;
+}
 SettingsWindow CategoryItem QLabel {
     color: rgb(155, 155, 155);
-    font-size: 13px;
+    font-size: 14px;
 }
 SettingsWindow EmptyBanner QLabel {
     color: rgb(83, 83, 83);

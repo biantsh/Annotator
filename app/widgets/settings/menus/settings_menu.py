@@ -25,6 +25,7 @@ class SettingsMenu(QVBoxLayout):
         self.addLayout(SectionLayout('Annotations'))
         self.addWidget(parent.settings_manager.setting_hide_keypoints)
         self.addWidget(parent.settings_manager.setting_hidden_categories)
+        self.addSpacing(5)
 
         self.addLayout(SectionLayout('Exporting'))
         self.addWidget(parent.settings_manager.setting_add_missing_bboxes)
